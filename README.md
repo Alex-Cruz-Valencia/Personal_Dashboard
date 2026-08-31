@@ -62,10 +62,10 @@ Source: [`src/lib/tasks/todoist.ts`](src/lib/tasks/todoist.ts).
 1. Google Cloud console → create an **OAuth client ID** (Web application).
 2. Enable the **Google Calendar API** and **Gmail API**.
 3. Add redirect URI `http://localhost:3000/api/auth/google/callback`.
-4. Set `GOOGLE_CLIENT_ID`, `GOOGLE_CLIENT_SECRET`, and a random
-   `DASHBOARD_SESSION_SECRET`.
-5. Visit `/api/auth/google` once to grant access. Tokens are stored in an
-   httpOnly cookie (single-user / local-dev grade). Disconnect at
+4. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
+5. Add your Google address as a **test user** on the OAuth consent screen.
+6. Visit `/api/auth/google` once to grant access. Tokens are cached server-side
+   in `.data/google-tokens.json` (gitignored). Disconnect at
    `/api/auth/google/logout`.
 
 Sources: [`src/lib/google/`](src/lib/google/).

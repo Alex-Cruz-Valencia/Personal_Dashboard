@@ -1,81 +1,43 @@
 /**
- * httpOnly-cookie token store for the Google OAuth flow.
+ * Token store for the Google OAuth flow.
  *
- * Single-user / local-dev grade. The cookie is optionally HMAC-signed with
- * `DASHBOARD_SESSION_SECRET` so a tampered value is rejected.
+ * This is a single-user, localhost dashboard, so tokens are cached in a
+ * gitignored file on the server (`.data/google-tokens.json`) — like `gcloud`
+ * stashing credentials under `~/.config`. Every browser you point at the
+ * dashboard then sees live data, and it survives a cookie clear.
+ *
+ * For a shared or hosted deployment, swap this for a real per-user datastore.
  */
 
 import "server-only";
-import { createHmac, timingSafeEqual } from "node:crypto";
-import { cookies } from "next/headers";
-import { config } from "@/lib/config";
+import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { dirname, join } from "node:path";
 import { refreshAccessToken, type GoogleTokens } from "./oauth";
 
-const COOKIE = "gdash_google";
-const MAX_AGE = 60 * 60 * 24 * 180; // 180 days
+const TOKEN_FILE = join(process.cwd(), ".data", "google-tokens.json");
 
-function b64urlEncode(input: string): string {
-  return Buffer.from(input, "utf8").toString("base64url");
-}
-function b64urlDecode(input: string): string {
-  return Buffer.from(input, "base64url").toString("utf8");
-}
-
-function sign(payload: string): string {
-  if (!config.sessionSecret) return payload;
-  const mac = createHmac("sha256", config.sessionSecret).update(payload).digest("base64url");
-  return `${payload}.${mac}`;
-}
-
-function verify(raw: string): string | null {
-  if (!config.sessionSecret) return raw;
-  const idx = raw.lastIndexOf(".");
-  if (idx === -1) return null;
-  const payload = raw.slice(0, idx);
-  const mac = raw.slice(idx + 1);
-  const expected = createHmac("sha256", config.sessionSecret)
-    .update(payload)
-    .digest("base64url");
-  const a = Buffer.from(mac);
-  const b = Buffer.from(expected);
-  if (a.length !== b.length || !timingSafeEqual(a, b)) return null;
-  return payload;
-}
+let cache: GoogleTokens | null | undefined;
 
 export async function readGoogleTokens(): Promise<GoogleTokens | null> {
-  const raw = (await cookies()).get(COOKIE)?.value;
-  if (!raw) return null;
-  const payload = verify(raw);
-  if (!payload) return null;
+  if (cache !== undefined) return cache;
   try {
-    return JSON.parse(b64urlDecode(payload)) as GoogleTokens;
+    const raw = await readFile(TOKEN_FILE, "utf8");
+    cache = JSON.parse(raw) as GoogleTokens;
   } catch {
-    return null;
+    cache = null;
   }
+  return cache;
 }
 
 export async function writeGoogleTokens(tokens: GoogleTokens): Promise<void> {
-  const value = sign(b64urlEncode(JSON.stringify(tokens)));
-  try {
-    (await cookies()).set(COOKIE, value, {
-      httpOnly: true,
-      sameSite: "lax",
-      secure: process.env.NODE_ENV === "production",
-      path: "/",
-      maxAge: MAX_AGE,
-    });
-  } catch {
-    // Called from a read-only render context — the caller still gets to use
-    // the in-memory tokens for this request; they'll be re-derived next time.
-  }
+  cache = tokens;
+  await mkdir(dirname(TOKEN_FILE), { recursive: true });
+  await writeFile(TOKEN_FILE, JSON.stringify(tokens, null, 2), { mode: 0o600 });
 }
 
 export async function clearGoogleTokens(): Promise<void> {
-  try {
-    (await cookies()).delete(COOKIE);
-  } catch {
-    /* read-only context */
-  }
+  cache = null;
+  await rm(TOKEN_FILE, { force: true });
 }
 
 /**

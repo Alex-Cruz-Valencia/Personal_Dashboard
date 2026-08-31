@@ -64,7 +64,8 @@ export async function getReplies(): Promise<Reply[]> {
 
   const listUrl = new URL(`${BASE}/messages`);
   listUrl.searchParams.set("q", config.google.gmailQuery);
-  listUrl.searchParams.set("maxResults", "10");
+  // Over-fetch — bulk / no-reply mail is filtered out below before we take 8.
+  listUrl.searchParams.set("maxResults", "25");
 
   const listRes = await fetch(listUrl, { headers: auth, next: { revalidate: 120 } });
   if (!listRes.ok) throw new Error(`Gmail list responded ${listRes.status}`);
@@ -77,7 +78,7 @@ export async function getReplies(): Promise<Reply[]> {
     ids.map(async (id) => {
       const url = new URL(`${BASE}/messages/${id}`);
       url.searchParams.set("format", "metadata");
-      for (const h of ["From", "Subject", "Date"]) {
+      for (const h of ["From", "Subject", "Date", "List-Unsubscribe", "Precedence"]) {
         url.searchParams.append("metadataHeaders", h);
       }
       const res = await fetch(url, { headers: auth, next: { revalidate: 120 } });
@@ -87,6 +88,7 @@ export async function getReplies(): Promise<Reply[]> {
   );
 
   return messages
+    .filter((msg) => !looksLikeBulk(msg))
     .map<Reply>((msg) => {
       const urgency = urgencyOf(msg, now);
       return {
@@ -102,7 +104,21 @@ export async function getReplies(): Promise<Reply[]> {
       (a, b) =>
         a.urgency - b.urgency ||
         ageMinutes(b.age) - ageMinutes(a.age),
-    );
+    )
+    .slice(0, 8);
+}
+
+const NO_REPLY_RE = /(^|[.\-_+])(no[.\-_]?reply|do[.\-_]?not[.\-_]?reply|donotreply|notification[s]?|noreply|mailer[-_]?daemon|newsletter|bounce)@/i;
+
+/** Bulk / automated mail that a human never needs to reply to. */
+function looksLikeBulk(msg: GmailMessage): boolean {
+  if (header(msg, "List-Unsubscribe")) return true;
+  if (/bulk|list|auto_reply/i.test(header(msg, "Precedence"))) return true;
+  if (msg.labelIds?.includes("CATEGORY_PROMOTIONS")) return true;
+  if (msg.labelIds?.includes("CATEGORY_SOCIAL")) return true;
+  const from = header(msg, "From");
+  const addr = from.match(/[^<>\s@]+@[^<>\s]+/)?.[0] ?? "";
+  return NO_REPLY_RE.test(`${addr.split("@")[0]}@`);
 }
 
 /** Rough re-parse of "18h" / "2d" back to minutes, for sorting only. */

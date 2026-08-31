@@ -56,19 +56,21 @@ export const config = {
       str("GOOGLE_REDIRECT_URI") ??
       `${str("DASHBOARD_BASE_URL") ?? "http://localhost:3000"}/api/auth/google/callback`,
     calendarId: str("GOOGLE_CALENDAR_ID") ?? "primary",
-    /** Gmail search for the "needs a reply" list. */
+    /**
+     * Gmail search for the "needs a reply" list. `category:primary` keeps it to
+     * the Primary tab, which already excludes Promotions / Social / Updates /
+     * Forums. Bulk mail that still slips through is dropped in `gmail.ts` by
+     * its List-Unsubscribe header.
+     */
     gmailQuery:
       str("GMAIL_QUERY") ??
-      "in:inbox is:unread -category:promotions -category:social newer_than:7d",
+      "in:inbox is:unread category:primary -from:me newer_than:7d",
   },
 
   anthropic: {
     apiKey: str("ANTHROPIC_API_KEY"),
     model: str("ANTHROPIC_MODEL") ?? "claude-opus-5",
   },
-
-  /** Signing secret for the Google token cookie. */
-  sessionSecret: str("DASHBOARD_SESSION_SECRET"),
 } as const;
 
 const todoist = Boolean(config.todoist.token);
