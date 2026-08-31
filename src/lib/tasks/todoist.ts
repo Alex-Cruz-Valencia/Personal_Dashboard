@@ -1,8 +1,12 @@
 /**
- * Phase 3 — Tasks via Todoist REST API v2 (personal API token).
+ * Phase 3 — Tasks via the Todoist API v1 (personal API token).
  *
  * Token + filter come from `config.todoist`. The filter defaults to
  * "(today | overdue)" so the card shows what actually needs doing today.
+ *
+ * Note: the old `/rest/v2/*` endpoints now return 410 — this uses the unified
+ * v1 API (`https://api.todoist.com/api/v1/*`), which wraps lists in
+ * `{ results, next_cursor }`.
  */
 
 import "server-only";
@@ -11,11 +15,13 @@ import { formatHour } from "@/lib/format";
 import { decimalHourForTimestamp } from "@/lib/time";
 import type { Priority, Task } from "@/lib/types";
 
-const API = "https://api.todoist.com/rest/v2";
+const API = "https://api.todoist.com/api/v1";
 
 interface TodoistDue {
+  /** "YYYY-MM-DD" for all-day, or a full RFC3339 timestamp for timed tasks. */
   date: string;
-  datetime?: string | null;
+  /** Set only when the task has a fixed time; null = floating. */
+  timezone: string | null;
   string: string;
   is_recurring: boolean;
 }
@@ -23,11 +29,11 @@ interface TodoistDue {
 interface TodoistTask {
   id: string;
   content: string;
-  priority: 1 | 2 | 3 | 4; // 4 = P1 (urgent) … 1 = P4 (none)
+  /** 4 = P1 (urgent) … 1 = P4 (no priority). */
+  priority: 1 | 2 | 3 | 4;
   project_id: string;
   labels: string[];
   due: TodoistDue | null;
-  order: number;
 }
 
 interface TodoistProject {
@@ -35,31 +41,41 @@ interface TodoistProject {
   name: string;
 }
 
-/** Todoist priority (4→1 urgent) → dashboard priority (1 urgent … 3 someday). */
+interface Page<T> {
+  results: T[];
+  next_cursor: string | null;
+}
+
+/** Todoist priority (4 = urgent) → dashboard priority (1 urgent … 3 someday). */
 function mapPriority(p: TodoistTask["priority"]): Priority {
   switch (p) {
     case 4:
       return 1;
     case 3:
+    case 2:
       return 2;
     default:
       return 3;
   }
 }
 
-function hasExplicitZone(datetime: string): boolean {
-  return /[zZ]$|[+-]\d\d:?\d\d$/.test(datetime);
+function isTimed(due: TodoistDue): boolean {
+  return due.date.includes("T");
+}
+
+function hasExplicitZone(value: string): boolean {
+  return /[zZ]$|[+-]\d\d:?\d\d$/.test(value);
 }
 
 function dueHourOf(due: TodoistDue | null, todayIso: string): number | null {
-  if (!due?.datetime) return null;
-  if (!hasExplicitZone(due.datetime)) {
+  if (!due || !isTimed(due)) return null;
+  if (!hasExplicitZone(due.date)) {
     // Floating local time — read the clock components straight off the string.
-    const t = due.datetime.split("T")[1] ?? "00:00:00";
+    const t = due.date.split("T")[1] ?? "00:00:00";
     const [h, m] = t.split(":").map(Number);
     return h + (m || 0) / 60;
   }
-  return decimalHourForTimestamp(due.datetime, todayIso, config.timezone);
+  return decimalHourForTimestamp(due.date, todayIso, config.timezone);
 }
 
 function dueLabel(due: TodoistDue | null, todayIso: string): string {
@@ -71,7 +87,7 @@ function dueLabel(due: TodoistDue | null, todayIso: string): string {
   return s ? s.charAt(0).toUpperCase() + s.slice(1) : "Today";
 }
 
-async function todoistGet<T>(path: string): Promise<T> {
+async function todoistGet<T>(path: string): Promise<Page<T>> {
   const res = await fetch(`${API}${path}`, {
     headers: { Authorization: `Bearer ${config.todoist.token}` },
     next: { revalidate: 120 },
@@ -79,22 +95,24 @@ async function todoistGet<T>(path: string): Promise<T> {
   if (!res.ok) {
     throw new Error(`Todoist ${path} responded ${res.status}`);
   }
-  return (await res.json()) as T;
+  return (await res.json()) as Page<T>;
 }
 
 export async function getTasks(todayIso: string): Promise<Task[]> {
   if (!config.todoist.token) throw new Error("Todoist not configured");
 
   const [tasks, projects] = await Promise.all([
-    todoistGet<TodoistTask[]>(
-      `/tasks?filter=${encodeURIComponent(config.todoist.filter)}`,
+    todoistGet<TodoistTask>(
+      `/tasks/filter?query=${encodeURIComponent(config.todoist.filter)}&limit=200`,
     ),
-    todoistGet<TodoistProject[]>("/projects").catch(() => [] as TodoistProject[]),
+    todoistGet<TodoistProject>("/projects?limit=200").catch(
+      () => ({ results: [], next_cursor: null }) as Page<TodoistProject>,
+    ),
   ]);
 
-  const projectName = new Map(projects.map((p) => [p.id, p.name]));
+  const projectName = new Map(projects.results.map((p) => [p.id, p.name]));
 
-  return tasks
+  return tasks.results
     .map<Task>((t) => ({
       id: t.id,
       name: t.content,
