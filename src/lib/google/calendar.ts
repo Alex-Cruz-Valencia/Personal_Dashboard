@@ -74,7 +74,7 @@ export async function getAgenda(
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 120 },
+    next: { revalidate: 60 },
   });
   if (!res.ok) throw new Error(`Google Calendar responded ${res.status}`);
   const data = (await res.json()) as GCalListResponse;

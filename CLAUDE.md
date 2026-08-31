@@ -12,8 +12,11 @@
   (query → device cookie → env → default) and threaded into weather, tasks,
   calendar and the clock. The browser shares position via `LocationSync` →
   `POST /api/location`. The reverse-geocoded name fills `weather.place`.
-- `WeatherCard` is the one **client** component — the temperature curve has a
-  pointer scrub. Its geometry mirrors the design's `renderVals()` curve math.
+- Client components (the reference is static, so these add interaction):
+  `WeatherCard` (temperature-curve scrub), `TaskList` (complete via checkbox,
+  rename inline — writes go through `/api/tasks/[id]*`, which
+  `revalidateTag("todoist")` on success), `LocationSync`, `AutoRefresh`
+  (60s `router.refresh()` while visible).
 - Cards render only from `src/lib/types.ts`. New data sources map into those
   shapes in `src/lib/dashboard-data.ts`; never hardcode into components.
 - `src/lib/format.ts` (+ the curve math in `WeatherCard`) port the design's

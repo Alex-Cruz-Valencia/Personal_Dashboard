@@ -1,3 +1,4 @@
+import { AutoRefresh } from "@/components/AutoRefresh";
 import { Dashboard } from "@/components/Dashboard";
 import { LocationSync } from "@/components/LocationSync";
 import { getDashboardData } from "@/lib/dashboard-data";
@@ -15,6 +16,7 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     <>
       <Dashboard data={data} settings={settings} />
       <LocationSync />
+      <AutoRefresh />
     </>
   );
 }

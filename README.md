@@ -40,6 +40,10 @@ component never knows whether a value is live or mock.
 Presentation knobs (`theme`, `timeFormat`, `density`) come from the URL:
 `/?theme=dark&density=focused&timeFormat=24-hour`.
 
+`AutoRefresh` re-renders the page every 60s while the tab is visible (and on
+tab re-focus), so the clock, weather, tasks and agenda stay current without a
+manual reload.
+
 ## Integration phases
 
 Copy [`.env.example`](.env.example) to `.env.local` and fill in a phase to turn
@@ -69,6 +73,11 @@ off wherever you are. Resolution order: `?lat=&lon=&tz=` query → device cookie
 Optional `TODOIST_FILTER` (default `(today | overdue)`).
 Source: [`src/lib/tasks/todoist.ts`](src/lib/tasks/todoist.ts).
 
+Tasks are **editable from the dashboard**: click the checkbox to complete a
+task, click its name to rename it inline. The write API also covers priority,
+due date, labels, reopen and delete (see Endpoints). The personal token has
+full account access, so no extra scope is needed.
+
 ### Phase 4 — Google Calendar + Gmail (OAuth2, read-only)
 1. Google Cloud console → create an **OAuth client ID** (Web application).
 2. Enable the **Google Calendar API** and **Gmail API**.
@@ -94,6 +103,10 @@ Route: `GET|POST /api/summary`. Source:
 |---|---|
 | `GET /api/status` | which integrations are configured / connected |
 | `GET/POST/DELETE /api/location` | read / set / clear the device location |
+| `POST /api/tasks/[id]/complete` | mark a task done |
+| `POST /api/tasks/[id]/reopen` | un-complete a task |
+| `PATCH /api/tasks/[id]` | edit `{ content?, priority? (1–3), due? (natural language, or null), labels?, description? }` |
+| `DELETE /api/tasks/[id]` | delete a task |
 | `GET /api/summary` | regenerate the day note from live data |
 | `POST /api/summary` | day note from an explicit `{ nowHour, weather, tasks, agenda }` body |
 | `GET /api/auth/google` | start Google OAuth |

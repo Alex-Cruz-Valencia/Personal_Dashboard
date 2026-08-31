@@ -17,6 +17,9 @@ import type { Priority, Task } from "@/lib/types";
 
 const API = "https://api.todoist.com/api/v1";
 
+/** Cache tag on task reads — mutations call `revalidateTag(TODOIST_TAG)`. */
+export const TODOIST_TAG = "todoist";
+
 interface TodoistDue {
   /** "YYYY-MM-DD" for all-day, or a full RFC3339 timestamp for timed tasks. */
   date: string;
@@ -98,7 +101,7 @@ function dueLabel(
 async function todoistGet<T>(path: string): Promise<Page<T>> {
   const res = await fetch(`${API}${path}`, {
     headers: { Authorization: `Bearer ${config.todoist.token}` },
-    next: { revalidate: 120 },
+    next: { revalidate: 30, tags: [TODOIST_TAG] },
   });
   if (!res.ok) {
     throw new Error(`Todoist ${path} responded ${res.status}`);
@@ -138,4 +141,67 @@ export async function getTasks(
         (a.dueHour ?? 99) - (b.dueHour ?? 99) ||
         a.name.localeCompare(b.name),
     );
+}
+
+/* ---------- writes ---------- */
+
+/** Dashboard priority (1 urgent … 3 someday) → Todoist priority (4 … 1). */
+const TO_TODOIST_PRIORITY: Record<Priority, number> = { 1: 4, 2: 3, 3: 1 };
+
+export interface TaskPatch {
+  /** New task text. */
+  content?: string;
+  description?: string;
+  /** Dashboard scale: 1 = urgent, 2 = normal, 3 = someday. */
+  priority?: Priority;
+  /** Natural-language due ("tomorrow 9am", "every monday"), or null to clear. */
+  due?: string | null;
+  labels?: string[];
+}
+
+async function todoistWrite(
+  path: string,
+  method: "POST" | "DELETE",
+  body?: Record<string, unknown>,
+): Promise<unknown> {
+  if (!config.todoist.token) throw new Error("Todoist not configured");
+  const res = await fetch(`${API}${path}`, {
+    method,
+    headers: {
+      Authorization: `Bearer ${config.todoist.token}`,
+      ...(body ? { "Content-Type": "application/json" } : {}),
+    },
+    body: body ? JSON.stringify(body) : undefined,
+    cache: "no-store",
+  });
+  if (!res.ok) {
+    throw new Error(`Todoist ${method} ${path} responded ${res.status}`);
+  }
+  const text = await res.text();
+  return text ? JSON.parse(text) : null;
+}
+
+export function completeTask(id: string): Promise<unknown> {
+  return todoistWrite(`/tasks/${id}/close`, "POST");
+}
+
+export function reopenTask(id: string): Promise<unknown> {
+  return todoistWrite(`/tasks/${id}/reopen`, "POST");
+}
+
+export function deleteTask(id: string): Promise<unknown> {
+  return todoistWrite(`/tasks/${id}`, "DELETE");
+}
+
+export function updateTask(id: string, patch: TaskPatch): Promise<unknown> {
+  const body: Record<string, unknown> = {};
+  if (patch.content !== undefined) body.content = patch.content;
+  if (patch.description !== undefined) body.description = patch.description;
+  if (patch.priority !== undefined) {
+    body.priority = TO_TODOIST_PRIORITY[patch.priority];
+  }
+  if (patch.labels !== undefined) body.labels = patch.labels;
+  if (patch.due === null) body.due_string = "no date";
+  else if (patch.due !== undefined) body.due_string = patch.due;
+  return todoistWrite(`/tasks/${id}`, "POST", body);
 }

@@ -67,7 +67,7 @@ export async function getReplies(): Promise<Reply[]> {
   // Over-fetch — bulk / no-reply mail is filtered out below before we take 8.
   listUrl.searchParams.set("maxResults", "50");
 
-  const listRes = await fetch(listUrl, { headers: auth, next: { revalidate: 120 } });
+  const listRes = await fetch(listUrl, { headers: auth, next: { revalidate: 90 } });
   if (!listRes.ok) throw new Error(`Gmail list responded ${listRes.status}`);
   const list = (await listRes.json()) as GmailListResponse;
   const ids = (list.messages ?? []).map((m) => m.id);
@@ -81,7 +81,7 @@ export async function getReplies(): Promise<Reply[]> {
       for (const h of ["From", "Subject", "Date", "List-Unsubscribe", "Precedence"]) {
         url.searchParams.append("metadataHeaders", h);
       }
-      const res = await fetch(url, { headers: auth, next: { revalidate: 120 } });
+      const res = await fetch(url, { headers: auth, next: { revalidate: 90 } });
       if (!res.ok) throw new Error(`Gmail message ${id} responded ${res.status}`);
       return (await res.json()) as GmailMessage;
     }),

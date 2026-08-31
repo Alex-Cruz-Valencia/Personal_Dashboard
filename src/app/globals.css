@@ -239,6 +239,23 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .task__tag--p3 { color: var(--p3); background: var(--p3-tint); border-color: transparent; }
 .task__due { font-size: 12px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; padding-top: 1px; }
 .task--p1 .task__due { color: var(--p1); }
+/* interaction states (the reference is a static mock) */
+.task__check:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.task--done .task__check { border-color: var(--accent); background: var(--accent); position: relative; }
+.task--done .task__check::after {
+  content: ""; position: absolute; left: 5px; top: 3px; width: 5px; height: 8px;
+  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(40deg);
+}
+.task--done .task__name { text-decoration: line-through; color: var(--ink-faint); }
+.task--done .task__due { color: var(--ink-faint); }
+.task__name { cursor: text; }
+.task__name-input {
+  font-family: inherit; font-size: 14.5px; font-weight: 500; line-height: 1.35;
+  width: 100%; margin: -1px 0; padding: 0; color: var(--ink);
+  background: transparent; border: 0; border-bottom: 1px solid var(--accent); outline: none;
+}
+.task--p1 .task__name-input { font-weight: 600; }
+.tasks__error { margin: 10px 0 0; font-size: 12px; font-weight: 500; color: var(--negative); }
 
 /* ---------- agenda ---------- */
 .agenda { list-style: none; margin: 0; padding: 0; }
