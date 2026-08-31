@@ -53,12 +53,16 @@ Set `DASHBOARD_WEATHER_ENABLED="true"` (or configure any other phase — weather
 then goes live automatically). Source:
 [`src/lib/weather/open-meteo.ts`](src/lib/weather/open-meteo.ts).
 
+The card shows the resolved place, current temp + condition, and an
+interactive hourly temperature curve (hover / drag to scrub — the readout
+names the calendar block each hour falls in).
+
 **Location follows the device.** On first load the browser asks to share your
-position (`LocationSync` → `POST /api/location` → a cookie); weather, daylight,
-the clock, the greeting and every event/task time then key off wherever you
-are. Resolution order: `?lat=&lon=&tz=` query → device cookie →
-`DASHBOARD_LATITUDE`/`LONGITUDE`/`TIMEZONE` → San Francisco. `DELETE
-/api/location` forgets the device position.
+position (`LocationSync` → `POST /api/location` → an httpOnly cookie, rounded
+to ~1 km); weather, the clock, the greeting and every event/task time then key
+off wherever you are. Resolution order: `?lat=&lon=&tz=` query → device cookie
+→ `DASHBOARD_LATITUDE`/`LONGITUDE`/`TIMEZONE` → San Francisco. `DELETE
+/api/location` forgets the stored position.
 
 ### Phase 3 — Todoist (personal API token)
 `TODOIST_API_TOKEN` — from Todoist → Settings → Integrations → Developer.

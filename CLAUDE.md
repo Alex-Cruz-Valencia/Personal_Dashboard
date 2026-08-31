@@ -16,6 +16,6 @@
   pointer scrub. Its geometry mirrors the design's `renderVals()` curve math.
 - Cards render only from `src/lib/types.ts`. New data sources map into those
   shapes in `src/lib/dashboard-data.ts`; never hardcode into components.
-- `src/lib/format.ts` is a line-by-line port of the design's `renderVals()` —
-  keep parity with it.
+- `src/lib/format.ts` (+ the curve math in `WeatherCard`) port the design's
+  `renderVals()` — keep parity when the design changes.
 - Nothing configured → demo mode (frozen `mock-data.ts`, exact reference).
