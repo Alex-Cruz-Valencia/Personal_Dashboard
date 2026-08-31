@@ -8,6 +8,10 @@
   restyle — if the design changes, re-port from the design project
   (`0e114d1c-17f4-4cf4-9af5-6e2d7e880dc0`).
 - All times are **decimal hours in the viewer's local day** (9.5 = 9:30am).
+- Location + timezone are resolved per-request by `src/lib/location.ts`
+  (query → device cookie → env → default) and threaded into weather, tasks,
+  calendar and the clock. The browser shares position via `LocationSync` →
+  `POST /api/location`.
 - Cards render only from `src/lib/types.ts`. New data sources map into those
   shapes in `src/lib/dashboard-data.ts`; never hardcode into components.
 - `src/lib/format.ts` is a line-by-line port of the design's `renderVals()` —

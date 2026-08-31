@@ -49,9 +49,16 @@ it on. Each is independent; the rest stay on mock data.
 Nothing to configure.
 
 ### Phase 2 — Weather (Open-Meteo, no API key)
-Set `DASHBOARD_LATITUDE` / `DASHBOARD_LONGITUDE` / `DASHBOARD_TIMEZONE`, then
-`DASHBOARD_WEATHER_ENABLED="true"` (or configure any other phase — weather then
-goes live automatically). Source: [`src/lib/weather/open-meteo.ts`](src/lib/weather/open-meteo.ts).
+Set `DASHBOARD_WEATHER_ENABLED="true"` (or configure any other phase — weather
+then goes live automatically). Source:
+[`src/lib/weather/open-meteo.ts`](src/lib/weather/open-meteo.ts).
+
+**Location follows the device.** On first load the browser asks to share your
+position (`LocationSync` → `POST /api/location` → a cookie); weather, daylight,
+the clock, the greeting and every event/task time then key off wherever you
+are. Resolution order: `?lat=&lon=&tz=` query → device cookie →
+`DASHBOARD_LATITUDE`/`LONGITUDE`/`TIMEZONE` → San Francisco. `DELETE
+/api/location` forgets the device position.
 
 ### Phase 3 — Todoist (personal API token)
 `TODOIST_API_TOKEN` — from Todoist → Settings → Integrations → Developer.
@@ -82,6 +89,7 @@ Route: `GET|POST /api/summary`. Source:
 | Route | Purpose |
 |---|---|
 | `GET /api/status` | which integrations are configured / connected |
+| `GET/POST/DELETE /api/location` | read / set / clear the device location |
 | `GET /api/summary` | regenerate the day note from live data |
 | `POST /api/summary` | day note from an explicit `{ nowHour, weather, tasks, agenda }` body |
 | `GET /api/auth/google` | start Google OAuth |

@@ -54,9 +54,12 @@ function whereText(event: GCalEvent, kind: EventKind): string {
   return kind === "focus" ? "Blocked" : "Personal";
 }
 
-export async function getAgenda(todayIso: string): Promise<AgendaEvent[]> {
+export async function getAgenda(
+  todayIso: string,
+  timezone: string,
+): Promise<AgendaEvent[]> {
   const token = await getGoogleAccessToken();
-  const { timeMin, timeMax } = dayBoundsUtc(todayIso, config.timezone);
+  const { timeMin, timeMax } = dayBoundsUtc(todayIso, timezone);
 
   const url = new URL(
     `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
@@ -84,8 +87,8 @@ export async function getAgenda(todayIso: string): Promise<AgendaEvent[]> {
         id: e.id,
         name: e.summary?.trim() || "(busy)",
         where: whereText(e, kind),
-        start: decimalHourForTimestamp(e.start.dateTime as string, todayIso, config.timezone),
-        end: decimalHourForTimestamp(e.end.dateTime as string, todayIso, config.timezone),
+        start: decimalHourForTimestamp(e.start.dateTime as string, todayIso, timezone),
+        end: decimalHourForTimestamp(e.end.dateTime as string, todayIso, timezone),
         kind,
       };
     })

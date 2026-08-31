@@ -9,6 +9,7 @@ import { config, features, forceMock, isDemoMode } from "./config";
 import { deterministicDayNote } from "./day-note";
 import { getAgenda } from "./google/calendar";
 import { getReplies } from "./google/gmail";
+import { resolveLocation, type LocationOverride } from "./location";
 import {
   MOCK_AGENDA,
   MOCK_ARC,
@@ -39,15 +40,17 @@ async function settle<T>(
   }
 }
 
-function realToday(): TodayInfo {
+function realToday(timezone: string): TodayInfo {
   const now = new Date();
   return {
-    iso: isoDateInZone(now, config.timezone),
-    nowHour: decimalHourInZone(now, config.timezone),
+    iso: isoDateInZone(now, timezone),
+    nowHour: decimalHourInZone(now, timezone),
   };
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+export async function getDashboardData(
+  locationOverride?: LocationOverride,
+): Promise<DashboardData> {
   const arc = { from: config.arcFrom, to: config.arcTo };
 
   // Pure reference-reproduction mode: nothing configured, or explicitly forced.
@@ -71,18 +74,19 @@ export async function getDashboardData(): Promise<DashboardData> {
     };
   }
 
-  const today = realToday();
+  const location = await resolveLocation(locationOverride);
+  const today = realToday(location.timezone);
   const user = { name: config.userName ?? MOCK_USER.name };
 
   const [weather, tasks, agenda, replies] = await Promise.all([
     features.weather
-      ? settle("weather", getWeather, MOCK_WEATHER)
+      ? settle("weather", () => getWeather(location), MOCK_WEATHER)
       : Promise.resolve({ value: MOCK_WEATHER, live: false }),
     features.todoist
-      ? settle("todoist", () => getTasks(today.iso), MOCK_TASKS)
+      ? settle("todoist", () => getTasks(today.iso, location.timezone), MOCK_TASKS)
       : Promise.resolve({ value: MOCK_TASKS, live: false }),
     features.google
-      ? settle("calendar", () => getAgenda(today.iso), MOCK_AGENDA)
+      ? settle("calendar", () => getAgenda(today.iso, location.timezone), MOCK_AGENDA)
       : Promise.resolve({ value: MOCK_AGENDA, live: false }),
     features.google
       ? settle("gmail", getReplies, MOCK_REPLIES)

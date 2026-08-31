@@ -5,9 +5,14 @@
  */
 
 import "server-only";
-import { config } from "@/lib/config";
 import type { Weather } from "@/lib/types";
 import { degreesToCompass, weatherCodeToText } from "./codes";
+
+export interface WeatherLocation {
+  latitude: number;
+  longitude: number;
+  timezone: string;
+}
 
 interface OpenMeteoResponse {
   current: {
@@ -32,10 +37,10 @@ function isoLocalToDecimalHour(value: string): number {
   return h + (m || 0) / 60;
 }
 
-export async function getWeather(): Promise<Weather> {
+export async function getWeather(location: WeatherLocation): Promise<Weather> {
   const url = new URL("https://api.open-meteo.com/v1/forecast");
-  url.searchParams.set("latitude", String(config.latitude));
-  url.searchParams.set("longitude", String(config.longitude));
+  url.searchParams.set("latitude", String(location.latitude));
+  url.searchParams.set("longitude", String(location.longitude));
   url.searchParams.set(
     "current",
     "temperature_2m,weather_code,wind_speed_10m,wind_direction_10m",
@@ -44,7 +49,7 @@ export async function getWeather(): Promise<Weather> {
     "daily",
     "temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max",
   );
-  url.searchParams.set("timezone", config.timezone);
+  url.searchParams.set("timezone", location.timezone);
   url.searchParams.set("forecast_days", "1");
   url.searchParams.set("temperature_unit", "fahrenheit");
   url.searchParams.set("wind_speed_unit", "mph");

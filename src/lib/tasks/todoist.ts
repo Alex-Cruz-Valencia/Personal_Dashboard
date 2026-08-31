@@ -67,7 +67,11 @@ function hasExplicitZone(value: string): boolean {
   return /[zZ]$|[+-]\d\d:?\d\d$/.test(value);
 }
 
-function dueHourOf(due: TodoistDue | null, todayIso: string): number | null {
+function dueHourOf(
+  due: TodoistDue | null,
+  todayIso: string,
+  timezone: string,
+): number | null {
   if (!due || !isTimed(due)) return null;
   if (!hasExplicitZone(due.date)) {
     // Floating local time — read the clock components straight off the string.
@@ -75,12 +79,16 @@ function dueHourOf(due: TodoistDue | null, todayIso: string): number | null {
     const [h, m] = t.split(":").map(Number);
     return h + (m || 0) / 60;
   }
-  return decimalHourForTimestamp(due.date, todayIso, config.timezone);
+  return decimalHourForTimestamp(due.date, todayIso, timezone);
 }
 
-function dueLabel(due: TodoistDue | null, todayIso: string): string {
+function dueLabel(
+  due: TodoistDue | null,
+  todayIso: string,
+  timezone: string,
+): string {
   if (!due) return "—";
-  const hour = dueHourOf(due, todayIso);
+  const hour = dueHourOf(due, todayIso, timezone);
   if (hour != null) return formatHour(hour, true);
   if (due.date === todayIso) return "Today";
   const s = due.string?.trim();
@@ -98,7 +106,10 @@ async function todoistGet<T>(path: string): Promise<Page<T>> {
   return (await res.json()) as Page<T>;
 }
 
-export async function getTasks(todayIso: string): Promise<Task[]> {
+export async function getTasks(
+  todayIso: string,
+  timezone: string,
+): Promise<Task[]> {
   if (!config.todoist.token) throw new Error("Todoist not configured");
 
   const [tasks, projects] = await Promise.all([
@@ -118,8 +129,8 @@ export async function getTasks(todayIso: string): Promise<Task[]> {
       name: t.content,
       priority: mapPriority(t.priority),
       meta: projectName.get(t.project_id) ?? t.labels[0] ?? "Task",
-      due: dueLabel(t.due, todayIso),
-      dueHour: dueHourOf(t.due, todayIso),
+      due: dueLabel(t.due, todayIso, timezone),
+      dueHour: dueHourOf(t.due, todayIso, timezone),
     }))
     .sort(
       (a, b) =>

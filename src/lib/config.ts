@@ -25,9 +25,15 @@ export const config = {
   /** IANA timezone for "now", sunrise/sunset, event times. */
   timezone: str("DASHBOARD_TIMEZONE") ?? "America/Los_Angeles",
 
-  /** Location for weather + daylight. Defaults to San Francisco. */
+  /**
+   * Fallback location for weather + daylight when the device hasn't shared
+   * one (see `location.ts`). Defaults to San Francisco.
+   */
   latitude: num("DASHBOARD_LATITUDE") ?? 37.7749,
   longitude: num("DASHBOARD_LONGITUDE") ?? -122.4194,
+  hasExplicitLocation:
+    num("DASHBOARD_LATITUDE") !== undefined &&
+    num("DASHBOARD_LONGITUDE") !== undefined,
 
   /** The visible span of the day arc, in whole local hours. */
   arcFrom: num("DASHBOARD_ARC_FROM") ?? 6,
