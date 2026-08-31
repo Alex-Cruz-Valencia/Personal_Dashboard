@@ -57,14 +57,12 @@ export const config = {
       `${str("DASHBOARD_BASE_URL") ?? "http://localhost:3000"}/api/auth/google/callback`,
     calendarId: str("GOOGLE_CALENDAR_ID") ?? "primary",
     /**
-     * Gmail search for the "needs a reply" list. `category:primary` keeps it to
-     * the Primary tab, which already excludes Promotions / Social / Updates /
-     * Forums. Bulk mail that still slips through is dropped in `gmail.ts` by
-     * its List-Unsubscribe header.
+     * Gmail search for the "needs a reply" list. Deliberately broad — the
+     * real filtering (bulk mail, promo/social/updates categories, noreply
+     * senders) happens in `gmail.ts` where the message headers are available.
      */
     gmailQuery:
-      str("GMAIL_QUERY") ??
-      "in:inbox is:unread category:primary -from:me newer_than:7d",
+      str("GMAIL_QUERY") ?? "in:inbox is:unread -from:me newer_than:14d",
   },
 
   anthropic: {

@@ -65,7 +65,7 @@ export async function getReplies(): Promise<Reply[]> {
   const listUrl = new URL(`${BASE}/messages`);
   listUrl.searchParams.set("q", config.google.gmailQuery);
   // Over-fetch — bulk / no-reply mail is filtered out below before we take 8.
-  listUrl.searchParams.set("maxResults", "25");
+  listUrl.searchParams.set("maxResults", "50");
 
   const listRes = await fetch(listUrl, { headers: auth, next: { revalidate: 120 } });
   if (!listRes.ok) throw new Error(`Gmail list responded ${listRes.status}`);
@@ -110,14 +110,26 @@ export async function getReplies(): Promise<Reply[]> {
 
 const NO_REPLY_RE = /(^|[.\-_+])(no[.\-_]?reply|do[.\-_]?not[.\-_]?reply|donotreply|notification[s]?|noreply|mailer[-_]?daemon|newsletter|bounce)@/i;
 
-/** Bulk / automated mail that a human never needs to reply to. */
+/**
+ * Bulk / automated mail that a human is not waiting on a reply to. Kept out:
+ *   - anything with a List-Unsubscribe header or Precedence: bulk/list
+ *   - Gmail's Promotions / Social / Forums categories
+ *   - Gmail's Updates category, UNLESS Gmail also flagged it Important
+ *     (that's how a shared doc / a real notification still gets through)
+ *   - noreply-style senders
+ */
 function looksLikeBulk(msg: GmailMessage): boolean {
+  const labels = msg.labelIds ?? [];
+  const important = labels.includes("IMPORTANT");
+
   if (header(msg, "List-Unsubscribe")) return true;
   if (/bulk|list|auto_reply/i.test(header(msg, "Precedence"))) return true;
-  if (msg.labelIds?.includes("CATEGORY_PROMOTIONS")) return true;
-  if (msg.labelIds?.includes("CATEGORY_SOCIAL")) return true;
-  const from = header(msg, "From");
-  const addr = from.match(/[^<>\s@]+@[^<>\s]+/)?.[0] ?? "";
+  if (labels.includes("CATEGORY_PROMOTIONS")) return true;
+  if (labels.includes("CATEGORY_SOCIAL")) return true;
+  if (labels.includes("CATEGORY_FORUMS")) return true;
+  if (labels.includes("CATEGORY_UPDATES") && !important) return true;
+
+  const addr = header(msg, "From").match(/[^<>\s@]+@[^<>\s]+/)?.[0] ?? "";
   return NO_REPLY_RE.test(`${addr.split("@")[0]}@`);
 }
 
