@@ -15,8 +15,10 @@
 - Client components (the reference is static, so these add interaction):
   `WeatherCard` (temperature-curve scrub), `TaskList` (complete via checkbox,
   rename inline — writes go through `/api/tasks/[id]*`, which
-  `revalidateTag("todoist")` on success), `LocationSync`, `AutoRefresh`
-  (60s `router.refresh()` while visible).
+  `revalidateTag("todoist")` on success), `DayArc` + `CalendarAgenda` (click a
+  block/row → `EventDetail` popover; `EventDetailProvider` wraps the tree in
+  `Dashboard`), `LocationSync`, `AutoRefresh` (60s `router.refresh()` while
+  visible). The popover portals to `<body>`, so it carries its own `data-theme`.
 - Cards render only from `src/lib/types.ts`. New data sources map into those
   shapes in `src/lib/dashboard-data.ts`; never hardcode into components.
 - `src/lib/format.ts` (+ the curve math in `WeatherCard`) port the design's

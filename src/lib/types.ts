@@ -78,6 +78,18 @@ export interface AgendaEvent {
   start: number;
   end: number;
   kind: EventKind;
+
+  /* ---- detail (shown in the click-to-expand card; optional) ---- */
+  /** Physical location or room. */
+  location?: string;
+  /** Video-call URL (Meet / Zoom / Teams …). */
+  meetingLink?: string;
+  /** Plain-text description / agenda. */
+  description?: string;
+  /** Number of invitees. */
+  attendeeCount?: number;
+  /** Link to open the event in its source calendar. */
+  htmlLink?: string;
 }
 
 export interface Reply {
