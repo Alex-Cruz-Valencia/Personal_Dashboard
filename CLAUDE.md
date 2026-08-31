@@ -12,6 +12,9 @@
   (query → device cookie → env → default) and threaded into weather, tasks,
   calendar and the clock. The browser shares position via `LocationSync` →
   `POST /api/location`.
+- **One intentional divergence from the reference:** the weather card shows a
+  muted `.weather__place` label (reverse-geocoded city) so the auto-detected
+  location is visible. Styled to match the reference's micro-label vocabulary.
 - Cards render only from `src/lib/types.ts`. New data sources map into those
   shapes in `src/lib/dashboard-data.ts`; never hardcode into components.
 - `src/lib/format.ts` is a line-by-line port of the design's `renderVals()` —
