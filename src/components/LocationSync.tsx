@@ -26,7 +26,7 @@ export function LocationSync() {
     })();
 
     navigator.geolocation.getCurrentPosition(
-      (pos) => {
+      async (pos) => {
         if (cancelled) return;
         const lat = Math.round(pos.coords.latitude * 100) / 100;
         const lon = Math.round(pos.coords.longitude * 100) / 100;
@@ -38,10 +38,31 @@ export function LocationSync() {
           /* private mode — just proceed */
         }
 
+        let label: string | undefined;
+        try {
+          const g = await fetch(
+            `https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=en`,
+          ).then((r) => (r.ok ? r.json() : null));
+          const place: string | undefined = g?.city || g?.locality;
+          const region: string | undefined =
+            g?.principalSubdivisionCode?.split("-").pop() || g?.principalSubdivision;
+          if (place) {
+            label =
+              g?.countryCode && g.countryCode !== "US"
+                ? `${place}, ${g.countryCode}`
+                : region
+                  ? `${place}, ${region}`
+                  : place;
+          }
+        } catch {
+          /* server will reverse-geocode instead */
+        }
+        if (cancelled) return;
+
         fetch("/api/location", {
           method: "POST",
           headers: { "content-type": "application/json" },
-          body: JSON.stringify({ latitude: lat, longitude: lon, timezone: tz }),
+          body: JSON.stringify({ latitude: lat, longitude: lon, timezone: tz, label }),
         })
           .then((res) => {
             if (!res.ok || cancelled) return;

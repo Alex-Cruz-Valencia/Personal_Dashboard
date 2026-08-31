@@ -100,6 +100,8 @@ export interface DashboardData {
   user: UserInfo;
   today: TodayInfo;
   weather: Weather;
+  /** Short place label for the weather card, e.g. "Hanover, NH". Null in demo mode. */
+  locationLabel: string | null;
   /** One-sentence "shape of the day" note (AI-generated when configured). */
   dayNote: string;
   tasks: Task[];

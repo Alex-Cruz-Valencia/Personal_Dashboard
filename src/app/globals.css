@@ -127,6 +127,10 @@ a:hover { color: var(--ink); text-decoration: underline; }
 
 /* ---------- weather ---------- */
 .weather { padding: 22px 24px; display: grid; gap: 14px; min-width: 260px; align-content: center; }
+/* local addition (not in the reference): a muted "where this is" label so the
+   auto-detected location is visible at a glance */
+.weather__place { display: flex; align-items: center; gap: 6px; margin-bottom: -4px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
+.weather__place::before { content: ""; width: 5px; height: 5px; border-radius: 999px; background: var(--accent); flex: none; }
 .weather__main { display: flex; align-items: center; gap: 14px; }
 .weather__temp { font-family: var(--font-display); font-size: 50px; font-weight: 600; line-height: 0.9; letter-spacing: -0.03em; }
 .weather__temp sup { font-size: 0.38em; vertical-align: super; color: var(--ink-faint); }

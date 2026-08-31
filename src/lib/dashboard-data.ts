@@ -23,6 +23,7 @@ import {
 import { getTasks } from "./tasks/todoist";
 import { decimalHourInZone, isoDateInZone } from "./time";
 import type { DashboardData, SourceStatus, TodayInfo } from "./types";
+import { reverseGeocode } from "./weather/geocode";
 import { getWeather } from "./weather/open-meteo";
 
 async function settle<T>(
@@ -59,6 +60,7 @@ export async function getDashboardData(
       user: MOCK_USER,
       today: MOCK_TODAY,
       weather: MOCK_WEATHER,
+      locationLabel: null,
       dayNote: MOCK_DAY_NOTE,
       tasks: MOCK_TASKS,
       agenda: MOCK_AGENDA,
@@ -78,7 +80,7 @@ export async function getDashboardData(
   const today = realToday(location.timezone);
   const user = { name: config.userName ?? MOCK_USER.name };
 
-  const [weather, tasks, agenda, replies] = await Promise.all([
+  const [weather, tasks, agenda, replies, geocoded] = await Promise.all([
     features.weather
       ? settle("weather", () => getWeather(location), MOCK_WEATHER)
       : Promise.resolve({ value: MOCK_WEATHER, live: false }),
@@ -91,6 +93,9 @@ export async function getDashboardData(
     features.google
       ? settle("gmail", getReplies, MOCK_REPLIES)
       : Promise.resolve({ value: MOCK_REPLIES, live: false }),
+    location.label
+      ? Promise.resolve(location.label)
+      : reverseGeocode(location.latitude, location.longitude),
   ]);
 
   const summary = features.anthropic
@@ -123,6 +128,7 @@ export async function getDashboardData(
     user,
     today,
     weather: weather.value,
+    locationLabel: geocoded ?? null,
     dayNote: summary.value,
     tasks: tasks.value,
     agenda: agenda.value,
