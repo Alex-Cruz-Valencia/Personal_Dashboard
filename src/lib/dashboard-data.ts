@@ -41,6 +41,12 @@ async function settle<T>(
   }
 }
 
+/** "America/New_York" → "New York"; a last-resort label when geocoding fails. */
+function timezoneCity(tz: string): string | null {
+  const seg = tz.split("/").pop();
+  return seg ? seg.replace(/_/g, " ") : null;
+}
+
 function realToday(timezone: string): TodayInfo {
   const now = new Date();
   return {
@@ -60,7 +66,6 @@ export async function getDashboardData(
       user: MOCK_USER,
       today: MOCK_TODAY,
       weather: MOCK_WEATHER,
-      locationLabel: null,
       dayNote: MOCK_DAY_NOTE,
       tasks: MOCK_TASKS,
       agenda: MOCK_AGENDA,
@@ -82,7 +87,7 @@ export async function getDashboardData(
 
   const [weather, tasks, agenda, replies, geocoded] = await Promise.all([
     features.weather
-      ? settle("weather", () => getWeather(location), MOCK_WEATHER)
+      ? settle("weather", () => getWeather(location, arc), MOCK_WEATHER)
       : Promise.resolve({ value: MOCK_WEATHER, live: false }),
     features.todoist
       ? settle("todoist", () => getTasks(today.iso, location.timezone), MOCK_TASKS)
@@ -124,11 +129,15 @@ export async function getDashboardData(
     summary: summary.live ? "live" : "mock",
   };
 
+  // The weather card's place label: reverse-geocoded name → the timezone's
+  // city → whatever the source already had (mock has one, a live fetch doesn't).
+  const place =
+    geocoded ?? timezoneCity(location.timezone) ?? weather.value.place;
+
   return {
     user,
     today,
-    weather: weather.value,
-    locationLabel: geocoded ?? null,
+    weather: { ...weather.value, place },
     dayNote: summary.value,
     tasks: tasks.value,
     agenda: agenda.value,

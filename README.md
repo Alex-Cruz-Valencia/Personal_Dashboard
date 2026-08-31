@@ -30,7 +30,7 @@ component never knows whether a value is live or mock.
 | Component | File | Data |
 |---|---|---|
 | `HelloCard` | greeting + date + shape-of-day note | clock + Phase 5 |
-| `WeatherCard` | temp / condition / daylight | Phase 2 |
+| `WeatherCard` | place, temp, condition, hourly temperature curve | Phase 2 |
 | `DayArc` | the signature timeline | agenda + tasks |
 | `TaskList` | today's tasks | Phase 3 |
 | `CalendarAgenda` | agenda | Phase 4 |

@@ -31,17 +31,29 @@ export interface TodayInfo {
   nowHour: number;
 }
 
+/** One hourly reading on the weather card's temperature curve. */
+export interface HourlyTemp {
+  /** Decimal hour of the local day (6 … 22 across the arc window). */
+  h: number;
+  /** Temperature, rounded °F. */
+  t: number;
+  /** The one thing worth knowing at that hour, e.g. "Fog thinning", "UV 8". */
+  note: string;
+}
+
 export interface Weather {
   tempNow: number;
-  tempHigh: number;
-  tempLow: number;
   /** Short human phrase, e.g. "Coastal fog, clearing by ten". */
   condition: string;
+  /** Where the forecast is for, e.g. "San Francisco, CA" — reassurance it's local. */
+  place: string;
   /** Sunrise / sunset as decimal hours, local time. */
   sunrise: number;
   sunset: number;
   /** One-line ambient footnote, e.g. "No rain expected · Wind 7 mph NW". */
   footnote: string;
+  /** Hourly temps across the day-arc window; drives the temperature curve. */
+  hourly: HourlyTemp[];
 }
 
 export interface Task {
@@ -100,8 +112,6 @@ export interface DashboardData {
   user: UserInfo;
   today: TodayInfo;
   weather: Weather;
-  /** Short place label for the weather card, e.g. "Hanover, NH". Null in demo mode. */
-  locationLabel: string | null;
   /** One-sentence "shape of the day" note (AI-generated when configured). */
   dayNote: string;
   tasks: Task[];
