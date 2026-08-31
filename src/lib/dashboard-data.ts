@@ -9,6 +9,7 @@ import { config, features, forceMock, isDemoMode } from "./config";
 import { deterministicDayNote } from "./day-note";
 import { getAgenda } from "./google/calendar";
 import { getReplies } from "./google/gmail";
+import { resolveLocation, type LocationOverride } from "./location";
 import {
   MOCK_AGENDA,
   MOCK_ARC,
@@ -22,6 +23,7 @@ import {
 import { getTasks } from "./tasks/todoist";
 import { decimalHourInZone, isoDateInZone } from "./time";
 import type { DashboardData, SourceStatus, TodayInfo } from "./types";
+import { reverseGeocode } from "./weather/geocode";
 import { getWeather } from "./weather/open-meteo";
 
 async function settle<T>(
@@ -39,15 +41,23 @@ async function settle<T>(
   }
 }
 
-function realToday(): TodayInfo {
+/** "America/New_York" → "New York"; a last-resort label when geocoding fails. */
+function timezoneCity(tz: string): string | null {
+  const seg = tz.split("/").pop();
+  return seg ? seg.replace(/_/g, " ") : null;
+}
+
+function realToday(timezone: string): TodayInfo {
   const now = new Date();
   return {
-    iso: isoDateInZone(now, config.timezone),
-    nowHour: decimalHourInZone(now, config.timezone),
+    iso: isoDateInZone(now, timezone),
+    nowHour: decimalHourInZone(now, timezone),
   };
 }
 
-export async function getDashboardData(): Promise<DashboardData> {
+export async function getDashboardData(
+  locationOverride?: LocationOverride,
+): Promise<DashboardData> {
   const arc = { from: config.arcFrom, to: config.arcTo };
 
   // Pure reference-reproduction mode: nothing configured, or explicitly forced.
@@ -71,22 +81,26 @@ export async function getDashboardData(): Promise<DashboardData> {
     };
   }
 
-  const today = realToday();
+  const location = await resolveLocation(locationOverride);
+  const today = realToday(location.timezone);
   const user = { name: config.userName ?? MOCK_USER.name };
 
-  const [weather, tasks, agenda, replies] = await Promise.all([
+  const [weather, tasks, agenda, replies, geocoded] = await Promise.all([
     features.weather
-      ? settle("weather", getWeather, MOCK_WEATHER)
+      ? settle("weather", () => getWeather(location, arc), MOCK_WEATHER)
       : Promise.resolve({ value: MOCK_WEATHER, live: false }),
     features.todoist
-      ? settle("todoist", () => getTasks(today.iso), MOCK_TASKS)
+      ? settle("todoist", () => getTasks(today.iso, location.timezone), MOCK_TASKS)
       : Promise.resolve({ value: MOCK_TASKS, live: false }),
     features.google
-      ? settle("calendar", () => getAgenda(today.iso), MOCK_AGENDA)
+      ? settle("calendar", () => getAgenda(today.iso, location.timezone), MOCK_AGENDA)
       : Promise.resolve({ value: MOCK_AGENDA, live: false }),
     features.google
       ? settle("gmail", getReplies, MOCK_REPLIES)
       : Promise.resolve({ value: MOCK_REPLIES, live: false }),
+    location.label
+      ? Promise.resolve(location.label)
+      : reverseGeocode(location.latitude, location.longitude),
   ]);
 
   const summary = features.anthropic
@@ -115,10 +129,15 @@ export async function getDashboardData(): Promise<DashboardData> {
     summary: summary.live ? "live" : "mock",
   };
 
+  // The weather card's place label: reverse-geocoded name → the timezone's
+  // city → whatever the source already had (mock has one, a live fetch doesn't).
+  const place =
+    geocoded ?? timezoneCity(location.timezone) ?? weather.value.place;
+
   return {
     user,
     today,
-    weather: weather.value,
+    weather: { ...weather.value, place },
     dayNote: summary.value,
     tasks: tasks.value,
     agenda: agenda.value,

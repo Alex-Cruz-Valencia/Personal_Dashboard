@@ -54,11 +54,6 @@ export function dateLineFor(iso: string): string {
   });
 }
 
-export function daylightLabel(sunrise: number, sunset: number): string {
-  const daylight = sunset - sunrise;
-  return `${Math.floor(daylight)}h ${Math.round((daylight % 1) * 60)}m`;
-}
-
 /* ---------- tasks ---------- */
 
 export interface TaskVM extends Task {

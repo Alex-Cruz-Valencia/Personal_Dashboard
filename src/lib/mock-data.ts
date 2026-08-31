@@ -24,13 +24,31 @@ export const MOCK_USER: UserInfo = { name: "Ellis" };
 export const MOCK_TODAY: TodayInfo = { iso: "2026-08-29", nowHour: 8.2 };
 
 export const MOCK_WEATHER: Weather = {
+  place: "San Francisco, CA",
   tempNow: 61,
-  tempHigh: 74,
-  tempLow: 55,
   condition: "Coastal fog, clearing by ten",
   sunrise: 6.4,
   sunset: 19.8,
   footnote: "No rain expected · Wind 7 mph NW",
+  hourly: [
+    { h: 6, t: 55, note: "Dense fog" },
+    { h: 7, t: 56, note: "Dense fog" },
+    { h: 8, t: 58, note: "Fog thinning" },
+    { h: 9, t: 61, note: "Fog thinning" },
+    { h: 10, t: 65, note: "Clearing" },
+    { h: 11, t: 69, note: "Sunny" },
+    { h: 12, t: 72, note: "Sunny · UV 7" },
+    { h: 13, t: 74, note: "Warmest stretch · UV 8" },
+    { h: 14, t: 74, note: "Warmest stretch · UV 8" },
+    { h: 15, t: 73, note: "Sunny · breeze picking up" },
+    { h: 16, t: 71, note: "Breezy, 14 mph" },
+    { h: 17, t: 68, note: "Breezy, 14 mph" },
+    { h: 18, t: 65, note: "Clear · good for a walk" },
+    { h: 19, t: 62, note: "Sunset 7:48pm" },
+    { h: 20, t: 59, note: "Cooling fast" },
+    { h: 21, t: 57, note: "Fog returning" },
+    { h: 22, t: 56, note: "Fog returning" },
+  ],
 };
 
 export const MOCK_DAY_NOTE =

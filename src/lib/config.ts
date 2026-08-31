@@ -25,9 +25,15 @@ export const config = {
   /** IANA timezone for "now", sunrise/sunset, event times. */
   timezone: str("DASHBOARD_TIMEZONE") ?? "America/Los_Angeles",
 
-  /** Location for weather + daylight. Defaults to San Francisco. */
+  /**
+   * Fallback location for weather + daylight when the device hasn't shared
+   * one (see `location.ts`). Defaults to San Francisco.
+   */
   latitude: num("DASHBOARD_LATITUDE") ?? 37.7749,
   longitude: num("DASHBOARD_LONGITUDE") ?? -122.4194,
+  hasExplicitLocation:
+    num("DASHBOARD_LATITUDE") !== undefined &&
+    num("DASHBOARD_LONGITUDE") !== undefined,
 
   /** The visible span of the day arc, in whole local hours. */
   arcFrom: num("DASHBOARD_ARC_FROM") ?? 6,
@@ -57,14 +63,12 @@ export const config = {
       `${str("DASHBOARD_BASE_URL") ?? "http://localhost:3000"}/api/auth/google/callback`,
     calendarId: str("GOOGLE_CALENDAR_ID") ?? "primary",
     /**
-     * Gmail search for the "needs a reply" list. `category:primary` keeps it to
-     * the Primary tab, which already excludes Promotions / Social / Updates /
-     * Forums. Bulk mail that still slips through is dropped in `gmail.ts` by
-     * its List-Unsubscribe header.
+     * Gmail search for the "needs a reply" list. Deliberately broad — the
+     * real filtering (bulk mail, promo/social/updates categories, noreply
+     * senders) happens in `gmail.ts` where the message headers are available.
      */
     gmailQuery:
-      str("GMAIL_QUERY") ??
-      "in:inbox is:unread category:primary -from:me newer_than:7d",
+      str("GMAIL_QUERY") ?? "in:inbox is:unread -from:me newer_than:14d",
   },
 
   anthropic: {

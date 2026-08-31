@@ -22,7 +22,13 @@ export function Dashboard({ data, settings }: DashboardProps) {
     <div className="morning" data-theme={settings.theme}>
       <div className="topbar">
         <HelloCard user={data.user} today={data.today} dayNote={data.dayNote} />
-        <WeatherCard weather={data.weather} />
+        <WeatherCard
+          weather={data.weather}
+          arc={data.arc}
+          agenda={data.agenda}
+          nowHour={data.today.nowHour}
+          settings={settings}
+        />
       </div>
 
       <DayArc

@@ -126,16 +126,42 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .hello__note-text { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 500; color: #14352A; }
 
 /* ---------- weather ---------- */
-.weather { padding: 22px 24px; display: grid; gap: 14px; min-width: 260px; align-content: center; }
+.weather { padding: 20px 24px; display: grid; gap: 13px; min-width: 300px; align-content: center; }
 .weather__main { display: flex; align-items: center; gap: 14px; }
 .weather__temp { font-family: var(--font-display); font-size: 50px; font-weight: 600; line-height: 0.9; letter-spacing: -0.03em; }
 .weather__temp sup { font-size: 0.38em; vertical-align: super; color: var(--ink-faint); }
 .weather__condition { font-size: 14px; font-weight: 600; line-height: 1.3; max-width: 15ch; }
-.weather__stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
-/* weather is ambient, not a decision — it stays neutral by design */
-.weather__stat { background: var(--surface-2); border-radius: var(--radius-sm); padding: 8px 10px; }
-.weather__stat-key { font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-faint); }
-.weather__stat-val { font-size: 14px; font-weight: 600; margin-top: 2px; }
+/* location — reassurance that the forecast is for where the user actually is */
+.weather__place { display: flex; align-items: baseline; gap: 8px; flex-wrap: wrap; }
+.weather__place-name { font-size: 13.5px; font-weight: 700; letter-spacing: -0.005em; }
+.weather__place-dot { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); align-self: center; flex: 0 0 auto; }
+
+/* temperature curve — weather is ambient, so it stays neutral by design */
+.tempcurve { display: grid; gap: 6px; }
+.tempcurve__chart { display: block; width: 100%; height: auto; overflow: visible; }
+.tempcurve__area { fill: var(--surface-2); }
+.tempcurve__line { fill: none; stroke: var(--ink-soft); stroke-width: 1.75; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
+.tempcurve__now { fill: var(--ink); }
+.tempcurve__marker { fill: var(--surface); stroke: var(--ink-soft); stroke-width: 1.25; vector-effect: non-scaling-stroke; }
+.tempcurve__plot { position: relative; cursor: crosshair; touch-action: pan-y; }
+.tempcurve__statics { transition: opacity .12s ease; }
+.tempcurve__statics--hidden { opacity: 0; }
+.tempcurve__scrubline { stroke: var(--ink); stroke-width: 1; stroke-dasharray: 2 3; vector-effect: non-scaling-stroke; }
+.tempcurve__scrubdot { fill: var(--ink); stroke: var(--surface); stroke-width: 1.5; }
+.tempcurve__readout {
+  position: absolute; top: -6px; display: flex; align-items: baseline; gap: 7px; white-space: nowrap;
+  background: var(--ink); color: var(--canvas); border-radius: 999px; padding: 5px 11px;
+  font-size: 11px; font-weight: 600; pointer-events: none; z-index: 2;
+  box-shadow: 0 6px 16px -8px rgba(0,0,0,0.5);
+}
+.tempcurve__readout-temp { font-size: 13px; font-weight: 700; }
+.tempcurve__readout-time { opacity: 0.62; }
+.tempcurve__readout-note { opacity: 0.92; }
+.tempcurve__readout-block { opacity: 0.62; }
+.tempcurve__readout-block:not(:empty)::before { content: "· "; }
+.tempcurve__note { position: absolute; font-size: 10px; font-weight: 700; color: var(--ink-soft); white-space: nowrap; margin-top: -5px; pointer-events: none; }
+.tempcurve__note--below { margin-top: 16px; }
+.tempcurve__scale { display: flex; justify-content: space-between; font-size: 10.5px; font-weight: 500; color: var(--ink-faint); }
 .weather__foot { font-size: 11.5px; font-weight: 500; letter-spacing: 0.03em; color: var(--ink-soft); }
 
 /* ---------- SIGNATURE: the day arc ---------- */
@@ -213,6 +239,23 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .task__tag--p3 { color: var(--p3); background: var(--p3-tint); border-color: transparent; }
 .task__due { font-size: 12px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; padding-top: 1px; }
 .task--p1 .task__due { color: var(--p1); }
+/* interaction states (the reference is a static mock) */
+.task__check:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.task--done .task__check { border-color: var(--accent); background: var(--accent); position: relative; }
+.task--done .task__check::after {
+  content: ""; position: absolute; left: 5px; top: 3px; width: 5px; height: 8px;
+  border: solid #fff; border-width: 0 2px 2px 0; transform: rotate(40deg);
+}
+.task--done .task__name { text-decoration: line-through; color: var(--ink-faint); }
+.task--done .task__due { color: var(--ink-faint); }
+.task__name { cursor: text; }
+.task__name-input {
+  font-family: inherit; font-size: 14.5px; font-weight: 500; line-height: 1.35;
+  width: 100%; margin: -1px 0; padding: 0; color: var(--ink);
+  background: transparent; border: 0; border-bottom: 1px solid var(--accent); outline: none;
+}
+.task--p1 .task__name-input { font-weight: 600; }
+.tasks__error { margin: 10px 0 0; font-size: 12px; font-weight: 500; color: var(--negative); }
 
 /* ---------- agenda ---------- */
 .agenda { list-style: none; margin: 0; padding: 0; }

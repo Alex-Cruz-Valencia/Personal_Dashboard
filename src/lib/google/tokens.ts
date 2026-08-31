@@ -16,27 +16,24 @@ import { refreshAccessToken, type GoogleTokens } from "./oauth";
 
 const TOKEN_FILE = join(process.cwd(), ".data", "google-tokens.json");
 
-let cache: GoogleTokens | null | undefined;
-
+// No in-memory cache: Next dev/runtime spreads requests across worker
+// processes, and a stale "not connected" read must never stick. The file
+// read is cheap and this is a single-user localhost app.
 export async function readGoogleTokens(): Promise<GoogleTokens | null> {
-  if (cache !== undefined) return cache;
   try {
     const raw = await readFile(TOKEN_FILE, "utf8");
-    cache = JSON.parse(raw) as GoogleTokens;
+    return JSON.parse(raw) as GoogleTokens;
   } catch {
-    cache = null;
+    return null;
   }
-  return cache;
 }
 
 export async function writeGoogleTokens(tokens: GoogleTokens): Promise<void> {
-  cache = tokens;
   await mkdir(dirname(TOKEN_FILE), { recursive: true });
   await writeFile(TOKEN_FILE, JSON.stringify(tokens, null, 2), { mode: 0o600 });
 }
 
 export async function clearGoogleTokens(): Promise<void> {
-  cache = null;
   await rm(TOKEN_FILE, { force: true });
 }
 

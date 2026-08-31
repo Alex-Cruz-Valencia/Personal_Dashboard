@@ -30,7 +30,7 @@ component never knows whether a value is live or mock.
 | Component | File | Data |
 |---|---|---|
 | `HelloCard` | greeting + date + shape-of-day note | clock + Phase 5 |
-| `WeatherCard` | temp / condition / daylight | Phase 2 |
+| `WeatherCard` | place, temp, condition, hourly temperature curve | Phase 2 |
 | `DayArc` | the signature timeline | agenda + tasks |
 | `TaskList` | today's tasks | Phase 3 |
 | `CalendarAgenda` | agenda | Phase 4 |
@@ -39,6 +39,10 @@ component never knows whether a value is live or mock.
 
 Presentation knobs (`theme`, `timeFormat`, `density`) come from the URL:
 `/?theme=dark&density=focused&timeFormat=24-hour`.
+
+`AutoRefresh` re-renders the page every 60s while the tab is visible (and on
+tab re-focus), so the clock, weather, tasks and agenda stay current without a
+manual reload.
 
 ## Integration phases
 
@@ -49,14 +53,30 @@ it on. Each is independent; the rest stay on mock data.
 Nothing to configure.
 
 ### Phase 2 — Weather (Open-Meteo, no API key)
-Set `DASHBOARD_LATITUDE` / `DASHBOARD_LONGITUDE` / `DASHBOARD_TIMEZONE`, then
-`DASHBOARD_WEATHER_ENABLED="true"` (or configure any other phase — weather then
-goes live automatically). Source: [`src/lib/weather/open-meteo.ts`](src/lib/weather/open-meteo.ts).
+Set `DASHBOARD_WEATHER_ENABLED="true"` (or configure any other phase — weather
+then goes live automatically). Source:
+[`src/lib/weather/open-meteo.ts`](src/lib/weather/open-meteo.ts).
+
+The card shows the resolved place, current temp + condition, and an
+interactive hourly temperature curve (hover / drag to scrub — the readout
+names the calendar block each hour falls in).
+
+**Location follows the device.** On first load the browser asks to share your
+position (`LocationSync` → `POST /api/location` → an httpOnly cookie, rounded
+to ~1 km); weather, the clock, the greeting and every event/task time then key
+off wherever you are. Resolution order: `?lat=&lon=&tz=` query → device cookie
+→ `DASHBOARD_LATITUDE`/`LONGITUDE`/`TIMEZONE` → San Francisco. `DELETE
+/api/location` forgets the stored position.
 
 ### Phase 3 — Todoist (personal API token)
 `TODOIST_API_TOKEN` — from Todoist → Settings → Integrations → Developer.
 Optional `TODOIST_FILTER` (default `(today | overdue)`).
 Source: [`src/lib/tasks/todoist.ts`](src/lib/tasks/todoist.ts).
+
+Tasks are **editable from the dashboard**: click the checkbox to complete a
+task, click its name to rename it inline. The write API also covers priority,
+due date, labels, reopen and delete (see Endpoints). The personal token has
+full account access, so no extra scope is needed.
 
 ### Phase 4 — Google Calendar + Gmail (OAuth2, read-only)
 1. Google Cloud console → create an **OAuth client ID** (Web application).
@@ -82,6 +102,11 @@ Route: `GET|POST /api/summary`. Source:
 | Route | Purpose |
 |---|---|
 | `GET /api/status` | which integrations are configured / connected |
+| `GET/POST/DELETE /api/location` | read / set / clear the device location |
+| `POST /api/tasks/[id]/complete` | mark a task done |
+| `POST /api/tasks/[id]/reopen` | un-complete a task |
+| `PATCH /api/tasks/[id]` | edit `{ content?, priority? (1–3), due? (natural language, or null), labels?, description? }` |
+| `DELETE /api/tasks/[id]` | delete a task |
 | `GET /api/summary` | regenerate the day note from live data |
 | `POST /api/summary` | day note from an explicit `{ nowHour, weather, tasks, agenda }` body |
 | `GET /api/auth/google` | start Google OAuth |
