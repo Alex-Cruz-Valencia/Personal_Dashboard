@@ -18,12 +18,17 @@ interface GCalEvent {
   id: string;
   summary?: string;
   location?: string;
+  description?: string;
   hangoutLink?: string;
+  htmlLink?: string;
   status?: string;
   start: GCalDateTime;
   end: GCalDateTime;
   attendees?: { email?: string; responseStatus?: string; self?: boolean }[];
   eventType?: string;
+  conferenceData?: {
+    entryPoints?: { entryPointType?: string; uri?: string }[];
+  };
 }
 
 interface GCalListResponse {
@@ -52,6 +57,38 @@ function whereText(event: GCalEvent, kind: EventKind): string {
   }
   if (kind === "meeting" && others > 0) return `${others + 1} people`;
   return kind === "focus" ? "Blocked" : "Personal";
+}
+
+const URL_RE = /https?:\/\/[^\s<>"')]+/i;
+
+/** Best video-call URL for the event, if any. */
+function meetingLinkOf(event: GCalEvent): string | undefined {
+  if (event.hangoutLink) return event.hangoutLink;
+  const video = event.conferenceData?.entryPoints?.find(
+    (p) => p.entryPointType === "video" && p.uri,
+  );
+  if (video?.uri) return video.uri;
+  const inLocation = event.location?.match(URL_RE)?.[0];
+  if (inLocation) return inLocation;
+  return event.description?.match(URL_RE)?.[0];
+}
+
+/** Google returns description as HTML — flatten it to plain text. */
+function toPlainText(html: string | undefined): string | undefined {
+  if (!html) return undefined;
+  const text = html
+    .replace(/<\s*br\s*\/?\s*>/gi, "\n")
+    .replace(/<\s*\/\s*(p|div|li)\s*>/gi, "\n")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/gi, " ")
+    .replace(/&amp;/gi, "&")
+    .replace(/&lt;/gi, "<")
+    .replace(/&gt;/gi, ">")
+    .replace(/&#39;|&apos;/gi, "'")
+    .replace(/&quot;/gi, '"')
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+  return text ? text.slice(0, 800) : undefined;
 }
 
 export async function getAgenda(
@@ -83,6 +120,7 @@ export async function getAgenda(
     .filter((e) => e.status !== "cancelled" && e.start?.dateTime && e.end?.dateTime)
     .map<AgendaEvent>((e) => {
       const kind = classify(e);
+      const others = (e.attendees ?? []).filter((a) => !a.self).length;
       return {
         id: e.id,
         name: e.summary?.trim() || "(busy)",
@@ -90,6 +128,11 @@ export async function getAgenda(
         start: decimalHourForTimestamp(e.start.dateTime as string, todayIso, timezone),
         end: decimalHourForTimestamp(e.end.dateTime as string, todayIso, timezone),
         kind,
+        location: e.location?.trim() || undefined,
+        meetingLink: meetingLinkOf(e),
+        description: toPlainText(e.description),
+        attendeeCount: others > 0 ? others + 1 : undefined,
+        htmlLink: e.htmlLink,
       };
     })
     .filter((e) => e.end > e.start);

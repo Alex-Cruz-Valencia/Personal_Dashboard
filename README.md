@@ -88,6 +88,10 @@ full account access, so no extra scope is needed.
    in `.data/google-tokens.json` (gitignored). Disconnect at
    `/api/auth/google/logout`.
 
+Click a block in the day arc or a row in the agenda to expand it — a popover
+shows the location, invitee count, meeting link (Join call), description and a
+link back to the source calendar. Hovering a block previews it.
+
 Sources: [`src/lib/google/`](src/lib/google/).
 
 ### Phase 5 — Daily summary (Anthropic API)

@@ -64,11 +64,52 @@ export const MOCK_TASKS: Task[] = [
 ];
 
 export const MOCK_AGENDA: AgendaEvent[] = [
-  { name: "Deep work — Kestrel", where: "Blocked · no room", start: 8.5, end: 11, kind: "focus" },
-  { name: "Standup", where: "Zoom · 6 people", start: 11, end: 11.25, kind: "meeting" },
-  { name: "1:1 with Priya", where: "Corner room", start: 13, end: 13.75, kind: "meeting" },
-  { name: "Kestrel launch review", where: "Zoom · 11 invited", start: 15, end: 16.25, kind: "meeting" },
-  { name: "Pickup + dinner", where: "Family", start: 17.5, end: 19, kind: "personal" },
+  {
+    name: "Deep work — Kestrel",
+    where: "Blocked · no room",
+    start: 8.5,
+    end: 11,
+    kind: "focus",
+    description:
+      "Hold for the launch draft. Phone on Do Not Disturb — Slack can wait.",
+  },
+  {
+    name: "Standup",
+    where: "Zoom · 6 people",
+    start: 11,
+    end: 11.25,
+    kind: "meeting",
+    meetingLink: "https://zoom.us/j/000000000",
+    attendeeCount: 6,
+    description: "Async-friendly. Post your update in the thread if you're heads-down.",
+  },
+  {
+    name: "1:1 with Priya",
+    where: "Corner room",
+    start: 13,
+    end: 13.75,
+    kind: "meeting",
+    location: "Corner room, 4th floor",
+    attendeeCount: 2,
+  },
+  {
+    name: "Kestrel launch review",
+    where: "Zoom · 11 invited",
+    start: 15,
+    end: 16.25,
+    kind: "meeting",
+    meetingLink: "https://zoom.us/j/111111111",
+    attendeeCount: 11,
+    description:
+      "Go / no-go on the Tuesday launch.\n\nAgenda:\n1. Open bugs (Dana)\n2. Pricing page copy (Priya)\n3. Comms plan (Marcus)\n4. Decision",
+  },
+  {
+    name: "Pickup + dinner",
+    where: "Family",
+    start: 17.5,
+    end: 19,
+    kind: "personal",
+  },
 ];
 
 export const MOCK_REPLIES: Reply[] = [
