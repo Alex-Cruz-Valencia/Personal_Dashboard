@@ -73,10 +73,12 @@ off wherever you are. Resolution order: `?lat=&lon=&tz=` query → device cookie
 Optional `TODOIST_FILTER` (default `(today | overdue)`).
 Source: [`src/lib/tasks/todoist.ts`](src/lib/tasks/todoist.ts).
 
-Tasks are **editable from the dashboard**: click the checkbox to complete a
-task, click its name to rename it inline. The write API also covers priority,
-due date, labels, reopen and delete (see Endpoints). The personal token has
-full account access, so no extra scope is needed.
+**Full task management from the dashboard.** Click the checkbox to complete a
+task; click the task to open an editor popover with rename, priority, due-date
+quick chips + free-text ("fri 3pm"), postpone, **move to another project**,
+labels, deadline, planned duration, notes, and delete. A **+ Add task** row
+creates new tasks. Every change auto-saves. The personal token already has
+full account access — no extra scope needed.
 
 ### Phase 4 — Google Calendar + Gmail (OAuth2, read-only)
 1. Google Cloud console → create an **OAuth client ID** (Web application).
@@ -107,9 +109,10 @@ Route: `GET|POST /api/summary`. Source:
 |---|---|
 | `GET /api/status` | which integrations are configured / connected |
 | `GET/POST/DELETE /api/location` | read / set / clear the device location |
-| `POST /api/tasks/[id]/complete` | mark a task done |
-| `POST /api/tasks/[id]/reopen` | un-complete a task |
-| `PATCH /api/tasks/[id]` | edit `{ content?, priority? (1–3), due? (natural language, or null), labels?, description? }` |
+| `GET /api/tasks/meta` | projects + labels for the editor |
+| `POST /api/tasks` | create `{ content, projectId?, priority? (1–3), due?, labels? }` |
+| `POST /api/tasks/[id]/complete` · `.../reopen` | mark done / undo |
+| `PATCH /api/tasks/[id]` | edit `{ content?, priority? (1–3), due? (text / null), labels?, description?, deadline? (ISO / null), durationMinutes? (number / null), projectId? (move) }` |
 | `DELETE /api/tasks/[id]` | delete a task |
 | `GET /api/summary` | regenerate the day note from live data |
 | `POST /api/summary` | day note from an explicit `{ nowHour, weather, tasks, agenda }` body |
