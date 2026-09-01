@@ -13,12 +13,18 @@
   calendar and the clock. The browser shares position via `LocationSync` →
   `POST /api/location`. The reverse-geocoded name fills `weather.place`.
 - Client components (the reference is static, so these add interaction):
-  `WeatherCard` (temperature-curve scrub), `TaskList` (complete via checkbox,
-  rename inline — writes go through `/api/tasks/[id]*`, which
-  `revalidateTag("todoist")` on success), `DayArc` + `CalendarAgenda` (click a
-  block/row → `EventDetail` popover; `EventDetailProvider` wraps the tree in
-  `Dashboard`), `LocationSync`, `AutoRefresh` (60s `router.refresh()` while
-  visible). The popover portals to `<body>`, so it carries its own `data-theme`.
+  `WeatherCard` (temperature-curve scrub); `TaskList` (checkbox completes,
+  click a task → `TaskDetail` editor popover — priority/due/project/labels/
+  deadline/duration/notes, auto-saves per field; `+ Add task`); `DayArc` +
+  `CalendarAgenda` (click → `EventDetail` popover); `LocationSync`;
+  `AutoRefresh` (60s `router.refresh()` while visible).
+- `Popover` (`src/components/Popover.tsx`) is the shared portalled-card shell
+  (anchored positioning + viewport clamp + outside-click/Esc close); it carries
+  its own `data-theme` since it renders outside `.morning`. Both
+  `EventDetail` and `TaskDetail` build on it; their `*Provider`s wrap the tree
+  in `Dashboard`.
+- Task writes go through `/api/tasks*`, which `revalidateTag("todoist")` on
+  success. `/api/tasks/meta` lazily supplies the project + label lists.
 - Cards render only from `src/lib/types.ts`. New data sources map into those
   shapes in `src/lib/dashboard-data.ts`; never hardcode into components.
 - `src/lib/format.ts` (+ the curve math in `WeatherCard`) port the design's
