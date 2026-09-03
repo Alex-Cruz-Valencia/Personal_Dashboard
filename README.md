@@ -88,9 +88,11 @@ full account access, so no extra scope is needed.
    in `.data/google-tokens.json` (gitignored). Disconnect at
    `/api/auth/google/logout`.
 
-Click a block in the day arc or a row in the agenda to expand it — a popover
-shows the location, invitee count, meeting link (Join call), description and a
-link back to the source calendar. Hovering a block previews it.
+**Needs a reply** curates the inbox rather than showing raw unread: it keeps
+unread, important, and genuine threads (a shared doc, a recruiter, an
+"action required", a real person — read *or* unread, since people reply
+later) and drops promotions, social and bulk newsletters. Override the search
+with `GMAIL_QUERY`.
 
 Sources: [`src/lib/google/`](src/lib/google/).
 
