@@ -4,16 +4,13 @@ import {
   createContext,
   useCallback,
   useContext,
-  useEffect,
-  useLayoutEffect,
-  useRef,
   useState,
   type ReactNode,
 } from "react";
-import { createPortal } from "react-dom";
 import { formatHour } from "@/lib/format";
 import type { Theme } from "@/lib/settings";
 import type { AgendaEvent } from "@/lib/types";
+import { Popover } from "./Popover";
 
 interface OpenState {
   event: AgendaEvent;
@@ -42,7 +39,6 @@ export function EventDetailProvider({
   children,
 }: {
   use24: boolean;
-  /** The popover is portalled outside `.morning`, so it carries its own theme. */
   theme: Theme;
   children: ReactNode;
 }) {
@@ -52,22 +48,6 @@ export function EventDetailProvider({
     setState({ event, anchor: anchorEl.getBoundingClientRect() });
   }, []);
   const close = useCallback(() => setState(null), []);
-
-  useEffect(() => {
-    if (!state) return;
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
-    };
-    const onScroll = () => close();
-    window.addEventListener("keydown", onKey);
-    window.addEventListener("scroll", onScroll, true);
-    window.addEventListener("resize", onScroll);
-    return () => {
-      window.removeEventListener("keydown", onKey);
-      window.removeEventListener("scroll", onScroll, true);
-      window.removeEventListener("resize", onScroll);
-    };
-  }, [state, close]);
 
   const api: EventDetailApi = {
     open,
@@ -104,63 +84,6 @@ function EventDetailCard({
   theme: Theme;
   onClose: () => void;
 }) {
-  const ref = useRef<HTMLDivElement>(null);
-  const [pos, setPos] = useState<{ top: number; left: number; maxHeight: number }>({
-    top: -9999,
-    left: -9999,
-    maxHeight: 400,
-  });
-
-  // Measure the rendered card, then position it against the anchor. This is
-  // the canonical use of useLayoutEffect (paint-blocking, needs real DOM size).
-  /* eslint-disable react-hooks/set-state-in-effect */
-  useLayoutEffect(() => {
-    const el = ref.current;
-    if (!el) return;
-    const vw = window.innerWidth;
-    const vh = window.innerHeight;
-    // Hidden/detached pane reports 0×0 — don't compute against garbage.
-    if (vw < 120 || vh < 120) {
-      setPos({ top: 24, left: 12, maxHeight: 600 });
-      return;
-    }
-
-    const width = el.offsetWidth;
-    const height = el.offsetHeight;
-    const gap = 8;
-    const margin = 12;
-
-    const roomBelow = vh - anchor.bottom - gap - margin;
-    const roomAbove = anchor.top - gap - margin;
-    const below = roomBelow >= Math.min(height, 220) || roomBelow >= roomAbove;
-
-    const maxHeight = Math.max(160, below ? roomBelow : roomAbove);
-    const top = below
-      ? anchor.bottom + gap
-      : Math.max(margin, anchor.top - gap - Math.min(height, maxHeight));
-
-    let left = anchor.left + anchor.width / 2 - width / 2;
-    left = Math.max(margin, Math.min(left, vw - width - margin));
-
-    setPos({ top, left, maxHeight });
-  }, [anchor]);
-  /* eslint-enable react-hooks/set-state-in-effect */
-
-  useEffect(() => {
-    const onDown = (e: PointerEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
-    };
-    // Defer so the click that opened the card doesn't immediately close it.
-    const id = window.setTimeout(
-      () => document.addEventListener("pointerdown", onDown),
-      0,
-    );
-    return () => {
-      window.clearTimeout(id);
-      document.removeEventListener("pointerdown", onDown);
-    };
-  }, [onClose]);
-
   const startEnd = `${formatHour(event.start, use24)} – ${formatHour(event.end, use24)}`;
   const mins = Math.round((event.end - event.start) * 60);
   const duration =
@@ -168,18 +91,14 @@ function EventDetailCard({
       ? `${Math.floor(mins / 60)}h${mins % 60 ? ` ${mins % 60}m` : ""}`
       : `${mins} min`;
 
-  return createPortal(
-    <div
-      ref={ref}
+  return (
+    <Popover
+      anchor={anchor}
+      theme={theme}
+      onClose={onClose}
+      closeOnScroll
+      ariaLabel={event.name}
       className={`event-detail event-detail--${event.kind}`}
-      data-theme={theme}
-      role="dialog"
-      aria-label={event.name}
-      style={{
-        top: pos.top,
-        left: pos.left,
-        maxHeight: pos.maxHeight,
-      }}
     >
       <div className="event-detail__head">
         <span className={`event-detail__kind event-detail__kind--${event.kind}`}>
@@ -242,7 +161,6 @@ function EventDetailCard({
           Open in calendar →
         </a>
       ) : null}
-    </div>,
-    document.body,
+    </Popover>
   );
 }
