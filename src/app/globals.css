@@ -96,16 +96,46 @@
 [data-theme="dark"] .hello__note-text { color: #CDE7DA; }
 [data-theme="dark"] .arc__event { color: #14181A; }
 
-/* ---------- system theme: follow the OS preference ----------
-   `settings.ts` only stamps `data-theme="light"|"dark"` when the viewer
-   picked one explicitly (?theme=); the default "system" leaves it off, so
-   this mirrors the block above for whichever root (.morning, the portalled
-   .event-detail / .taskedit popovers) doesn't carry an explicit choice.
-   Keep in sync with the `[data-theme="dark"]` rules above. */
+/* ---------- effective theme, mirrored up to :root ----------
+   `.morning` (and the portalled popovers) carry the explicit data-theme the
+   viewer picked via ?theme=; "system" (the default) leaves it off and this
+   follows prefers-color-scheme instead. Either way, the tokens also need to
+   land on :root — not just .morning — so <body>'s own background (visible
+   past .morning's max-width, or above/below it) matches instead of staying
+   the light canvas. :has() reads .morning's explicit choice back up to the
+   root; the popovers always carry the same choice as .morning, so checking
+   it alone is enough. Keep the token values in sync with `[data-theme="dark"]`
+   above. */
+:root:has(.morning[data-theme="dark"]) {
+  --canvas:     #0F1211;
+  --surface:    #181C1A;
+  --surface-2:  #1F2422;
+  --line:       #2B3230;
+  --ink:        #ECF0EE;
+  --ink-soft:   #9BA6A1;
+  --ink-faint:  #6D7873;
+  --accent:     #4CB78E;
+  --accent-tint:#1A2E27;
+  --p1:         #E4705A;
+  --p1-tint:    #31201D;
+  --p2:         #D9A445;
+  --p2-tint:    #2E2718;
+  --p3:         #7FA6D8;
+  --p3-tint:    #1D2531;
+  --cal-meeting:  #6FA8D6;
+  --cal-focus:    #D9A445;
+  --cal-personal: #93A3AC;
+  --negative:      #E4705A;
+  --negative-tint: #31201D;
+  --warning:       #D9A445;
+  --warning-tint:  #2E2718;
+  --neutral:       #A2B0B8;
+  --neutral-tint:  #212A2F;
+  --shadow:     0 1px 2px rgba(0,0,0,0.45), 0 10px 28px -14px rgba(0,0,0,0.8);
+  color-scheme: dark;
+}
 @media (prefers-color-scheme: dark) {
-  .morning:not([data-theme]),
-  .event-detail:not([data-theme]),
-  .taskedit:not([data-theme]) {
+  :root:not(:has(.morning[data-theme="light"])) {
     --canvas:     #0F1211;
     --surface:    #181C1A;
     --surface-2:  #1F2422;
@@ -133,6 +163,7 @@
     --shadow:     0 1px 2px rgba(0,0,0,0.45), 0 10px 28px -14px rgba(0,0,0,0.8);
     color-scheme: dark;
   }
+  /* literal (non-variable) colors, still scoped to .morning's own internals */
   .morning:not([data-theme]) .arc__band {
     background: linear-gradient(90deg, #1B2028 0%, #33291F 14%, #45392A 32%, #2E3C46 52%, #45372A 76%, #2C2620 90%, #1A1F22 100%);
   }
