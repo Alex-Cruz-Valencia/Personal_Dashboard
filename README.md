@@ -38,7 +38,9 @@ component never knows whether a value is live or mock.
 | `Footline` | free-time + refreshed-at | clock + agenda |
 
 Presentation knobs (`theme`, `timeFormat`, `density`) come from the URL:
-`/?theme=dark&density=focused&timeFormat=24-hour`.
+`/?theme=dark&density=focused&timeFormat=24-hour`. `theme` defaults to
+`system` — it follows the viewer's OS light/dark setting via
+`prefers-color-scheme` — and `light`/`dark` force one regardless of the OS.
 
 `AutoRefresh` re-renders the page every 60s while the tab is visible (and on
 tab re-focus), so the clock, weather, tasks and agenda stay current without a

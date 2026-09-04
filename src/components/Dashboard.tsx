@@ -21,7 +21,7 @@ interface DashboardProps {
 export function Dashboard({ data, settings }: DashboardProps) {
   return (
     <EventDetailProvider use24={use24Hour(settings)} theme={settings.theme}>
-      <div className="morning" data-theme={settings.theme}>
+      <div className="morning" data-theme={settings.theme === "system" ? undefined : settings.theme}>
         <div className="topbar">
           <HelloCard user={data.user} today={data.today} dayNote={data.dayNote} />
           <WeatherCard
