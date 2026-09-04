@@ -172,7 +172,7 @@ function EventDetailCard({
     <div
       ref={ref}
       className={`event-detail event-detail--${event.kind}`}
-      data-theme={theme}
+      data-theme={theme === "system" ? undefined : theme}
       role="dialog"
       aria-label={event.name}
       style={{
