@@ -341,6 +341,14 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .reply__note--u1 { color: var(--negative); background: var(--negative-tint); }
 .reply__note--u2 { color: var(--warning);  background: var(--warning-tint); }
 .reply__note--u3 { color: var(--neutral);  background: var(--neutral-tint); }
+/* unread marker — a small accent dot on the avatar (the card now also shows
+   already-read threads that may still want a follow-up) */
+.reply__avatar { position: relative; }
+.reply--unread .reply__avatar::after {
+  content: ""; position: absolute; top: -1px; right: -1px; width: 8px; height: 8px;
+  border-radius: 999px; background: var(--accent); border: 2px solid var(--surface);
+}
+.reply--unread .reply__from { font-weight: 700; }
 
 .footline { display: flex; justify-content: space-between; gap: 16px; padding: 2px 8px; font-size: 12px; font-weight: 500; color: var(--ink-faint); }
 

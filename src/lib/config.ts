@@ -63,12 +63,13 @@ export const config = {
       `${str("DASHBOARD_BASE_URL") ?? "http://localhost:3000"}/api/auth/google/callback`,
     calendarId: str("GOOGLE_CALENDAR_ID") ?? "primary",
     /**
-     * Gmail search for the "needs a reply" list. Deliberately broad — the
-     * real filtering (bulk mail, promo/social/updates categories, noreply
-     * senders) happens in `gmail.ts` where the message headers are available.
+     * Gmail search for the "needs a reply" list. Deliberately broad (includes
+     * read mail) — `gmail.ts` does the real curation from the message headers
+     * and labels, then keeps unread + important + genuine threads.
      */
     gmailQuery:
-      str("GMAIL_QUERY") ?? "in:inbox is:unread -from:me newer_than:14d",
+      str("GMAIL_QUERY") ??
+      "in:inbox -from:me -category:promotions -category:social newer_than:10d",
   },
 
   anthropic: {

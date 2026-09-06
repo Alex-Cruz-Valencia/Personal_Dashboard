@@ -101,6 +101,8 @@ export interface Reply {
   age: string;
   /** Short reason chip, e.g. "Blocking her", "Answer yes/no". */
   note: string;
+  /** Still unread — shown with a small marker. */
+  unread?: boolean;
   urgency: Urgency;
 }
 
