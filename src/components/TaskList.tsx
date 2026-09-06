@@ -4,15 +4,17 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildTasks, taskCountLabel } from "@/lib/format";
 import type { DashboardSettings } from "@/lib/settings";
-import type { Task } from "@/lib/types";
+import type { SliceSource, Task } from "@/lib/types";
+import { StaleTag } from "./StaleTag";
 import { useTaskDetail } from "./TaskDetail";
 
 interface TaskListProps {
   tasks: Task[];
   settings: DashboardSettings;
+  source: SliceSource;
 }
 
-export function TaskList({ tasks, settings }: TaskListProps) {
+export function TaskList({ tasks, settings, source }: TaskListProps) {
   const router = useRouter();
   const { open, isSelected } = useTaskDetail();
   const [done, setDone] = useState<Set<string>>(new Set());
@@ -54,8 +56,20 @@ export function TaskList({ tasks, settings }: TaskListProps) {
       <div className="card__head">
         <h2 className="card__title">Today&rsquo;s tasks</h2>
         <div className="card__count">{taskCountLabel(rows)}</div>
+        <StaleTag source={source} />
       </div>
       <div className="card__body">
+        {rows.length === 0 ? (
+          <p className="card__empty card__empty--first">
+            {tasks.length > 0
+              ? `${tasks.length} lower-priority ${
+                  tasks.length === 1 ? "task" : "tasks"
+                } hidden by Focused view.`
+              : source === "off"
+                ? "Connect Todoist to see what’s due today."
+                : "Nothing due today — enjoy the clear run."}
+          </p>
+        ) : null}
         <ul className="tasks">
           {rows.map((t, i) => {
             const id = t.id ?? "";

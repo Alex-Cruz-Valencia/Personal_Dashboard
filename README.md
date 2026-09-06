@@ -37,10 +37,18 @@ component never knows whether a value is live or mock.
 | `EmailList` | needs a reply | Phase 4 |
 | `Footline` | free-time + refreshed-at | clock + agenda |
 
-Presentation knobs (`theme`, `timeFormat`, `density`) come from the URL:
-`/?theme=dark&density=focused&timeFormat=24-hour`. `theme` defaults to
-`system` — it follows the viewer's OS light/dark setting via
-`prefers-color-scheme` — and `light`/`dark` force one regardless of the OS.
+Presentation knobs (`theme`, `timeFormat`, `density`) are set from the **⚙
+panel in the footer** (persisted in the `dashboard_prefs` cookie) or from the
+URL: `/?theme=dark&density=focused&timeFormat=24-hour`. A URL param wins over
+the cookie, which wins over the defaults. `theme` defaults to `system` — it
+follows the viewer's OS light/dark setting via `prefers-color-scheme` — and
+`light`/`dark` force one regardless of the OS.
+
+Cards that render from a **configured** source show a small "Sample" marker
+when that source is failing and they've fallen back to mock data; a source
+that simply isn't set up stays unmarked. Empty tasks / agenda / mail show a
+one-line empty state. These three, plus the ⚙ panel, are the only additions
+beyond the verbatim reference.
 
 `AutoRefresh` re-renders the page every 60s while the tab is visible (and on
 tab re-focus), so the clock, weather, tasks and agenda stay current without a

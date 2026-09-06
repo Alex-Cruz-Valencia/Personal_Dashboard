@@ -49,9 +49,14 @@ export function Dashboard({ data, settings }: DashboardProps) {
           />
 
           <div className="columns">
-            <TaskList tasks={data.tasks} settings={settings} />
-            <CalendarAgenda agenda={data.agenda} today={data.today} settings={settings} />
-            <EmailList replies={data.replies} />
+            <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
+            <CalendarAgenda
+              agenda={data.agenda}
+              today={data.today}
+              settings={settings}
+              source={data.sources.calendar}
+            />
+            <EmailList replies={data.replies} source={data.sources.email} />
           </div>
 
           <Footline agenda={data.agenda} today={data.today} settings={settings} />
