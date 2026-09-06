@@ -67,6 +67,28 @@ export interface Task {
   due: string;
   /** Decimal hour for the arc tick, or null when the task has no clock time. */
   dueHour: number | null;
+
+  /* ---- detail (shown in the click-to-expand editor; optional) ---- */
+  /** Source project id, for the "move to project" control. */
+  projectId?: string;
+  /** Longer notes. */
+  description?: string;
+  /** Label names (without the leading @). */
+  labels?: string[];
+  /** True when the due date repeats. */
+  isRecurring?: boolean;
+  /** The repeat rule, e.g. "every saturday" — only when isRecurring. */
+  recurrence?: string;
+  /** Hard deadline (distinct from due), ISO date or null. */
+  deadline?: string | null;
+  /** Planned working time in minutes, or null. */
+  durationMinutes?: number | null;
+}
+
+/** A Todoist project, for the task editor's "move to" control. */
+export interface Project {
+  id: string;
+  name: string;
 }
 
 export interface AgendaEvent {
