@@ -1,7 +1,10 @@
 /**
- * Phase 4 — "Needs a reply" via Gmail API v1 (read-only).
+ * Phase 4 — the "Needs a reply" card via Gmail API v1 (read-only).
  *
- * Urgency is a heuristic: Gmail's own IMPORTANT signal plus age.
+ * Goal: surface mail actually worth attention. Marketing / social / bulk
+ * newsletters are dropped; genuine threads (a shared doc, a recruiter, an
+ * "action required", a real person) are kept — read OR unread, because people
+ * often read a message and reply later.
  */
 
 import "server-only";
@@ -43,20 +46,56 @@ function displayName(from: string): string {
   return from.trim() || "Unknown";
 }
 
-function urgencyOf(msg: GmailMessage, now: Date): Urgency {
-  const ageHours = (now.getTime() - Number(msg.internalDate)) / 3_600_000;
-  const important = msg.labelIds?.includes("IMPORTANT") ?? false;
-  if (important && ageHours < 48) return 1;
-  if (ageHours < 24) return 2;
-  if (ageHours > 72) return 3;
-  return 2;
+const MAILER_RE = /(mailer[-_]?daemon|postmaster|bounce[s]?|delivery[-_]?status)@/i;
+
+/** Bulk / automated mail a human isn't expected to act on. */
+function looksLikeBulk(msg: GmailMessage): boolean {
+  const labels = msg.labelIds ?? [];
+  const important = labels.includes("IMPORTANT");
+
+  if (labels.includes("CATEGORY_PROMOTIONS")) return true;
+  if (labels.includes("CATEGORY_SOCIAL")) return true;
+
+  // A List-Unsubscribe header (or Precedence: bulk) means a mailing list —
+  // drop it unless Gmail flagged it important (recruiter blasts, calendar
+  // invites and shared-doc notices sometimes carry one).
+  const bulkHeader =
+    Boolean(header(msg, "List-Unsubscribe")) ||
+    /\b(bulk|list|auto_reply)\b/i.test(header(msg, "Precedence"));
+  if (bulkHeader && !important) return true;
+
+  const addr = header(msg, "From").match(/[^<>\s]+@[^<>\s]+/)?.[0] ?? "";
+  return MAILER_RE.test(addr);
 }
 
-const NOTE: Record<Urgency, string> = {
-  1: "Waiting on you",
-  2: "Needs an answer",
-  3: "Can wait",
-};
+/** Short chip + urgency, from the subject, unread state and importance. */
+function classify(
+  msg: GmailMessage,
+  subject: string,
+): { note: string; urgency: Urgency } {
+  const s = subject.toLowerCase();
+  const unread = msg.labelIds?.includes("UNREAD") ?? false;
+  const important = msg.labelIds?.includes("IMPORTANT") ?? false;
+
+  if (/\b(action required|please (verify|confirm|sign|review|approve|complete)|verify your|payment|overdue|past due|deadline)\b/.test(s)) {
+    return { note: "Action needed", urgency: 1 };
+  }
+  if (/\b(shared (with you|a document)|via google (docs|drive|sheets)|added you)\b/.test(s)) {
+    return { note: "Shared with you", urgency: 2 };
+  }
+  if (/\b(invitation to|invites you|has invited you|you'?re invited)\b/.test(s)) {
+    return { note: "Invite", urgency: 2 };
+  }
+  if (s.includes("?") || /\b(can you|could you|are you able|let me know|thoughts\??|feedback)\b/.test(s)) {
+    return { note: "Question", urgency: 2 };
+  }
+  if (/^re:/i.test(subject) || /\bre:/i.test(subject)) {
+    return { note: "In a thread", urgency: unread ? 2 : 3 };
+  }
+  if (unread && important) return { note: "Flagged", urgency: 2 };
+  if (unread) return { note: "Unread", urgency: 3 };
+  return { note: "FYI", urgency: 3 };
+}
 
 export async function getReplies(): Promise<Reply[]> {
   const token = await getGoogleAccessToken();
@@ -64,8 +103,7 @@ export async function getReplies(): Promise<Reply[]> {
 
   const listUrl = new URL(`${BASE}/messages`);
   listUrl.searchParams.set("q", config.google.gmailQuery);
-  // Over-fetch — bulk / no-reply mail is filtered out below before we take 8.
-  listUrl.searchParams.set("maxResults", "50");
+  listUrl.searchParams.set("maxResults", "40");
 
   const listRes = await fetch(listUrl, { headers: auth, next: { revalidate: 90 } });
   if (!listRes.ok) throw new Error(`Gmail list responded ${listRes.status}`);
@@ -78,7 +116,7 @@ export async function getReplies(): Promise<Reply[]> {
     ids.map(async (id) => {
       const url = new URL(`${BASE}/messages/${id}`);
       url.searchParams.set("format", "metadata");
-      for (const h of ["From", "Subject", "Date", "List-Unsubscribe", "Precedence"]) {
+      for (const h of ["From", "Subject", "List-Unsubscribe", "Precedence"]) {
         url.searchParams.append("metadataHeaders", h);
       }
       const res = await fetch(url, { headers: auth, next: { revalidate: 90 } });
@@ -90,47 +128,25 @@ export async function getReplies(): Promise<Reply[]> {
   return messages
     .filter((msg) => !looksLikeBulk(msg))
     .map<Reply>((msg) => {
-      const urgency = urgencyOf(msg, now);
+      const subject = header(msg, "Subject") || "(no subject)";
+      const { note, urgency } = classify(msg, subject);
       return {
         id: msg.id,
         from: displayName(header(msg, "From")),
-        subject: header(msg, "Subject") || "(no subject)",
+        subject,
         age: relativeAge(new Date(Number(msg.internalDate)), now),
-        note: NOTE[urgency],
+        note,
         urgency,
+        unread: msg.labelIds?.includes("UNREAD") ?? false,
       };
     })
     .sort(
       (a, b) =>
+        Number(b.unread) - Number(a.unread) ||
         a.urgency - b.urgency ||
-        ageMinutes(b.age) - ageMinutes(a.age),
+        ageMinutes(a.age) - ageMinutes(b.age),
     )
-    .slice(0, 8);
-}
-
-const NO_REPLY_RE = /(^|[.\-_+])(no[.\-_]?reply|do[.\-_]?not[.\-_]?reply|donotreply|notification[s]?|noreply|mailer[-_]?daemon|newsletter|bounce)@/i;
-
-/**
- * Bulk / automated mail that a human is not waiting on a reply to. Kept out:
- *   - anything with a List-Unsubscribe header or Precedence: bulk/list
- *   - Gmail's Promotions / Social / Forums categories
- *   - Gmail's Updates category, UNLESS Gmail also flagged it Important
- *     (that's how a shared doc / a real notification still gets through)
- *   - noreply-style senders
- */
-function looksLikeBulk(msg: GmailMessage): boolean {
-  const labels = msg.labelIds ?? [];
-  const important = labels.includes("IMPORTANT");
-
-  if (header(msg, "List-Unsubscribe")) return true;
-  if (/bulk|list|auto_reply/i.test(header(msg, "Precedence"))) return true;
-  if (labels.includes("CATEGORY_PROMOTIONS")) return true;
-  if (labels.includes("CATEGORY_SOCIAL")) return true;
-  if (labels.includes("CATEGORY_FORUMS")) return true;
-  if (labels.includes("CATEGORY_UPDATES") && !important) return true;
-
-  const addr = header(msg, "From").match(/[^<>\s@]+@[^<>\s]+/)?.[0] ?? "";
-  return NO_REPLY_RE.test(`${addr.split("@")[0]}@`);
+    .slice(0, 6);
 }
 
 /** Rough re-parse of "18h" / "2d" back to minutes, for sorting only. */

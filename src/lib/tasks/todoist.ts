@@ -13,7 +13,7 @@ import "server-only";
 import { config } from "@/lib/config";
 import { formatHour } from "@/lib/format";
 import { decimalHourForTimestamp } from "@/lib/time";
-import type { Priority, Task } from "@/lib/types";
+import type { Priority, Project, Task } from "@/lib/types";
 
 const API = "https://api.todoist.com/api/v1";
 
@@ -32,14 +32,23 @@ interface TodoistDue {
 interface TodoistTask {
   id: string;
   content: string;
+  description: string;
   /** 4 = P1 (urgent) … 1 = P4 (no priority). */
   priority: 1 | 2 | 3 | 4;
   project_id: string;
   labels: string[];
   due: TodoistDue | null;
+  deadline: { date: string } | null;
+  duration: { amount: number; unit: string } | null;
 }
 
 interface TodoistProject {
+  id: string;
+  name: string;
+  is_archived?: boolean;
+}
+
+interface TodoistLabel {
   id: string;
   name: string;
 }
@@ -64,6 +73,13 @@ function mapPriority(p: TodoistTask["priority"]): Priority {
 
 function isTimed(due: TodoistDue): boolean {
   return due.date.includes("T");
+}
+
+function durationToMinutes(
+  d: { amount: number; unit: string } | null,
+): number | null {
+  if (!d) return null;
+  return d.unit === "day" ? d.amount * 24 * 60 : d.amount;
 }
 
 function hasExplicitZone(value: string): boolean {
@@ -134,6 +150,13 @@ export async function getTasks(
       meta: projectName.get(t.project_id) ?? t.labels[0] ?? "Task",
       due: dueLabel(t.due, todayIso, timezone),
       dueHour: dueHourOf(t.due, todayIso, timezone),
+      projectId: t.project_id,
+      description: t.description || undefined,
+      labels: t.labels,
+      isRecurring: t.due?.is_recurring ?? false,
+      recurrence: t.due?.is_recurring ? t.due.string : undefined,
+      deadline: t.deadline?.date ?? null,
+      durationMinutes: durationToMinutes(t.duration),
     }))
     .sort(
       (a, b) =>
@@ -141,6 +164,36 @@ export async function getTasks(
         (a.dueHour ?? 99) - (b.dueHour ?? 99) ||
         a.name.localeCompare(b.name),
     );
+}
+
+/* ---------- projects & labels (for the task editor) ---------- */
+
+function metaTtl(): NextFetchRequestConfig {
+  return { revalidate: 300, tags: [TODOIST_TAG] };
+}
+
+export async function listProjects(): Promise<Project[]> {
+  if (!config.todoist.token) throw new Error("Todoist not configured");
+  const res = await fetch(`${API}/projects?limit=200`, {
+    headers: { Authorization: `Bearer ${config.todoist.token}` },
+    next: metaTtl(),
+  });
+  if (!res.ok) throw new Error(`Todoist /projects responded ${res.status}`);
+  const page = (await res.json()) as Page<TodoistProject>;
+  return page.results
+    .filter((p) => !p.is_archived)
+    .map((p) => ({ id: p.id, name: p.name }));
+}
+
+export async function listLabels(): Promise<string[]> {
+  if (!config.todoist.token) throw new Error("Todoist not configured");
+  const res = await fetch(`${API}/labels?limit=200`, {
+    headers: { Authorization: `Bearer ${config.todoist.token}` },
+    next: metaTtl(),
+  });
+  if (!res.ok) throw new Error(`Todoist /labels responded ${res.status}`);
+  const page = (await res.json()) as Page<TodoistLabel>;
+  return page.results.map((l) => l.name);
 }
 
 /* ---------- writes ---------- */
@@ -156,6 +209,18 @@ export interface TaskPatch {
   priority?: Priority;
   /** Natural-language due ("tomorrow 9am", "every monday"), or null to clear. */
   due?: string | null;
+  labels?: string[];
+  /** Hard deadline, ISO date "YYYY-MM-DD", or null to clear. */
+  deadline?: string | null;
+  /** Planned working time in minutes, or null to clear. */
+  durationMinutes?: number | null;
+}
+
+export interface NewTask {
+  content: string;
+  projectId?: string;
+  priority?: Priority;
+  due?: string;
   labels?: string[];
 }
 
@@ -203,5 +268,29 @@ export function updateTask(id: string, patch: TaskPatch): Promise<unknown> {
   if (patch.labels !== undefined) body.labels = patch.labels;
   if (patch.due === null) body.due_string = "no date";
   else if (patch.due !== undefined) body.due_string = patch.due;
+  if (patch.deadline === null) body.deadline_date = null;
+  else if (patch.deadline !== undefined) body.deadline_date = patch.deadline;
+  if (patch.durationMinutes === null) {
+    body.duration = null;
+  } else if (patch.durationMinutes !== undefined) {
+    body.duration = patch.durationMinutes;
+    body.duration_unit = "minute";
+  }
   return todoistWrite(`/tasks/${id}`, "POST", body);
+}
+
+/** Move a task to a different project (Todoist keeps this separate from update). */
+export function moveTask(id: string, projectId: string): Promise<unknown> {
+  return todoistWrite(`/tasks/${id}/move`, "POST", { project_id: projectId });
+}
+
+export function addTask(task: NewTask): Promise<unknown> {
+  const body: Record<string, unknown> = { content: task.content };
+  if (task.projectId) body.project_id = task.projectId;
+  if (task.priority !== undefined) {
+    body.priority = TO_TODOIST_PRIORITY[task.priority];
+  }
+  if (task.due) body.due_string = task.due;
+  if (task.labels?.length) body.labels = task.labels;
+  return todoistWrite("/tasks", "POST", body);
 }

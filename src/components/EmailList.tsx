@@ -17,7 +17,10 @@ export function EmailList({ replies }: EmailListProps) {
       <div className="card__body">
         <ul className="replies">
           {rows.map((r, i) => (
-            <li key={r.id ?? `reply${i}`} className="reply">
+            <li
+              key={r.id ?? `reply${i}`}
+              className={`reply${r.unread ? " reply--unread" : ""}`}
+            >
               <div className="reply__avatar">{r.initials}</div>
               <div className="reply__body">
                 <div className="reply__top">
