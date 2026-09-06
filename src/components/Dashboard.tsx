@@ -23,7 +23,12 @@ export function Dashboard({ data, settings }: DashboardProps) {
   return (
     <EventDetailProvider use24={use24Hour(settings)} theme={settings.theme}>
       <TaskDetailProvider theme={settings.theme}>
-        <div className="morning" data-theme={settings.theme}>
+        {/* "system" leaves the attribute off so globals.css can fall through
+            to prefers-color-scheme (see the effective-theme block there). */}
+        <div
+          className="morning"
+          data-theme={settings.theme === "system" ? undefined : settings.theme}
+        >
           <div className="topbar">
             <HelloCard user={data.user} today={data.today} dayNote={data.dayNote} />
             <WeatherCard
@@ -44,9 +49,14 @@ export function Dashboard({ data, settings }: DashboardProps) {
           />
 
           <div className="columns">
-            <TaskList tasks={data.tasks} settings={settings} />
-            <CalendarAgenda agenda={data.agenda} today={data.today} settings={settings} />
-            <EmailList replies={data.replies} />
+            <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
+            <CalendarAgenda
+              agenda={data.agenda}
+              today={data.today}
+              settings={settings}
+              source={data.sources.calendar}
+            />
+            <EmailList replies={data.replies} source={data.sources.email} />
           </div>
 
           <Footline agenda={data.agenda} today={data.today} settings={settings} />

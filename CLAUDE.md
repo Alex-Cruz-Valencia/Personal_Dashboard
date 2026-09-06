@@ -7,6 +7,10 @@
   `src/app/globals.css` and components use those exact class names. Do not
   restyle — if the design changes, re-port from the design project
   (`0e114d1c-17f4-4cf4-9af5-6e2d7e880dc0`).
+- Additions **not** in the static reference, kept visually minimal and
+  token-only (see the marked sections at the end of `globals.css`): the ⚙
+  `SettingsPanel` in the footer, per-card empty states (`.card__empty`), and
+  the `StaleTag` "Sample" marker.
 - All times are **decimal hours in the viewer's local day** (9.5 = 9:30am).
 - Location + timezone are resolved per-request by `src/lib/location.ts`
   (query → device cookie → env → default) and threaded into weather, tasks,
@@ -17,7 +21,12 @@
   click a task → `TaskDetail` editor popover — priority/due/project/labels/
   deadline/duration/notes, auto-saves per field; `+ Add task`); `DayArc` +
   `CalendarAgenda` (click → `EventDetail` popover); `LocationSync`;
-  `AutoRefresh` (60s `router.refresh()` while visible).
+  `AutoRefresh` (60s `router.refresh()` while visible); `SettingsPanel`
+  (writes the `dashboard_prefs` cookie, then `router.refresh()`).
+- Settings precedence (`src/lib/settings.ts` → read in `page.tsx`): URL query
+  → `dashboard_prefs` cookie → `DEFAULT_SETTINGS`.
+- `dashboard-data.ts` marks each slice `live` / `mock` (configured but the
+  fetch failed — `StaleTag` shows) / `off` (nothing configured — silent).
 - `Popover` (`src/components/Popover.tsx`) is the shared portalled-card shell
   (anchored positioning + viewport clamp + outside-click/Esc close); it carries
   its own `data-theme` since it renders outside `.morning`. Both

@@ -72,11 +72,11 @@ export async function getDashboardData(
       replies: MOCK_REPLIES,
       arc: MOCK_ARC,
       sources: {
-        weather: "mock",
-        tasks: "mock",
-        calendar: "mock",
-        email: "mock",
-        summary: "mock",
+        weather: "off",
+        tasks: "off",
+        calendar: "off",
+        email: "off",
+        summary: "off",
       },
     };
   }
@@ -121,12 +121,17 @@ export async function getDashboardData(
         live: false,
       };
 
+  // `live` when the source answered; `mock` when a *configured* source failed
+  // (worth flagging); `off` when nothing is wired up for that slice.
+  const slice = (live: boolean, configured: boolean): SourceStatus[keyof SourceStatus] =>
+    live ? "live" : configured ? "mock" : "off";
+
   const sources: SourceStatus = {
-    weather: weather.live ? "live" : "mock",
-    tasks: tasks.live ? "live" : "mock",
-    calendar: agenda.live ? "live" : "mock",
-    email: replies.live ? "live" : "mock",
-    summary: summary.live ? "live" : "mock",
+    weather: slice(weather.live, features.weather),
+    tasks: slice(tasks.live, features.todoist),
+    calendar: slice(agenda.live, features.google),
+    email: slice(replies.live, features.google),
+    summary: slice(summary.live, features.anthropic),
   };
 
   // The weather card's place label: reverse-geocoded name → the timezone's

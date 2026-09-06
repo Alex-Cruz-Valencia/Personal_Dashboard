@@ -134,13 +134,20 @@ export interface ArcWindow {
   to: number;
 }
 
-/** Which slices are backed by a live source vs. falling back to mock data. */
+/**
+ * Per-slice provenance:
+ * - `live` — a configured source answered
+ * - `mock` — a configured source failed, so this is sample data (worth flagging)
+ * - `off`  — nothing configured for this slice; sample data is expected
+ */
+export type SliceSource = "live" | "mock" | "off";
+
 export interface SourceStatus {
-  weather: "live" | "mock";
-  tasks: "live" | "mock";
-  calendar: "live" | "mock";
-  email: "live" | "mock";
-  summary: "live" | "mock";
+  weather: SliceSource;
+  tasks: SliceSource;
+  calendar: SliceSource;
+  email: SliceSource;
+  summary: SliceSource;
 }
 
 /** Everything one render of the dashboard needs. */

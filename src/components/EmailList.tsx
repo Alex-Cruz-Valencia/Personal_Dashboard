@@ -1,11 +1,13 @@
 import { buildReplies, replyCountLabel } from "@/lib/format";
-import type { Reply } from "@/lib/types";
+import type { Reply, SliceSource } from "@/lib/types";
+import { StaleTag } from "./StaleTag";
 
 interface EmailListProps {
   replies: Reply[];
+  source: SliceSource;
 }
 
-export function EmailList({ replies }: EmailListProps) {
+export function EmailList({ replies, source }: EmailListProps) {
   const rows = buildReplies(replies);
 
   return (
@@ -13,26 +15,35 @@ export function EmailList({ replies }: EmailListProps) {
       <div className="card__head">
         <h2 className="card__title">Needs a reply</h2>
         <div className="card__count">{replyCountLabel(replies)}</div>
+        <StaleTag source={source} />
       </div>
       <div className="card__body">
-        <ul className="replies">
-          {rows.map((r, i) => (
-            <li
-              key={r.id ?? `reply${i}`}
-              className={`reply${r.unread ? " reply--unread" : ""}`}
-            >
-              <div className="reply__avatar">{r.initials}</div>
-              <div className="reply__body">
-                <div className="reply__top">
-                  <div className="reply__from">{r.from}</div>
-                  <div className="reply__age">{r.age}</div>
+        {rows.length === 0 ? (
+          <p className="card__empty card__empty--first">
+            {source === "off"
+              ? "Connect Gmail to see threads that still need a reply."
+              : "Inbox is clear — nothing waiting on you."}
+          </p>
+        ) : (
+          <ul className="replies">
+            {rows.map((r, i) => (
+              <li
+                key={r.id ?? `reply${i}`}
+                className={`reply${r.unread ? " reply--unread" : ""}`}
+              >
+                <div className="reply__avatar">{r.initials}</div>
+                <div className="reply__body">
+                  <div className="reply__top">
+                    <div className="reply__from">{r.from}</div>
+                    <div className="reply__age">{r.age}</div>
+                  </div>
+                  <div className="reply__subject">{r.subject}</div>
+                  <span className={r.noteCls}>{r.note}</span>
                 </div>
-                <div className="reply__subject">{r.subject}</div>
-                <span className={r.noteCls}>{r.note}</span>
-              </div>
-            </li>
-          ))}
-        </ul>
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
     </section>
   );
