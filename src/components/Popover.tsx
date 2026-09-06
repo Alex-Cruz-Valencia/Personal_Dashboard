@@ -120,7 +120,7 @@ export function Popover({
     <div
       ref={ref}
       className={className}
-      data-theme={theme}
+      data-theme={theme === "system" ? undefined : theme}
       role="dialog"
       aria-label={ariaLabel}
       style={{ top: pos.top, left: pos.left, maxHeight: pos.maxHeight }}
