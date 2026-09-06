@@ -4,7 +4,8 @@
  * can be linked in any state, e.g. `/?theme=dark&density=focused`.
  */
 
-export type Theme = "light" | "dark";
+/** "system" follows the viewer's OS light/dark preference; the rest force it. */
+export type Theme = "light" | "dark" | "system";
 export type TimeFormat = "12-hour" | "24-hour";
 export type Density = "comfortable" | "focused";
 
@@ -15,7 +16,7 @@ export interface DashboardSettings {
 }
 
 export const DEFAULT_SETTINGS: DashboardSettings = {
-  theme: "light",
+  theme: "system",
   timeFormat: "12-hour",
   density: "comfortable",
 };
@@ -33,7 +34,7 @@ function pick<T extends string>(
 
 export function parseSettings(searchParams: SearchParams): DashboardSettings {
   return {
-    theme: pick(searchParams.theme, ["light", "dark"], DEFAULT_SETTINGS.theme),
+    theme: pick(searchParams.theme, ["light", "dark", "system"], DEFAULT_SETTINGS.theme),
     timeFormat: pick(
       searchParams.timeFormat ?? searchParams.time,
       ["12-hour", "24-hour"],
