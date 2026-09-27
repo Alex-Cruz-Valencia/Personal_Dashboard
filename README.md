@@ -88,8 +88,10 @@ full account access — no extra scope needed.
 3. Add redirect URI `http://localhost:3000/api/auth/google/callback`.
 4. Set `GOOGLE_CLIENT_ID` and `GOOGLE_CLIENT_SECRET`.
 5. Add your Google address as a **test user** on the OAuth consent screen.
-6. Visit `/api/auth/google` once to grant access. Tokens are cached server-side
-   in `.data/google-tokens.json` (gitignored). Disconnect at
+6. Visit `/api/auth/google` once to grant access. Tokens are cached
+   server-side — in `.data/google-tokens.json` (gitignored) by default, or in
+   Upstash Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN` are set (required on a
+   serverless host — see [Deploying](#deploying)). Disconnect at
    `/api/auth/google/logout`.
 
 **Needs a reply** curates the inbox rather than showing raw unread: it keeps
@@ -132,3 +134,40 @@ npm run build   # production build
 npm run lint    # eslint
 npx tsc --noEmit  # typecheck
 ```
+
+## Deploying
+
+This card shows real task names, calendar events and email subjects — treat
+the live deployment like a password-protected personal page, not a public
+site. The recommended setup is **two Vercel projects from the same GitHub
+repo**, so every push updates both and neither has to be built or maintained
+separately:
+
+| | **Private** (you) | **Public demo** (anyone) |
+|---|---|---|
+| Env vars | All of them — `TODOIST_API_TOKEN`, `GOOGLE_CLIENT_ID`/`_SECRET`, `GOOGLE_REDIRECT_URI` (this deployment's own URL), `ANTHROPIC_API_KEY`, `DASHBOARD_*`, `UPSTASH_REDIS_REST_URL`/`_TOKEN` | **None of the above** — leave every integration var unset (or set `DASHBOARD_FORCE_MOCK="true"` to force it explicitly) |
+| Behavior | Live data (see Integration phases above) | Frozen reference dataset — `isDemoMode` in `src/lib/config.ts`, `mock-data.ts` |
+| Access | **Vercel → Project → Settings → Deployment Protection** — turn on Vercel Authentication or a password. Don't skip this; it's the only thing standing between the internet and your inbox. | Public, no protection needed |
+
+Setup:
+
+1. **Vercel → Add New Project**, import this repo, name it e.g.
+   `morning-dashboard` (private). Add its env vars, set `DASHBOARD_BASE_URL`
+   and `GOOGLE_REDIRECT_URI` to its real `https://…vercel.app` (or custom)
+   domain, and turn on Deployment Protection.
+2. **Add a second project** from the *same* repo, name it e.g.
+   `morning-dashboard-demo`. Add no integration env vars at all. Leave
+   protection off.
+3. Every `git push` to the branch both projects track redeploys both —
+   there's no separate "publish to demo" step.
+4. **Google token storage on a serverless host:** the private project's
+   filesystem doesn't persist between invocations, so the default
+   `.data/google-tokens.json` file store won't hold a connection. Add
+   Upstash Redis from the **Vercel Marketplace** (Storage tab → Upstash →
+   Redis) to the *private* project only — it injects
+   `UPSTASH_REDIS_REST_URL`/`_TOKEN` automatically, and `src/lib/google/tokens.ts`
+   switches to it the moment those vars exist. No code changes needed. Skip
+   this if you're instead hosting on something with a real disk (Railway,
+   Fly.io, Render, a VPS, a home server) — the file store just works there.
+5. Visit `/api/auth/google` on the **private** deployment once, after
+   Redis is wired up, to (re)connect.

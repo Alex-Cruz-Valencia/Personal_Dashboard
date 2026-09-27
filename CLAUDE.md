@@ -30,3 +30,10 @@
 - `src/lib/format.ts` (+ the curve math in `WeatherCard`) port the design's
   `renderVals()` — keep parity when the design changes.
 - Nothing configured → demo mode (frozen `mock-data.ts`, exact reference).
+  Every `/api/tasks*` write route checks `features.todoist`/`features.google`
+  before calling out, so a deployment with no secrets fails closed (400) —
+  this is what makes the public demo deployment safe. See README → Deploying.
+- Google token storage (`src/lib/google/tokens.ts`) auto-picks its backend:
+  Upstash Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN` are set (required on
+  serverless hosts — the local file store doesn't survive between
+  invocations there), else the gitignored `.data/google-tokens.json` file.
