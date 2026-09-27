@@ -56,7 +56,11 @@ export function Dashboard({ data, settings }: DashboardProps) {
               settings={settings}
               source={data.sources.calendar}
             />
-            <EmailList replies={data.replies} source={data.sources.email} />
+            <EmailList
+              replies={data.replies}
+              source={data.sources.email}
+              theme={settings.theme}
+            />
           </div>
 
           <Footline agenda={data.agenda} today={data.today} settings={settings} />

@@ -66,3 +66,11 @@
   calendar failing doesn't blank the rest; ids are prefixed with their
   calendar's index since Google's event ids are only unique within a
   calendar.
+- Gmail scope is `gmail.modify`, not `gmail.readonly` — `EmailList`'s
+  Trash/Move actions need it. `trashMessage`/`moveMessageToLabel`/
+  `listGmailLabels` (`src/lib/google/gmail.ts`) back `/api/replies/[id]/
+  trash`, `/api/replies/[id]/move`, `/api/replies/meta`. Both write routes
+  `revalidateTag(GMAIL_TAG)` so the next render reflects the change — same
+  convention as the Todoist write routes. Widening the scope means any
+  already-connected token needs a fresh `/api/auth/google` consent; it
+  won't pick up write access on its own.

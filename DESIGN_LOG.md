@@ -20,6 +20,50 @@ Newest first. Each entry:
 
 ---
 
+## 2026-09-27 — Trash / move-to-label on "Needs a reply" (and a hover-visibility miss)
+
+**Problem / trigger** — The inbox card was read-only: seeing a message that
+didn't need attention meant switching to Gmail to actually clear it. A
+curated list that can't be acted on just becomes a second copy of the inbox
+to keep mentally dismissing.
+
+**Decision** — Two actions per message: **Trash** (with an arm/confirm
+step, same pattern as task deletion) and **Move…** (a small popover listing
+existing Gmail labels as one-click chips, plus free text to create a new
+one). Both use `gmail.modify` — read, label, and trash, but never a
+permanent, bypass-the-trash delete — rather than the much broader
+`https://mail.google.com/` scope real permanent deletion would need.
+
+**Reasoning** — In Gmail's own model there's no real distinction between
+"delete" and "archive to a folder" the way older mail clients drew it —
+Trash *is* a label, same as any other. Building both actions on the same
+`modify` scope, as label add/remove calls, kept the permission footprint to
+exactly what "get it out of the inbox view" requires, with Gmail's own
+30-day Trash window standing in for undo rather than building one.
+
+**Shipped-then-caught mistake** — The first pass hid both action buttons
+behind `opacity: 0`, revealed only on hover (mirroring `.task__body`'s
+hover-tint elsewhere in the app). Once actually reconnected and tested with
+real mail, *I* couldn't find my own buttons — not a screen-reader or
+keyboard-nav gap, just: nothing on screen hinted they existed at all. Fixed
+by making them permanently visible, small pill buttons at rest. Worth
+stating plainly: hover-reveal is fine for a secondary affordance next to an
+already-visible primary one (a task's rename-on-click, an event's
+click-to-expand); it's the wrong call for the *only* way to reach a
+feature, since at that point "hover to discover" isn't discovery.
+
+**Alternatives considered** — A confirm-free single-click trash with an
+"Undo" toast — closer to some mail clients' muscle-memory, but would have
+meant building real undo state rather than relying on Gmail's own Trash,
+for a feature that's already one extra click away from irreversible.
+
+**Tradeoffs / open questions** — The row now has two more small buttons
+sitting in front of the note chip at all times — measurably busier than the
+static reference's reply row, in exchange for the card actually being able
+to do what its title promises.
+
+---
+
 ## 2026-09-27 — Merge multiple shared calendars into one agenda (revised same day: curated list → auto-discover + opt-out)
 
 **Problem / trigger** — The agenda only ever showed one calendar (the
