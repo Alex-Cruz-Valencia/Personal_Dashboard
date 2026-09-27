@@ -1,9 +1,10 @@
 # Design Log
 
 A running record of the product/design decisions behind this dashboard —
-not the code changes themselves (git history already has those), but the
-*why*: the problem noticed, the options weighed, and the reasoning behind
-what shipped. Kept for retrospectives, write-ups, and interview prep.
+UI, UX, and user-flow choices, not just visual ones — not the code changes
+themselves (git history already has those), but the *why*: the problem
+noticed, the options weighed, and the reasoning behind what shipped. Kept
+for retrospectives, write-ups, and interview prep.
 
 Newest first. Each entry:
 
@@ -16,6 +17,58 @@ Newest first. Each entry:
 **Alternatives considered** — what else was on the table, and why not (if any)
 **Tradeoffs / open questions** — what this costs, or what's still unresolved
 ```
+
+---
+
+## 2026-09-27 — Merge multiple shared calendars into one agenda (revised same day: curated list → auto-discover + opt-out)
+
+**Problem / trigger** — The agenda only ever showed one calendar (the
+account's own "primary"), even though other calendars — including ones
+belonging to entirely different Google accounts — had been shared with it.
+A shared-with-you calendar is real signal for "what does my day look like,"
+and the card was silently dropping it.
+
+**First decision (shipped, then reconsidered)** — An explicit,
+comma-separated list of calendar addresses/ids to merge (opt-*in*),
+reasoning that a curated agenda shouldn't inherit noise (declined events,
+subscribed holiday calendars) just because it's technically visible via
+`calendarList`, and that an explicit list keeps the agenda's contents 1:1
+with a value you can read in `.env`, not indirectly tied to whatever
+Google's own sidebar happens to have checked.
+
+**Why it was reconsidered** — In practice, opt-in was cumbersome: every
+newly-shared calendar needed a manual env-var edit before it would ever
+show up, which is exactly backwards from how sharing normally works — you
+find out a calendar exists *because* someone shared it, not because you
+went looking for its address to add to a list. The friction I'd flagged as
+a hypothetical "if this turns out to matter" tradeoff turned out to matter
+immediately.
+
+**Final decision** — Auto-discover via `calendarList` (every calendar the
+account can see, down to `freeBusyReader` access) and merge all of them by
+default, with an opt-*out* list (`GOOGLE_CALENDAR_EXCLUDE_IDS`) for
+anything genuinely unwanted. This flips the default from "nothing extra
+unless named" to "everything unless excluded" — matching how the person
+actually experiences calendar sharing (additive, from Google's side) rather
+than how the config file experiences it (additive, from a list you maintain).
+Per-calendar fetch failures still don't blank the others (`Promise.allSettled`),
+and event ids still get a per-calendar-index prefix, since Google's ids are
+only unique within their own calendar.
+
+**Alternatives considered** — Filtering auto-discovery to only calendars
+marked `selected` in the user's own Google Calendar UI, as a proxy for "I
+already said I want to see this." Not used: it silently depends on a Google
+Calendar UI setting neither this app nor its config file ever shows the
+value of, whereas an explicit exclude-list is visible and legible in
+`.env` even though the include set (mostly) isn't.
+
+**Tradeoffs / open questions** — The failure mode flips too: opt-in risked
+missing calendars you'd want; opt-out risks *over-including* — a stray
+subscribed calendar, a low-detail free/busy share — until you notice and
+exclude it. Untimed (all-day) events are already filtered out upstream
+(the existing `start.dateTime` check), which happens to keep most
+holiday/birthday-style calendars from cluttering the timed agenda without
+any special-casing for this feature.
 
 ---
 

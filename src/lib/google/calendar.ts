@@ -35,6 +35,39 @@ interface GCalListResponse {
   items: GCalEvent[];
 }
 
+interface GCalListEntry {
+  id: string;
+  deleted?: boolean;
+}
+
+interface GCalCalendarListResponse {
+  items?: GCalListEntry[];
+}
+
+/**
+ * Every calendar this account can see — including one shared from a
+ * different Google account — minus `GOOGLE_CALENDAR_EXCLUDE_IDS`.
+ * `freeBusyReader` is the lowest access role, so a "see only free/busy"
+ * share is still included (its events just come back opaque; `classify()`
+ * and the "(busy)" fallback already handle that).
+ */
+async function discoverCalendarIds(token: string): Promise<string[]> {
+  const url = new URL("https://www.googleapis.com/calendar/v3/users/me/calendarList");
+  url.searchParams.set("minAccessRole", "freeBusyReader");
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) throw new Error(`Google CalendarList responded ${res.status}`);
+  const data = (await res.json()) as GCalCalendarListResponse;
+
+  const excluded = new Set(config.google.calendarExcludeIds.map((id) => id.toLowerCase()));
+  return (data.items ?? [])
+    .filter((c) => !c.deleted && !excluded.has(c.id.toLowerCase()))
+    .map((c) => c.id);
+}
+
 const FOCUS_RE = /\b(focus|deep work|deep-work|heads?[- ]down|no meeting|writing|block)\b/i;
 
 function classify(event: GCalEvent): EventKind {
@@ -91,17 +124,15 @@ function toPlainText(html: string | undefined): string | undefined {
   return text ? text.slice(0, 800) : undefined;
 }
 
-export async function getAgenda(
-  todayIso: string,
-  timezone: string,
-): Promise<AgendaEvent[]> {
-  const token = await getGoogleAccessToken();
-  const { timeMin, timeMax } = dayBoundsUtc(todayIso, timezone);
-
+/** One calendar's events for the day. Thrown errors are the caller's problem. */
+async function fetchCalendarEvents(
+  calendarId: string,
+  token: string,
+  timeMin: string,
+  timeMax: string,
+): Promise<GCalEvent[]> {
   const url = new URL(
-    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(
-      config.google.calendarId,
-    )}/events`,
+    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
   );
   url.searchParams.set("timeMin", timeMin);
   url.searchParams.set("timeMax", timeMax);
@@ -113,16 +144,51 @@ export async function getAgenda(
     headers: { Authorization: `Bearer ${token}` },
     next: { revalidate: 60 },
   });
-  if (!res.ok) throw new Error(`Google Calendar responded ${res.status}`);
+  if (!res.ok) {
+    throw new Error(`Google Calendar (${calendarId}) responded ${res.status}`);
+  }
   const data = (await res.json()) as GCalListResponse;
+  return data.items ?? [];
+}
 
-  return (data.items ?? [])
-    .filter((e) => e.status !== "cancelled" && e.start?.dateTime && e.end?.dateTime)
-    .map<AgendaEvent>((e) => {
+export async function getAgenda(
+  todayIso: string,
+  timezone: string,
+): Promise<AgendaEvent[]> {
+  const token = await getGoogleAccessToken();
+  const { timeMin, timeMax } = dayBoundsUtc(todayIso, timezone);
+  const calendarIds = await discoverCalendarIds(token);
+
+  // One failed/inaccessible shared calendar (revoked access, a typo'd id)
+  // shouldn't blank out the whole agenda — merge whatever succeeded and log
+  // the rest, the same way `dashboard-data.ts` degrades other sources.
+  const results = await Promise.allSettled(
+    calendarIds.map((id) => fetchCalendarEvents(id, token, timeMin, timeMax)),
+  );
+
+  const events: { calendarIndex: number; event: GCalEvent }[] = [];
+  results.forEach((result, i) => {
+    if (result.status === "fulfilled") {
+      for (const event of result.value) events.push({ calendarIndex: i, event });
+    } else if (process.env.NODE_ENV !== "production") {
+      console.warn(`[calendar] ${calendarIds[i]} → skipped:`, (result.reason as Error).message);
+    }
+  });
+  if (results.length > 0 && results.every((r) => r.status === "rejected")) {
+    throw new Error("Every discovered calendar failed");
+  }
+
+  return events
+    .filter(
+      ({ event: e }) => e.status !== "cancelled" && e.start?.dateTime && e.end?.dateTime,
+    )
+    .map<AgendaEvent>(({ calendarIndex, event: e }) => {
       const kind = classify(e);
       const others = (e.attendees ?? []).filter((a) => !a.self).length;
       return {
-        id: e.id,
+        // Event ids are only unique within their own calendar — prefix with
+        // the calendar's index so two calendars can't collide.
+        id: `${calendarIndex}:${e.id}`,
         name: e.summary?.trim() || "(busy)",
         where: whereText(e, kind),
         start: decimalHourForTimestamp(e.start.dateTime as string, todayIso, timezone),
@@ -135,5 +201,6 @@ export async function getAgenda(
         htmlLink: e.htmlLink,
       };
     })
-    .filter((e) => e.end > e.start);
+    .filter((e) => e.end > e.start)
+    .sort((a, b) => a.start - b.start);
 }
