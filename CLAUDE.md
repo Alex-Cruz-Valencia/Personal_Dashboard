@@ -43,6 +43,9 @@
   before calling out, so a deployment with no secrets fails closed (400) —
   this is what makes the public demo deployment safe. See README → Deploying.
 - Google token storage (`src/lib/google/tokens.ts`) auto-picks its backend:
-  Upstash Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN` are set (required on
-  serverless hosts — the local file store doesn't survive between
-  invocations there), else the gitignored `.data/google-tokens.json` file.
+  Redis when `UPSTASH_REDIS_REST_URL`/`_TOKEN` **or** `KV_REST_API_URL`/
+  `KV_REST_API_TOKEN` are set (required on serverless hosts — the local file
+  store doesn't survive between invocations there; the latter pair is what
+  `vercel integration add upstash/upstash-kv` actually injects, kept for
+  compatibility with the old first-party Vercel KV naming), else the
+  gitignored `.data/google-tokens.json` file.

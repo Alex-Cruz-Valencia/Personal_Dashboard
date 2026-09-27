@@ -40,6 +40,12 @@ yarn-error.log*
 # vercel
 .vercel
 
+# agent skill docs auto-fetched by `vercel integration add` (e.g. Upstash) —
+# local reference material, not part of the app
+/.agents/
+/.claude/skills/
+skills-lock.json
+
 # typescript
 *.tsbuildinfo
 next-env.d.ts
