@@ -504,7 +504,59 @@ a:hover { color: var(--ink); text-decoration: underline; }
 }
 .reply--unread .reply__from { font-weight: 700; }
 
-.footline { display: flex; justify-content: space-between; gap: 16px; padding: 2px 8px; font-size: 12px; font-weight: 500; color: var(--ink-faint); }
+.footline { display: flex; justify-content: space-between; align-items: center; gap: 16px; padding: 2px 8px; font-size: 12px; font-weight: 500; color: var(--ink-faint); }
+.footline__right { display: flex; align-items: center; gap: 10px; }
+
+/* ---------- empty states (not in the static reference) ---------- */
+.card__empty {
+  list-style: none; margin: 0; padding: 14px 0 4px;
+  font-size: 13px; font-weight: 500; line-height: 1.45; color: var(--ink-soft);
+}
+.card__empty--first { border-top: 0; }
+
+/* ---------- stale-source marker (not in the static reference) ----------
+   Shown only when a slice is *configured* but its live fetch failed, so the
+   card is quietly serving sample data. "Not configured" stays unmarked. */
+.stale-tag {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  color: var(--warning); background: var(--warning-tint);
+  border-radius: 999px; padding: 3px 8px; white-space: nowrap;
+}
+.card__head .stale-tag { margin-left: 8px; }
+
+/* ---------- display settings panel (not in the static reference) ---------- */
+.settings__trigger {
+  display: inline-flex; align-items: center; justify-content: center;
+  width: 24px; height: 24px; padding: 0; border-radius: 999px;
+  border: 1px solid var(--line); background: var(--surface); color: var(--ink-soft);
+  cursor: pointer; transition: color .12s ease, border-color .12s ease;
+}
+.settings__trigger:hover { color: var(--ink); border-color: var(--ink-faint); }
+.settings__trigger:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.settings {
+  position: fixed; z-index: 50; width: clamp(240px, 92vw, 288px);
+  display: flex; flex-direction: column; gap: 13px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow); padding: 15px 16px;
+  font-family: var(--font-body);
+}
+.settings__field { display: grid; gap: 6px; }
+.settings__label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase;
+  color: var(--ink-faint);
+}
+.settings__seg { display: flex; gap: 5px; }
+.settings__seg-btn {
+  flex: 1; font: inherit; font-size: 11.5px; font-weight: 600; padding: 6px 4px; cursor: pointer;
+  border: 1px solid var(--line); border-radius: var(--radius-sm);
+  background: var(--surface-2); color: var(--ink-soft);
+  transition: color .12s ease, border-color .12s ease;
+}
+.settings__seg-btn:hover { color: var(--ink); }
+.settings__seg-btn.is-on {
+  color: var(--accent); background: var(--accent-tint); border-color: transparent;
+}
 
 /* ---------- responsive ---------- */
 @media (max-width: 1040px) {
@@ -514,6 +566,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
 @media (max-width: 760px) {
   :root { --gutter: 16px; --gap: 14px; --radius-lg: 18px; }
   .topbar { grid-template-columns: 1fr; }
+  /* the tag + sentence get too narrow side by side on a phone — stack them */
+  .hello__note { flex-direction: column; gap: 5px; }
+  .hello__note-tag { padding-top: 0; }
   .weather { min-width: 0; }
   .weather__main { justify-content: flex-start; }
   .dayarc__head { flex-direction: column; align-items: flex-start; gap: 10px; }

@@ -1,8 +1,13 @@
 /**
  * Presentation settings — the three knobs the Claude Design component exposed
- * (Appearance / Behavior). They are read from the URL query so the dashboard
- * can be linked in any state, e.g. `/?theme=dark&density=focused`.
+ * (Appearance / Behavior).
+ *
+ * Precedence: URL query (`/?theme=dark&density=focused`, still linkable in any
+ * state) → the `dashboard_prefs` cookie the in-app panel writes → defaults.
  */
+
+/** Cookie the SettingsPanel writes; read back in `page.tsx`. */
+export const PREFS_COOKIE = "dashboard_prefs";
 
 /** "system" follows the viewer's OS light/dark preference; the rest force it. */
 export type Theme = "light" | "dark" | "system";
@@ -32,20 +37,46 @@ function pick<T extends string>(
   return (allowed as readonly string[]).includes(v ?? "") ? (v as T) : fallback;
 }
 
-export function parseSettings(searchParams: SearchParams): DashboardSettings {
+export function parseSettings(
+  searchParams: SearchParams,
+  stored?: Partial<DashboardSettings>,
+): DashboardSettings {
+  const base = { ...DEFAULT_SETTINGS, ...stored };
   return {
-    theme: pick(searchParams.theme, ["light", "dark", "system"], DEFAULT_SETTINGS.theme),
+    theme: pick(searchParams.theme, ["light", "dark", "system"], base.theme),
     timeFormat: pick(
       searchParams.timeFormat ?? searchParams.time,
       ["12-hour", "24-hour"],
-      DEFAULT_SETTINGS.timeFormat,
+      base.timeFormat,
     ),
     density: pick(
       searchParams.density,
       ["comfortable", "focused"],
-      DEFAULT_SETTINGS.density,
+      base.density,
     ),
   };
+}
+
+/** Parse the `dashboard_prefs` cookie value; unknown / malformed fields drop. */
+export function readStoredSettings(raw: string | undefined): Partial<DashboardSettings> {
+  if (!raw) return {};
+  let obj: Record<string, unknown>;
+  try {
+    obj = JSON.parse(raw) as Record<string, unknown>;
+  } catch {
+    return {};
+  }
+  const out: Partial<DashboardSettings> = {};
+  if (obj.theme === "light" || obj.theme === "dark" || obj.theme === "system") {
+    out.theme = obj.theme;
+  }
+  if (obj.timeFormat === "12-hour" || obj.timeFormat === "24-hour") {
+    out.timeFormat = obj.timeFormat;
+  }
+  if (obj.density === "comfortable" || obj.density === "focused") {
+    out.density = obj.density;
+  }
+  return out;
 }
 
 export function use24Hour(settings: DashboardSettings): boolean {

@@ -3,16 +3,18 @@
 import { agendaCountLabel, buildAgenda } from "@/lib/format";
 import type { DashboardSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
-import type { AgendaEvent, TodayInfo } from "@/lib/types";
+import type { AgendaEvent, SliceSource, TodayInfo } from "@/lib/types";
 import { useEventDetail } from "./EventDetail";
+import { StaleTag } from "./StaleTag";
 
 interface CalendarAgendaProps {
   agenda: AgendaEvent[];
   today: TodayInfo;
   settings: DashboardSettings;
+  source: SliceSource;
 }
 
-export function CalendarAgenda({ agenda, today, settings }: CalendarAgendaProps) {
+export function CalendarAgenda({ agenda, today, settings, source }: CalendarAgendaProps) {
   const { open, isSelected } = useEventDetail();
   const rows = buildAgenda(agenda, today.nowHour, use24Hour(settings));
 
@@ -21,8 +23,16 @@ export function CalendarAgenda({ agenda, today, settings }: CalendarAgendaProps)
       <div className="card__head">
         <h2 className="card__title">Agenda</h2>
         <div className="card__count">{agendaCountLabel(agenda)}</div>
+        <StaleTag source={source} />
       </div>
       <div className="card__body">
+        {rows.length === 0 ? (
+          <p className="card__empty card__empty--first">
+            {source === "off"
+              ? "Connect Google Calendar to see today’s schedule."
+              : "Nothing on the calendar today."}
+          </p>
+        ) : (
         <ul className="agenda">
           {rows.map((e, i) => {
             const event = agenda[i];
@@ -55,6 +65,7 @@ export function CalendarAgenda({ agenda, today, settings }: CalendarAgendaProps)
             );
           })}
         </ul>
+        )}
       </div>
     </section>
   );
