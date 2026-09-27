@@ -5,10 +5,12 @@
  * per-user table needed. Two backends, chosen automatically by which env
  * vars are set:
  *
- *  - **Upstash Redis** (`UPSTASH_REDIS_REST_URL` + `UPSTASH_REDIS_REST_TOKEN`,
- *    exactly what the Vercel Marketplace Upstash integration injects) —
- *    required on serverless hosts, whose filesystem doesn't persist between
- *    invocations.
+ *  - **Upstash Redis**, required on serverless hosts (whose filesystem
+ *    doesn't persist between invocations). Reads either var-name pair:
+ *    `UPSTASH_REDIS_REST_URL`/`_TOKEN` (Upstash's own naming, e.g. a raw
+ *    Upstash account) or `KV_REST_API_URL`/`KV_REST_API_TOKEN` (what the
+ *    Vercel Marketplace "Upstash for Redis" integration actually injects —
+ *    kept for compatibility with the old first-party Vercel KV).
  *  - A gitignored local file (`.data/google-tokens.json`), otherwise — fine
  *    for local dev, or any host with a persistent disk.
  *
@@ -25,8 +27,8 @@ import { refreshAccessToken, type GoogleTokens } from "./oauth";
 const TOKEN_FILE = join(process.cwd(), ".data", "google-tokens.json");
 const REDIS_KEY = "dashboard:google-tokens";
 
-const redisUrl = process.env.UPSTASH_REDIS_REST_URL;
-const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN;
+const redisUrl = process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+const redisToken = process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
 const kv = redisUrl && redisToken ? new Redis({ url: redisUrl, token: redisToken }) : null;
 
 // No in-memory cache: Next dev/runtime spreads requests across worker
