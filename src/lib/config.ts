@@ -62,19 +62,17 @@ export const config = {
       str("GOOGLE_REDIRECT_URI") ??
       `${str("DASHBOARD_BASE_URL") ?? "http://localhost:3000"}/api/auth/google/callback`,
     /**
-     * Calendars merged into the agenda. `GOOGLE_CALENDAR_IDS` (comma-separated)
-     * takes precedence; `GOOGLE_CALENDAR_ID` (singular) is the older
-     * single-calendar knob, kept working for existing configs. Any calendar
-     * shared with this account — including one on a different Google
-     * account — works here by its address; `calendar.readonly` already
-     * covers it, no extra OAuth consent needed.
+     * The agenda auto-discovers and merges every calendar this account can
+     * see — including one shared from a different Google account —
+     * without any extra OAuth consent (`calendar.readonly` already covers
+     * anything shared with you). List specific calendars here (address or
+     * id, comma-separated) to leave them out.
      */
-    calendarIds: (
-      str("GOOGLE_CALENDAR_IDS")
+    calendarExcludeIds:
+      str("GOOGLE_CALENDAR_EXCLUDE_IDS")
         ?.split(",")
         .map((id) => id.trim())
-        .filter(Boolean) ?? [str("GOOGLE_CALENDAR_ID") ?? "primary"]
-    ),
+        .filter(Boolean) ?? [],
     /**
      * Gmail search for the "needs a reply" list. Deliberately broad (includes
      * read mail) — `gmail.ts` does the real curation from the message headers

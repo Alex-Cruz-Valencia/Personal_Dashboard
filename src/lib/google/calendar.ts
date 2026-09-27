@@ -35,6 +35,39 @@ interface GCalListResponse {
   items: GCalEvent[];
 }
 
+interface GCalListEntry {
+  id: string;
+  deleted?: boolean;
+}
+
+interface GCalCalendarListResponse {
+  items?: GCalListEntry[];
+}
+
+/**
+ * Every calendar this account can see — including one shared from a
+ * different Google account — minus `GOOGLE_CALENDAR_EXCLUDE_IDS`.
+ * `freeBusyReader` is the lowest access role, so a "see only free/busy"
+ * share is still included (its events just come back opaque; `classify()`
+ * and the "(busy)" fallback already handle that).
+ */
+async function discoverCalendarIds(token: string): Promise<string[]> {
+  const url = new URL("https://www.googleapis.com/calendar/v3/users/me/calendarList");
+  url.searchParams.set("minAccessRole", "freeBusyReader");
+
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+    next: { revalidate: 300 },
+  });
+  if (!res.ok) throw new Error(`Google CalendarList responded ${res.status}`);
+  const data = (await res.json()) as GCalCalendarListResponse;
+
+  const excluded = new Set(config.google.calendarExcludeIds.map((id) => id.toLowerCase()));
+  return (data.items ?? [])
+    .filter((c) => !c.deleted && !excluded.has(c.id.toLowerCase()))
+    .map((c) => c.id);
+}
+
 const FOCUS_RE = /\b(focus|deep work|deep-work|heads?[- ]down|no meeting|writing|block)\b/i;
 
 function classify(event: GCalEvent): EventKind {
@@ -124,7 +157,7 @@ export async function getAgenda(
 ): Promise<AgendaEvent[]> {
   const token = await getGoogleAccessToken();
   const { timeMin, timeMax } = dayBoundsUtc(todayIso, timezone);
-  const calendarIds = config.google.calendarIds;
+  const calendarIds = await discoverCalendarIds(token);
 
   // One failed/inaccessible shared calendar (revoked access, a typo'd id)
   // shouldn't blank out the whole agenda — merge whatever succeeded and log
@@ -141,8 +174,8 @@ export async function getAgenda(
       console.warn(`[calendar] ${calendarIds[i]} → skipped:`, (result.reason as Error).message);
     }
   });
-  if (events.length === 0 && results.every((r) => r.status === "rejected")) {
-    throw new Error("Every configured calendar failed");
+  if (results.length > 0 && results.every((r) => r.status === "rejected")) {
+    throw new Error("Every discovered calendar failed");
   }
 
   return events

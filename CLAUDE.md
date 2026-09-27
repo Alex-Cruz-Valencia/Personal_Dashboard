@@ -57,10 +57,12 @@
   `vercel integration add upstash/upstash-kv` actually injects, kept for
   compatibility with the old first-party Vercel KV naming), else the
   gitignored `.data/google-tokens.json` file.
-- `getAgenda` (`src/lib/google/calendar.ts`) merges every id in
-  `config.google.calendarIds` (from `GOOGLE_CALENDAR_IDS`, comma-separated;
-  falls back to singular `GOOGLE_CALENDAR_ID`) — any calendar shared with the
-  account, including from another Google account, works by address; no extra
-  OAuth scope needed. Fetched with `Promise.allSettled`, so one calendar
-  failing doesn't blank the rest; event ids are prefixed with their
-  calendar's index since ids are only unique within a calendar.
+- `getAgenda` (`src/lib/google/calendar.ts`) auto-discovers every calendar
+  the account can see via `calendarList` (`discoverCalendarIds`, min access
+  role `freeBusyReader`) — including one shared from another Google
+  account, no extra OAuth scope needed — minus
+  `config.google.calendarExcludeIds` (`GOOGLE_CALENDAR_EXCLUDE_IDS`,
+  comma-separated). Events are fetched with `Promise.allSettled`, so one
+  calendar failing doesn't blank the rest; ids are prefixed with their
+  calendar's index since Google's event ids are only unique within a
+  calendar.

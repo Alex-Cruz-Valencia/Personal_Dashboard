@@ -103,13 +103,14 @@ full account access — no extra scope needed.
    set (required on a serverless host — see [Deploying](#deploying)).
    Disconnect at `/api/auth/google/logout`.
 
-**Multiple calendars.** The agenda merges every calendar in
-`GOOGLE_CALENDAR_IDS` (comma-separated) — your own plus any calendar someone
-else has shared with this account, even from a different Google account.
-`calendar.readonly` already covers anything shared with you, so no extra
-consent is needed; just add its address/id. One calendar failing (revoked
-access, a typo) doesn't blank the others — it's dropped and logged, and
-what's still reachable renders normally.
+**Multiple calendars.** The agenda auto-discovers and merges *every*
+calendar this account can see — your own plus any calendar someone else has
+shared with it, even from a different Google account. `calendar.readonly`
+already covers anything shared with you, so no extra consent is needed.
+Leave one out with `GOOGLE_CALENDAR_EXCLUDE_IDS` (comma-separated
+addresses/ids). One calendar failing (revoked access) doesn't blank the
+others — it's dropped and logged, and what's still reachable renders
+normally.
 
 **Needs a reply** curates the inbox rather than showing raw unread: it keeps
 unread, important, and genuine threads (a shared doc, a recruiter, an
