@@ -2,6 +2,14 @@
 
 # Morning Dashboard — project notes
 
+- **Design decisions get logged.** When a change is a design/product choice
+  (not just an implementation detail) — a new UI pattern, a behavior
+  tradeoff, a naming/copy call, a security or architecture decision with
+  user-facing consequences — add an entry to [`DESIGN_LOG.md`](DESIGN_LOG.md)
+  (problem, decision, reasoning, alternatives, tradeoffs). It's kept
+  separate from code so it reads as a standalone product narrative. Routine
+  bug fixes with no real alternative don't need an entry.
+
 - The UI is a **verbatim reproduction** of the Claude Design source
   "Morning Dashboard v2.dc.html". Its stylesheet is ported as-is into
   `src/app/globals.css` and components use those exact class names. Do not
