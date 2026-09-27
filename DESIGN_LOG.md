@@ -1,9 +1,10 @@
 # Design Log
 
 A running record of the product/design decisions behind this dashboard —
-not the code changes themselves (git history already has those), but the
-*why*: the problem noticed, the options weighed, and the reasoning behind
-what shipped. Kept for retrospectives, write-ups, and interview prep.
+UI, UX, and user-flow choices, not just visual ones — not the code changes
+themselves (git history already has those), but the *why*: the problem
+noticed, the options weighed, and the reasoning behind what shipped. Kept
+for retrospectives, write-ups, and interview prep.
 
 Newest first. Each entry:
 
@@ -16,6 +17,48 @@ Newest first. Each entry:
 **Alternatives considered** — what else was on the table, and why not (if any)
 **Tradeoffs / open questions** — what this costs, or what's still unresolved
 ```
+
+---
+
+## 2026-09-27 — Merge multiple shared calendars into one agenda
+
+**Problem / trigger** — The agenda only ever showed one calendar (the
+account's own "primary"), even though other calendars — including ones
+belonging to entirely different Google accounts — had been shared with it.
+A shared-with-you calendar is real signal for "what does my day look like,"
+and the card was silently dropping it.
+
+**Decision** — `GOOGLE_CALENDAR_IDS`, a comma-separated list of calendar
+addresses/ids to merge, curated by the user rather than auto-discovered.
+Each is fetched in parallel; one failing (revoked access, a typo) doesn't
+blank the others, and event ids get a per-calendar prefix so two calendars'
+ids can't collide once merged into one sorted list.
+
+**Reasoning** — No new Google permission was needed either way —
+`calendar.readonly` already covers anything shared with the account, not
+just the ones you own — so the real decision was curation, not access.
+Google's API can enumerate every calendar you can see (`calendarList`), but
+that list includes things a viewer almost never wants stacked into a
+morning agenda: declined events, subscribed holiday calendars, "free/busy
+only" shares that carry no useful detail. An agenda that's supposed to be a
+curated, at-a-glance surface (the same principle behind "Needs a reply"
+filtering out promotions) shouldn't inherit noise just because it's
+technically visible. An explicit list keeps the calendars on the card the
+same set the person actually meant to include.
+
+**Alternatives considered** — Auto-discovery via `calendarList.list()`,
+falling back to only calendars marked `selected` in the user's own Google
+Calendar UI (their existing signal for "I want to see this"). Not rejected
+outright — it's a reasonable v2 if the explicit list turns out to be
+tedious to maintain — but the explicit list was the safer, more legible
+starting point: the resulting agenda contents are 1:1 with a value you can
+read in `.env`, not indirectly with whatever the Google Calendar app's
+sidebar happens to have checked.
+
+**Tradeoffs / open questions** — Adding a newly-shared calendar means
+editing an env var, not something that happens automatically the moment
+someone shares one. If that friction turns out to matter in practice, the
+`calendarList`-with-`selected`-filter approach is the natural next step.
 
 ---
 
