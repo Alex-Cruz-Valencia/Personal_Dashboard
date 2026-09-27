@@ -1,10 +1,14 @@
 /**
- * Phase 4 — the "Needs a reply" card via Gmail API v1 (read-only).
+ * Phase 4 — the "Needs a reply" card via Gmail API v1.
  *
  * Goal: surface mail actually worth attention. Marketing / social / bulk
  * newsletters are dropped; genuine threads (a shared doc, a recruiter, an
  * "action required", a real person) are kept — read OR unread, because people
  * often read a message and reply later.
+ *
+ * Also lets a message be cleared from the card — trashed, or moved to a
+ * label ("folder") — since a curated list is only useful if you can act on
+ * it from here instead of switching to Gmail.
  */
 
 import "server-only";
@@ -14,6 +18,9 @@ import type { Reply, Urgency } from "@/lib/types";
 import { getGoogleAccessToken } from "./tokens";
 
 const BASE = "https://gmail.googleapis.com/gmail/v1/users/me";
+
+/** Cache tag on reply reads — mutations call `revalidateTag(GMAIL_TAG)`. */
+export const GMAIL_TAG = "gmail";
 
 interface GmailListResponse {
   messages?: { id: string; threadId: string }[];
@@ -105,7 +112,10 @@ export async function getReplies(): Promise<Reply[]> {
   listUrl.searchParams.set("q", config.google.gmailQuery);
   listUrl.searchParams.set("maxResults", "40");
 
-  const listRes = await fetch(listUrl, { headers: auth, next: { revalidate: 90 } });
+  const listRes = await fetch(listUrl, {
+    headers: auth,
+    next: { revalidate: 90, tags: [GMAIL_TAG] },
+  });
   if (!listRes.ok) throw new Error(`Gmail list responded ${listRes.status}`);
   const list = (await listRes.json()) as GmailListResponse;
   const ids = (list.messages ?? []).map((m) => m.id);
@@ -119,7 +129,10 @@ export async function getReplies(): Promise<Reply[]> {
       for (const h of ["From", "Subject", "List-Unsubscribe", "Precedence"]) {
         url.searchParams.append("metadataHeaders", h);
       }
-      const res = await fetch(url, { headers: auth, next: { revalidate: 90 } });
+      const res = await fetch(url, {
+        headers: auth,
+        next: { revalidate: 90, tags: [GMAIL_TAG] },
+      });
       if (!res.ok) throw new Error(`Gmail message ${id} responded ${res.status}`);
       return (await res.json()) as GmailMessage;
     }),
@@ -156,4 +169,84 @@ function ageMinutes(age: string): number {
   if (age.endsWith("h")) return n * 60;
   if (age.endsWith("m")) return n;
   return 0;
+}
+
+/* ---------- clearing a message from the card ---------- */
+
+interface GmailLabelEntry {
+  id: string;
+  name: string;
+  type?: string;
+}
+
+async function fetchAllLabels(token: string): Promise<GmailLabelEntry[]> {
+  const res = await fetch(`${BASE}/labels`, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Gmail labels responded ${res.status}`);
+  const data = (await res.json()) as { labels?: GmailLabelEntry[] };
+  return data.labels ?? [];
+}
+
+/** User-created labels only — the "folders" a message can be moved to. */
+export async function listGmailLabels(): Promise<string[]> {
+  const token = await getGoogleAccessToken();
+  const labels = await fetchAllLabels(token);
+  return labels
+    .filter((l) => l.type === "user")
+    .map((l) => l.name)
+    .sort((a, b) => a.localeCompare(b));
+}
+
+/** Gmail needs a label id, not its name, to modify a message. */
+async function findOrCreateLabelId(name: string, token: string): Promise<string> {
+  const existing = (await fetchAllLabels(token)).find(
+    (l) => l.name.toLowerCase() === name.toLowerCase(),
+  );
+  if (existing) return existing.id;
+
+  const res = await fetch(`${BASE}/labels`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      name,
+      labelListVisibility: "labelShow",
+      messageListVisibility: "show",
+    }),
+  });
+  if (!res.ok) throw new Error(`Gmail label create responded ${res.status}`);
+  const created = (await res.json()) as { id: string };
+  return created.id;
+}
+
+/** Move to Trash — recoverable in Gmail for 30 days, same as clicking the trash icon there. */
+export async function trashMessage(id: string): Promise<void> {
+  const token = await getGoogleAccessToken();
+  const res = await fetch(`${BASE}/messages/${id}/trash`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  if (!res.ok) throw new Error(`Gmail trash responded ${res.status}`);
+}
+
+/**
+ * The "move to a folder" action: apply a label (creating it if it doesn't
+ * exist yet) and pull the message out of the inbox. Read/unread state is
+ * left alone — same as Gmail's own move-to-label behavior.
+ */
+export async function moveMessageToLabel(id: string, labelName: string): Promise<void> {
+  const token = await getGoogleAccessToken();
+  const labelId = await findOrCreateLabelId(labelName, token);
+  const res = await fetch(`${BASE}/messages/${id}/modify`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({ addLabelIds: [labelId], removeLabelIds: ["INBOX"] }),
+  });
+  if (!res.ok) throw new Error(`Gmail modify responded ${res.status}`);
 }

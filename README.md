@@ -90,7 +90,7 @@ labels, deadline, planned duration, notes, and delete. A **+ Add task** row
 creates new tasks. Every change auto-saves. The personal token already has
 full account access — no extra scope needed.
 
-### Phase 4 — Google Calendar + Gmail (OAuth2, read-only)
+### Phase 4 — Google Calendar (read-only) + Gmail (read + label/trash)
 1. Google Cloud console → create an **OAuth client ID** (Web application).
 2. Enable the **Google Calendar API** and **Gmail API**.
 3. Add redirect URI `http://localhost:3000/api/auth/google/callback`.
@@ -117,6 +117,16 @@ unread, important, and genuine threads (a shared doc, a recruiter, an
 "action required", a real person — read *or* unread, since people reply
 later) and drops promotions, social and bulk newsletters. Override the search
 with `GMAIL_QUERY`.
+
+**Clearing a message from the card.** Hover a reply for **Trash** (moves it
+to Gmail's Trash — recoverable there for 30 days, same as clicking the trash
+icon in Gmail) or **Move…** (apply a label and pull it out of the inbox —
+picks from your existing labels, or type a new one to create it). This needs
+the broader `gmail.modify` scope rather than `gmail.readonly` — it can read,
+label, and trash, but never a permanent, bypass-the-trash delete (that needs
+the much wider `mail.google.com` scope, which this app deliberately doesn't
+request). If you connected Google before this scope changed, disconnect and
+reconnect (`/api/auth/google/logout` → `/api/auth/google`) to re-consent.
 
 Sources: [`src/lib/google/`](src/lib/google/).
 
