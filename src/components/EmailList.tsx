@@ -14,18 +14,47 @@ interface EmailListProps {
   theme: Theme;
 }
 
+interface LabelInfo {
+  name: string;
+  textColor?: string;
+  backgroundColor?: string;
+}
+
+// Loaded once per session and reused across every "Move…" click, so the
+// popover never shows a loading state — it's fetched the moment the card
+// mounts, well before anyone could have clicked anything.
+let labelCache: LabelInfo[] | null = null;
+
 export function EmailList({ replies, source, theme }: EmailListProps) {
   const router = useRouter();
-  const rows = buildReplies(replies);
 
+  const [labels, setLabels] = useState<LabelInfo[] | null>(labelCache);
   const [cleared, setCleared] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [confirmTrashId, setConfirmTrashId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [moveState, setMoveState] = useState<{ id: string; anchor: DOMRect } | null>(null);
 
-  const visibleIds = new Set(replies.map((r) => r.id));
-  const cleared_ = new Set([...cleared].filter((id) => visibleIds.has(id)));
+  useEffect(() => {
+    if (labelCache || source === "off") return;
+    let alive = true;
+    fetch("/api/replies/meta")
+      .then((r) => (r.ok ? r.json() : { labels: [] }))
+      .then((m: { labels: LabelInfo[] }) => {
+        labelCache = m.labels;
+        if (alive) setLabels(m.labels);
+      })
+      .catch(() => {});
+    return () => {
+      alive = false;
+    };
+  }, [source]);
+
+  // Cleared items disappear the instant an action succeeds — not when the
+  // slower page-wide refresh eventually lands. The refresh still runs, to
+  // reconcile the count and pick up anything that changed server-side.
+  const visible = replies.filter((r) => !r.id || !cleared.has(r.id));
+  const rows = buildReplies(visible);
 
   const clear = (id: string, run: () => Promise<Response>) => {
     setError(null);
@@ -71,7 +100,7 @@ export function EmailList({ replies, source, theme }: EmailListProps) {
     <section className="card column--replies">
       <div className="card__head">
         <h2 className="card__title">Needs a reply</h2>
-        <div className="card__count">{replyCountLabel(replies)}</div>
+        <div className="card__count">{replyCountLabel(visible)}</div>
         <StaleTag source={source} />
       </div>
       <div className="card__body">
@@ -85,16 +114,10 @@ export function EmailList({ replies, source, theme }: EmailListProps) {
           <ul className="replies">
             {rows.map((r, i) => {
               const id = r.id ?? "";
-              const isCleared = id ? cleared_.has(id) : false;
               const isBusy = id ? busy.has(id) : false;
-              const canAct = Boolean(id) && !isBusy && !isCleared;
+              const canAct = Boolean(id) && !isBusy;
               return (
-                <li
-                  key={id || `reply${i}`}
-                  className={`reply${r.unread ? " reply--unread" : ""}${
-                    isCleared ? " reply--cleared" : ""
-                  }`}
-                >
+                <li key={id || `reply${i}`} className={`reply${r.unread ? " reply--unread" : ""}`}>
                   <div className="reply__avatar">{r.initials}</div>
                   <div className="reply__body">
                     <div className="reply__top">
@@ -165,6 +188,7 @@ export function EmailList({ replies, source, theme }: EmailListProps) {
         <MovePopover
           anchor={moveState.anchor}
           theme={theme}
+          labels={labels}
           onClose={() => setMoveState(null)}
           onPick={(label) => move(moveState.id, label)}
         />
@@ -176,30 +200,18 @@ export function EmailList({ replies, source, theme }: EmailListProps) {
 function MovePopover({
   anchor,
   theme,
+  labels,
   onClose,
   onPick,
 }: {
   anchor: DOMRect;
   theme: Theme;
+  labels: LabelInfo[] | null;
   onClose: () => void;
   onPick: (label: string) => void;
 }) {
-  const [labels, setLabels] = useState<string[] | null>(null);
   const [draft, setDraft] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    let alive = true;
-    fetch("/api/replies/meta")
-      .then((r) => (r.ok ? r.json() : { labels: [] }))
-      .then((m: { labels: string[] }) => {
-        if (alive) setLabels(m.labels);
-      })
-      .catch(() => alive && setLabels([]));
-    return () => {
-      alive = false;
-    };
-  }, []);
 
   useEffect(() => {
     inputRef.current?.focus();
@@ -226,12 +238,17 @@ function MovePopover({
         <div className="replymove__chips">
           {labels.map((l) => (
             <button
-              key={l}
+              key={l.name}
               type="button"
               className="replymove__chip"
-              onClick={() => submit(l)}
+              style={
+                l.backgroundColor
+                  ? { background: l.backgroundColor, color: l.textColor, borderColor: "transparent" }
+                  : undefined
+              }
+              onClick={() => submit(l.name)}
             >
-              {l}
+              {l.name}
             </button>
           ))}
         </div>

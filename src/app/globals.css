@@ -571,7 +571,6 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .reply__action--trash:hover:not(:disabled) { color: var(--negative); }
 .reply__action--trash-armed { color: var(--negative); background: var(--negative-tint); }
 .reply__confirm { display: flex; align-items: center; gap: 2px; }
-.reply--cleared { opacity: 0.4; pointer-events: none; }
 
 .replymove {
   position: fixed; z-index: 50; width: clamp(220px, 90vw, 260px);

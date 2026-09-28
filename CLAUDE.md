@@ -74,3 +74,9 @@
   convention as the Todoist write routes. Widening the scope means any
   already-connected token needs a fresh `/api/auth/google` consent; it
   won't pick up write access on its own.
+- `EmailList` fetches `/api/replies/meta` (labels + Gmail's own colors) on
+  mount into a module-level cache, not on first "Move…" click — the
+  popover should never show its own loading state. Trash/Move filter the
+  cleared reply out of the *client-rendered* list immediately; they don't
+  wait for the `router.refresh()` they still trigger in the background to
+  reconcile the count/server state.

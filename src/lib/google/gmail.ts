@@ -177,6 +177,14 @@ interface GmailLabelEntry {
   id: string;
   name: string;
   type?: string;
+  color?: { textColor?: string; backgroundColor?: string };
+}
+
+export interface GmailLabelInfo {
+  name: string;
+  /** Gmail's own color for this label, when the user set one. */
+  textColor?: string;
+  backgroundColor?: string;
 }
 
 async function fetchAllLabels(token: string): Promise<GmailLabelEntry[]> {
@@ -188,14 +196,21 @@ async function fetchAllLabels(token: string): Promise<GmailLabelEntry[]> {
   return data.labels ?? [];
 }
 
-/** User-created labels only — the "folders" a message can be moved to. */
-export async function listGmailLabels(): Promise<string[]> {
+/**
+ * User-created labels only — the "folders" a message can be moved to —
+ * with Gmail's own color for each, when the user set one.
+ */
+export async function listGmailLabels(): Promise<GmailLabelInfo[]> {
   const token = await getGoogleAccessToken();
   const labels = await fetchAllLabels(token);
   return labels
     .filter((l) => l.type === "user")
-    .map((l) => l.name)
-    .sort((a, b) => a.localeCompare(b));
+    .map((l) => ({
+      name: l.name,
+      textColor: l.color?.textColor,
+      backgroundColor: l.color?.backgroundColor,
+    }))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** Gmail needs a label id, not its name, to modify a message. */
