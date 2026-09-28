@@ -230,6 +230,26 @@ function eventUrl(calendarId: string, eventId: string): string {
 }
 
 /**
+ * A 403 here has consistently meant "correctly-scoped token, self-organized
+ * event, still rejected" in testing against a Google Workspace (school)
+ * account — almost certainly a domain admin's API access-control policy
+ * restricting Calendar writes for unverified apps, not anything this app's
+ * OAuth flow or request shape can fix. Surfacing that distinction beats a
+ * bare status code.
+ */
+function writeErrorMessage(action: string, status: number): string {
+  if (status === 403) {
+    return (
+      `Google Calendar ${action} responded 403 (Forbidden). If your Google ` +
+      `account is managed by a school or employer, this is usually their ` +
+      `Workspace admin restricting third-party apps from editing Calendar — ` +
+      `not something this app can work around.`
+    );
+  }
+  return `Google Calendar ${action} responded ${status}`;
+}
+
+/**
  * Delete a single occurrence. `getAgenda` lists with `singleEvents=true`, so
  * `eventId` here already names one instance, not the recurring series — a
  * recurring event's other occurrences are untouched, matching Google
@@ -244,7 +264,7 @@ export async function deleteEvent(id: string): Promise<void> {
   });
   // 410 means it's already gone (e.g. deleted elsewhere) — treat as success.
   if (!res.ok && res.status !== 410) {
-    throw new Error(`Google Calendar delete responded ${res.status}`);
+    throw new Error(writeErrorMessage("delete", res.status));
   }
 }
 
@@ -289,5 +309,5 @@ export async function updateEvent(id: string, patch: EventPatch): Promise<void> 
     },
     body: JSON.stringify(body),
   });
-  if (!res.ok) throw new Error(`Google Calendar update responded ${res.status}`);
+  if (!res.ok) throw new Error(writeErrorMessage("update", res.status));
 }

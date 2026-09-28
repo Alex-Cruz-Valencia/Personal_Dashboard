@@ -67,6 +67,19 @@ no way from this card to edit "all future instances," matching Google
 Calendar's own default behavior but not its full flexibility. If that gap
 turns out to matter in practice, it's the natural next scope to add.
 
+**Found in live testing, not fixable in this app** — Writes fail with a
+bare `403 Forbidden` against the account used to test this (a Google
+Workspace / school-managed address), even though: the token is freshly
+minted with the correct scope, and the account is confirmed the organizer
+of every event tested. Reads and Gmail's `gmail.modify` writes work fine
+on the same account. That combination — correct auth, correct ownership,
+still blocked, and only for one specific API — is the signature of a
+Workspace admin's API access-control policy restricting third-party apps
+from writing to Calendar specifically, not a bug in this app's OAuth flow
+or request shape. Nothing to fix here; the error message was rewritten to
+say so plainly instead of surfacing a bare status code, since a personal
+(non-managed) Google account should hit no such wall.
+
 ---
 
 ## 2026-09-27 — Making Trash/Move feel instant, after real use surfaced the lag
