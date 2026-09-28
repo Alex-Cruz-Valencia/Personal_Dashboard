@@ -20,6 +20,55 @@ Newest first. Each entry:
 
 ---
 
+## 2026-09-27 — Editing calendar events: scope, single-occurrence semantics, and what's out
+
+**Problem / trigger** — The agenda/day-arc's event popover was read-only.
+Mirroring the just-shipped Gmail actions, the ask was to delete and
+reschedule events from the dashboard directly, plus edit "as seen in
+Google Calendar" where reasonable.
+
+**Decision** — Widened the Google scope to `calendar.readonly` +
+`calendar.events` (not the broader `calendar` scope, which also grants
+creating/deleting/sharing whole calendars — a much bigger blast radius than
+"edit events"). The event popover became a real editor: rename, reschedule
+(date + start/end time), location, description, and delete with a confirm
+step. Deliberately **not** editable here: guests, reminders/notifications,
+and recurrence — `event.htmlLink` ("Open in Calendar") is the escape hatch
+for anything not covered.
+
+**Reasoning** — Delete/reschedule were the explicit ask; guests and
+recurrence editing are a different order of complexity (recurrence
+specifically needs a "this event / this and following / all events"
+chooser, which Google Calendar itself surfaces as a whole separate dialog)
+for something that wasn't the actual request. Building those without being
+asked would have been speculative scope, not responsiveness.
+
+**A real bug this caught before it shipped** — Event ids were built from
+`{calendarIndex}:{eventId}`, where the index was just the array position
+from that render's `discoverCalendarIds()` call. Once auto-discovery
+replaced an explicit calendar list, that order was never guaranteed stable
+between requests — an edit or delete could silently target the *wrong
+calendar's* event if discovery happened to return a different order
+between the read that produced the id and the write that used it. Fixed by
+encoding the real calendar id in the composite id instead of a position.
+Caught during implementation, before any write functionality existed to
+expose it — a good example of a change (multi-calendar merge) quietly
+setting up a bug in a *different*, later feature (editing) that hadn't
+been built yet when the first change shipped.
+
+**Alternatives considered** — The full `calendar` scope (simpler — one
+scope instead of two) — rejected on the same least-privilege reasoning as
+`gmail.modify` vs. `mail.google.com`: grant exactly the capability being
+built, not the most convenient scope that happens to include it.
+
+**Tradeoffs / open questions** — Deleting or rescheduling a recurring
+event's instance from here always acts on that single occurrence — there's
+no way from this card to edit "all future instances," matching Google
+Calendar's own default behavior but not its full flexibility. If that gap
+turns out to matter in practice, it's the natural next scope to add.
+
+---
+
 ## 2026-09-27 — Making Trash/Move feel instant, after real use surfaced the lag
 
 **Problem / trigger** — Using the just-shipped Trash/Move actions for real,

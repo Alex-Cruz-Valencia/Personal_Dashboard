@@ -80,3 +80,18 @@
   cleared reply out of the *client-rendered* list immediately; they don't
   wait for the `router.refresh()` they still trigger in the background to
   reconcile the count/server state.
+- Calendar scope is `calendar.readonly` **+** `calendar.events` (event
+  read/write; deliberately not the broader `calendar` scope, which also
+  covers creating/deleting/sharing whole calendars). `AgendaEvent.id` is
+  `<encodeURIComponent(calendarId)>:<eventId>` (`compositeId`/
+  `parseCompositeId` in `calendar.ts`) — it used to be a positional
+  `calendarIndex`, which broke the moment `discoverCalendarIds()` returned
+  calendars in a different order between requests; the real calendar id is
+  the only thing safe to persist across a render. `deleteEvent`/
+  `updateEvent` operate on a single occurrence (the list call already used
+  `singleEvents=true`), so a recurring event's other instances are
+  untouched — no "this vs. all" chooser needed. `EventDetail`'s edit form
+  (`eventedit__*` in globals.css, mirroring `taskedit__*`) covers name,
+  date/start/end, location, description, and delete; guests, reminders and
+  recurrence are deliberately not editable here — `event.htmlLink` ("Open
+  in Calendar") is the escape hatch for those.
