@@ -18,12 +18,29 @@ export interface DashboardSettings {
   theme: Theme;
   timeFormat: TimeFormat;
   density: Density;
+  /** Visible span of the day arc, in whole local hours. 24 = midnight (end of day). */
+  dayStart: number;
+  dayEnd: number;
+  /**
+   * Where the weather card's hourly curve starts — independent of the day
+   * arc (early-morning weather is rarely worth showing even when the arc
+   * itself starts early). Always ends at `dayEnd`.
+   */
+  weatherStart: number;
 }
 
+/**
+ * Generic fallback only — `page.tsx` layers `config.arcFrom`/`arcTo` in
+ * ahead of these via `parseSettings`'s `stored` argument, so these three
+ * rarely apply in practice (see the `weatherStart` note there too).
+ */
 export const DEFAULT_SETTINGS: DashboardSettings = {
   theme: "system",
   timeFormat: "12-hour",
   density: "comfortable",
+  dayStart: 6,
+  dayEnd: 22,
+  weatherStart: 6,
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -37,11 +54,28 @@ function pick<T extends string>(
   return (allowed as readonly string[]).includes(v ?? "") ? (v as T) : fallback;
 }
 
+/** An hour-of-day, 0–24 inclusive (24 = midnight as end-of-day). */
+function pickHour(value: string | string[] | undefined, fallback: number): number {
+  const v = Array.isArray(value) ? value[0] : value;
+  if (v === undefined) return fallback;
+  const n = Number(v);
+  return Number.isFinite(n) && n >= 0 && n <= 24 ? n : fallback;
+}
+
 export function parseSettings(
   searchParams: SearchParams,
   stored?: Partial<DashboardSettings>,
 ): DashboardSettings {
   const base = { ...DEFAULT_SETTINGS, ...stored };
+
+  const dayStart = pickHour(searchParams.dayStart, base.dayStart);
+  const dayEnd = pickHour(searchParams.dayEnd, base.dayEnd);
+  // A day that doesn't run forward at least an hour breaks the arc's math
+  // (division by a ~zero span) — fall back to the last-known-good pair
+  // rather than let a malformed pair through.
+  const [safeStart, safeEnd] =
+    dayEnd - dayStart >= 1 ? [dayStart, dayEnd] : [base.dayStart, base.dayEnd];
+
   return {
     theme: pick(searchParams.theme, ["light", "dark", "system"], base.theme),
     timeFormat: pick(
@@ -53,6 +87,12 @@ export function parseSettings(
       searchParams.density,
       ["comfortable", "focused"],
       base.density,
+    ),
+    dayStart: safeStart,
+    dayEnd: safeEnd,
+    weatherStart: Math.min(
+      pickHour(searchParams.weatherStart, base.weatherStart),
+      safeEnd - 1,
     ),
   };
 }
@@ -75,6 +115,15 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   }
   if (obj.density === "comfortable" || obj.density === "focused") {
     out.density = obj.density;
+  }
+  if (typeof obj.dayStart === "number" && obj.dayStart >= 0 && obj.dayStart <= 24) {
+    out.dayStart = obj.dayStart;
+  }
+  if (typeof obj.dayEnd === "number" && obj.dayEnd >= 0 && obj.dayEnd <= 24) {
+    out.dayEnd = obj.dayEnd;
+  }
+  if (typeof obj.weatherStart === "number" && obj.weatherStart >= 0 && obj.weatherStart <= 24) {
+    out.weatherStart = obj.weatherStart;
   }
   return out;
 }

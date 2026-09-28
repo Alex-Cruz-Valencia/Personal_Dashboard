@@ -574,6 +574,15 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .settings__seg-btn.is-on {
   color: var(--accent); background: var(--accent-tint); border-color: transparent;
 }
+.settings__row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.settings__hour { display: flex; align-items: center; gap: 8px; }
+.settings__number {
+  width: 56px; font: inherit; font-size: 12.5px; color: var(--ink);
+  background: var(--surface-2); border: 1px solid var(--line); border-radius: var(--radius-sm);
+  padding: 6px 8px; outline: none;
+}
+.settings__number:focus { border-color: var(--accent); }
+.settings__hour-hint { font-size: 11px; font-weight: 600; color: var(--ink-soft); white-space: nowrap; }
 
 /* ---------- reply actions: trash / move to a label (not in the static reference) ---------- */
 .reply__foot { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
