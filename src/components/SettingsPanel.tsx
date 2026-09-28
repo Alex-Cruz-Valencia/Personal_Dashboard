@@ -2,10 +2,8 @@
 
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { formatHour } from "@/lib/format";
 import {
   PREFS_COOKIE,
-  use24Hour,
   type DashboardSettings,
   type Density,
   type Theme,
@@ -24,10 +22,6 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
   const router = useRouter();
   const btnRef = useRef<HTMLButtonElement>(null);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
-  // Called unconditionally, at the top — its name makes ESLint's
-  // rules-of-hooks treat it as a hook even though it's a plain function, so
-  // it can't be called from inside the conditionally-rendered popover below.
-  const use24 = use24Hour(settings);
 
   const toggle = () => {
     setAnchor((a) => (a ? null : (btnRef.current?.getBoundingClientRect() ?? null)));
@@ -95,88 +89,9 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
             ]}
             onPick={(timeFormat) => update({ timeFormat })}
           />
-
-          <div className="settings__row2">
-            <HourField
-              label="Day starts"
-              value={settings.dayStart}
-              use24={use24}
-              onCommit={(dayStart) => update({ dayStart })}
-            />
-            <HourField
-              label="Day ends"
-              value={settings.dayEnd}
-              use24={use24}
-              onCommit={(dayEnd) => update({ dayEnd })}
-            />
-          </div>
-          <HourField
-            label="Weather starts"
-            value={settings.weatherStart}
-            use24={use24}
-            onCommit={(weatherStart) => update({ weatherStart })}
-          />
         </Popover>
       ) : null}
     </>
-  );
-}
-
-/**
- * An hour-of-day field (0–24, 24 = midnight/end-of-day) with the resulting
- * clock time shown alongside so a bare integer isn't the only feedback.
- * Commits on blur / Enter, not per keystroke.
- */
-function HourField({
-  label,
-  value,
-  use24,
-  onCommit,
-}: {
-  label: string;
-  value: number;
-  use24: boolean;
-  onCommit: (value: number) => void;
-}) {
-  const [draft, setDraft] = useState(String(value));
-  // Resync if `value` changes from outside this field (e.g. another field's
-  // edit clamped this one — see weatherStart in settings.ts). Adjusting
-  // state during render, not an effect, per React's own pattern for this.
-  const [prevValue, setPrevValue] = useState(value);
-  if (value !== prevValue) {
-    setPrevValue(value);
-    setDraft(String(value));
-  }
-
-  const commit = () => {
-    const n = Number(draft);
-    if (Number.isFinite(n) && n >= 0 && n <= 24 && n !== value) {
-      onCommit(n);
-    } else {
-      setDraft(String(value));
-    }
-  };
-
-  return (
-    <div className="settings__field">
-      <div className="settings__label">{label}</div>
-      <div className="settings__hour">
-        <input
-          type="number"
-          min={0}
-          max={24}
-          step={1}
-          className="settings__number"
-          value={draft}
-          onChange={(e) => setDraft(e.target.value)}
-          onBlur={commit}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") e.currentTarget.blur();
-          }}
-        />
-        <span className="settings__hour-hint">{formatHour(value, use24)}</span>
-      </div>
-    </div>
   );
 }
 

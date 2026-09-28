@@ -161,8 +161,5 @@ export interface DashboardData {
   agenda: AgendaEvent[];
   replies: Reply[];
   arc: ArcWindow;
-  /** The weather card's own window — same end as `arc`, an independently
-   *  configurable start (see `DashboardSettings.weatherStart`). */
-  weatherArc: ArcWindow;
   sources: SourceStatus;
 }

@@ -37,22 +37,12 @@ component never knows whether a value is live or mock.
 | `EmailList` | needs a reply | Phase 4 |
 | `Footline` | free-time + refreshed-at | clock + agenda |
 
-Presentation knobs (`theme`, `timeFormat`, `density`, plus `dayStart`/
-`dayEnd`/`weatherStart` below) are set from the **⚙ panel in the footer**
-(persisted in the `dashboard_prefs` cookie) or from the URL:
-`/?theme=dark&density=focused&timeFormat=24-hour&dayStart=8&dayEnd=24`. A URL
-param wins over the cookie, which wins over `DASHBOARD_ARC_FROM`/`ARC_TO`
-(this deployment's own env-configured default), which wins over a final
-hardcoded fallback. `theme` defaults to `system` — it follows the viewer's OS
-light/dark setting via `prefers-color-scheme` — and `light`/`dark` force one
-regardless of the OS.
-
-**Day / weather window.** `dayStart`/`dayEnd` move the day arc's visible
-span (`dayEnd` can go up to `24` for midnight — the arc's scale stays
-linear, so it's the literal value `24`, not `0`). `weatherStart` is
-independent of `dayStart` — the weather card's hourly curve can start later
-than the arc itself (early-morning weather is rarely worth showing even
-when the arc starts early); it always shares the arc's end.
+Presentation knobs (`theme`, `timeFormat`, `density`) are set from the **⚙
+panel in the footer** (persisted in the `dashboard_prefs` cookie) or from the
+URL: `/?theme=dark&density=focused&timeFormat=24-hour`. A URL param wins over
+the cookie, which wins over the defaults. `theme` defaults to `system` — it
+follows the viewer's OS light/dark setting via `prefers-color-scheme` — and
+`light`/`dark` force one regardless of the OS.
 
 Cards that render from a **configured** source show a small "Sample" marker
 when that source is failing and they've fallen back to mock data; a source

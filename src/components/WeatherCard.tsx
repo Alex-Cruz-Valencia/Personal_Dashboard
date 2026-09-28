@@ -8,10 +8,7 @@ import type { AgendaEvent, ArcWindow, HourlyTemp, Weather } from "@/lib/types";
 
 interface WeatherCardProps {
   weather: Weather;
-  /**
-   * The weather card's own window (`DashboardData.weatherArc`) — same end
-   * as the day arc, independently configurable start.
-   */
+  /** Same window as the day arc — the curve lines up under it. */
   arc: ArcWindow;
   agenda: AgendaEvent[];
   nowHour: number;

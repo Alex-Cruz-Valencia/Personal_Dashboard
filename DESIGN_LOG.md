@@ -20,56 +20,6 @@ Newest first. Each entry:
 
 ---
 
-## 2026-09-27 — Configurable day/weather window, and decoupling the two
-
-**Problem / trigger** — The day arc's 6am–10pm span and the weather card's
-hourly range were the same fixed number, both baked into env config. Using
-the dashboard day to day: the tracked day actually starts around 8am, ends
-around midnight, and — a separate observation — showing weather from 6am
-is noise; nobody's checking the forecast before they're up. Two different
-problems that happened to share one root cause: nothing about "the day"
-was actually configurable per-viewer, and nothing separated "the day" from
-"the weather" in the first place.
-
-**Decision** — `dayStart` / `dayEnd` / `weatherStart` join the existing
-settings model (URL query → cookie → this deployment's `DASHBOARD_ARC_FROM`/
-`ARC_TO` → a hardcoded fallback), editable from the same ⚙ panel. Weather
-gets its *own* start, independent of the arc's, but always shares the arc's
-end — there was no complaint about weather cutting off too early, only
-starting too early.
-
-**Reasoning** — Folding these into the *existing* settings/cookie system,
-rather than inventing a new mechanism, was close to free: the precedence
-chain, the persistence, and the panel were all already built for
-theme/density/time. The harder call was *not* reusing the day arc's window
-for weather too, even though they'd always been the same number — once
-you're asking "when does my day start," "when do I want to see the
-forecast start" is a related but different question, and conflating them
-again would have reintroduced the exact problem that prompted this.
-
-**Alternatives considered** — A single shared "day window" with weather
-just inheriting it (the status quo, just made configurable) — rejected
-because it doesn't fit the request: an 8am–midnight day with a 6am weather
-start needs two numbers, not one made editable.
-
-**Tradeoffs / open questions** — `dayEnd` support stops at `24` (midnight,
-the same calendar day) rather than allowing a day that runs into the next
-calendar day (say, 2am) — the latter needs actual date-rollover handling
-for agenda/task times, which nothing asked for yet. Caught and fixed a
-real latent bug along the way: `formatHour` collided hour `24` with noon,
-both reading "12:00pm" — never triggered before because `arcTo` had never
-been anything but a mid-window value like `22`.
-
-**Not done here, flagged for later**: a left sidebar navigation (with
-Settings as its first destination) was floated as a larger, separate
-initiative in the same conversation. Deliberately not started alongside
-this — it's a real IA change (what else lives there, mobile behavior,
-whether the footer panel gets replaced or kept), not a same-shaped
-extension of what already exists, and deserves its own scoping pass rather
-than being bolted on as a side effect of a settings change.
-
----
-
 ## 2026-09-27 — Making Trash/Move feel instant, after real use surfaced the lag
 
 **Problem / trigger** — Using the just-shipped Trash/Move actions for real,
