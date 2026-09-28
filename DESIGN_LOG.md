@@ -20,6 +20,51 @@ Newest first. Each entry:
 
 ---
 
+## 2026-09-27 — Making Trash/Move feel instant, after real use surfaced the lag
+
+**Problem / trigger** — Using the just-shipped Trash/Move actions for real,
+two things felt slow: the label picker had a visible loading beat every
+time "Move…" was clicked, and clicking Trash or a label left the row
+sitting there for a moment before it actually vanished. Neither was a
+one-off — they were structural, in how the previous pass built the feature.
+
+**Decision** — Two separate fixes for two separate causes:
+1. Fetch `/api/replies/meta` once, on the card mounting, into a
+   module-level cache — not lazily inside the popover the first time it
+   opens. By the time anyone can click "Move…", the labels are already in
+   memory; the popover has nothing left to wait on.
+2. Stop rendering a cleared reply the moment its action *succeeds*,
+   rather than waiting for the `router.refresh()` that follows to
+   reconcile server state. That refresh re-fetches the whole page's data —
+   weather, tasks, calendar, everything — not just this one row, so tying
+   the row's disappearance to it meant a visibly slow remove for a change
+   that's conceptually just "hide this one thing."
+
+**Reasoning** — Both are the same underlying lesson: *don't make the
+user's perceived latency equal to a slower system's actual latency* when
+the two aren't really coupled. The label list doesn't need to be fetched
+per-interaction — it changes rarely, so loading it once, early, and
+reusing it removes the wait entirely instead of just hiding it better. The
+cleared row doesn't need to wait on the *entire* page's server round-trip
+to know it should disappear — the outcome of one write is enough
+information on its own.
+
+**Alternatives considered** — For the row removal, keeping the optimistic
+*dim* (the original `.reply--cleared { opacity: 0.4 }`) instead of an
+outright hide, so a failed request had a visibly "in-flight" row to revert.
+Replaced instead with: hide immediately, and on failure, un-hide it and
+surface an inline error — the success path (the overwhelmingly common one)
+gets full-speed feedback, and failure still recovers cleanly, just via a
+different visual state instead of a lingering dim.
+
+**Tradeoffs / open questions** — The label cache is seeded once per page
+load and never invalidated — a label renamed or deleted in Gmail directly
+won't show up here until the next full reload. Acceptable for how rarely
+labels change relative to how often the card refreshes; worth revisiting
+if that assumption stops holding.
+
+---
+
 ## 2026-09-27 — Trash / move-to-label on "Needs a reply" (and a hover-visibility miss)
 
 **Problem / trigger** — The inbox card was read-only: seeing a message that
