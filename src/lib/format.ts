@@ -22,14 +22,22 @@ export const PRIORITY_LABEL: Record<Priority, string> = {
   3: "Someday",
 };
 
-/** Decimal hour → clock string. `fmt()` in the source. */
+/**
+ * Decimal hour → clock string. `fmt()` in the source.
+ *
+ * `h` can run past 24 (a day-end of "midnight" is the literal value 24, not
+ * 0, so the arc's scale stays linear) — `hh % 24` puts it back on a normal
+ * clock face before formatting, so 24 reads as 12:00am rather than colliding
+ * with noon's "12:00pm".
+ */
 export function formatHour(h: number, use24: boolean): string {
   const hh = Math.floor(h);
   const mm = Math.round((h - hh) * 60);
   const m = String(mm).padStart(2, "0");
-  if (use24) return `${String(hh).padStart(2, "0")}:${m}`;
-  const ampm = hh >= 12 ? "pm" : "am";
-  const h12 = hh % 12 === 0 ? 12 : hh % 12;
+  if (use24) return `${String(hh % 24).padStart(2, "0")}:${m}`;
+  const clock = hh % 24;
+  const ampm = clock >= 12 ? "pm" : "am";
+  const h12 = clock % 12 === 0 ? 12 : clock % 12;
   return `${h12}:${m}${ampm}`;
 }
 

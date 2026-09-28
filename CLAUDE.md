@@ -32,7 +32,18 @@
   `AutoRefresh` (60s `router.refresh()` while visible); `SettingsPanel`
   (writes the `dashboard_prefs` cookie, then `router.refresh()`).
 - Settings precedence (`src/lib/settings.ts` → read in `page.tsx`): URL query
-  → `dashboard_prefs` cookie → `DEFAULT_SETTINGS`.
+  → `dashboard_prefs` cookie → `DEFAULT_SETTINGS`. `dayStart`/`dayEnd`/
+  `weatherStart` are the exception: `page.tsx` layers `config.arcFrom`/
+  `arcTo` in as the *stored* fallback ahead of the cookie, so the real
+  precedence for those three is query → cookie → env config →
+  `DEFAULT_SETTINGS`'s own hardcoded 6/22/6.
+- `dashboard-data.ts`'s `getDashboardData` takes a `DayWindow` (`dayStart`,
+  `dayEnd`, `weatherStart`) built from resolved settings — `arc` and
+  `weatherArc` on `DashboardData` are derived from it, `weatherArc` sharing
+  `dayEnd` but with its own start. `WeatherCard`'s `arc` prop is always
+  `data.weatherArc`, never the day arc. `formatHour` (`format.ts`) takes
+  `h % 24` before computing am/pm — needed once `dayEnd` can legitimately
+  be `24` (midnight), which used to collide with noon's "12:00pm" label.
 - `dashboard-data.ts` marks each slice `live` / `mock` (configured but the
   fetch failed — `StaleTag` shows) / `off` (nothing configured — silent).
 - `Popover` (`src/components/Popover.tsx`) is the shared portalled-card shell

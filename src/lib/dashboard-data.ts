@@ -55,10 +55,23 @@ function realToday(timezone: string): TodayInfo {
   };
 }
 
+export interface DayWindow {
+  dayStart: number;
+  dayEnd: number;
+  /** Independent of `dayStart` — see `DashboardSettings.weatherStart`. */
+  weatherStart: number;
+}
+
 export async function getDashboardData(
   locationOverride?: LocationOverride,
+  window: DayWindow = {
+    dayStart: config.arcFrom,
+    dayEnd: config.arcTo,
+    weatherStart: config.arcFrom,
+  },
 ): Promise<DashboardData> {
-  const arc = { from: config.arcFrom, to: config.arcTo };
+  const arc = { from: window.dayStart, to: window.dayEnd };
+  const weatherArc = { from: window.weatherStart, to: window.dayEnd };
 
   // Pure reference-reproduction mode: nothing configured, or explicitly forced.
   if (forceMock || isDemoMode) {
@@ -71,6 +84,7 @@ export async function getDashboardData(
       agenda: MOCK_AGENDA,
       replies: MOCK_REPLIES,
       arc: MOCK_ARC,
+      weatherArc: MOCK_ARC,
       sources: {
         weather: "off",
         tasks: "off",
@@ -87,7 +101,7 @@ export async function getDashboardData(
 
   const [weather, tasks, agenda, replies, geocoded] = await Promise.all([
     features.weather
-      ? settle("weather", () => getWeather(location, arc), MOCK_WEATHER)
+      ? settle("weather", () => getWeather(location, weatherArc), MOCK_WEATHER)
       : Promise.resolve({ value: MOCK_WEATHER, live: false }),
     features.todoist
       ? settle("todoist", () => getTasks(today.iso, location.timezone), MOCK_TASKS)
@@ -148,6 +162,7 @@ export async function getDashboardData(
     agenda: agenda.value,
     replies: replies.value,
     arc,
+    weatherArc,
     sources,
   };
 }

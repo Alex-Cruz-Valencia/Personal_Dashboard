@@ -20,6 +20,90 @@ Newest first. Each entry:
 
 ---
 
+## 2026-09-28 — A PR that GitHub called "merged" but wasn't, and why
+
+**Problem / trigger** — Asked to change the day-arc window to 8am–midnight,
+the answer should have been "open the ⚙ panel, type 8 and 24" — that
+feature had already been built and merged as PR #16. Instead, the live
+dashboard still showed the old 6am–10pm default, and `settings.ts` on
+`main` had no `dayStart` field at all. `gh pr view 16` reported
+`state: MERGED`. The code told a different story.
+
+**What actually happened** — PR #16 had been built stacked on PR #15's
+branch, then split off cleanly with `git revert` once I noticed the
+mis-scoping (logged at the time). That revert was the right call for #15,
+but it meant #16's branch and #15's branch shared a git ancestor commit
+that later got *undone* on #15's side. When #16 was merged sometime after
+#15 and #17 had already landed, git's own duplicate-change detection
+(triggered by that shared, since-reverted ancestor) treated #16's entire
+commit as a no-op and merged an empty diff — no conflict, no error, just
+silently nothing. `gh`/GitHub still recorded a merge event and a "MERGED"
+state, because from GitHub's side, a merge genuinely happened — it just
+didn't change any files.
+
+**Decision** — Don't try to rebase or cherry-pick out of that history
+(confirmed firsthand: rebasing the old branch onto current `main`
+reproduced the exact same empty-merge behavior, for the same reason).
+Rebuilt the feature as fresh edits against current `main` instead, verified
+line-by-line against what the original PR was supposed to contain, and
+shipped it as a new PR rather than trying to reconcile the broken one.
+
+**Reasoning** — Once git's history contains a commit and its own exact
+revert, that commit is permanently "cheap" to silently no-op in any future
+rebase/merge that can see both — fighting that is more fragile than just
+re-authoring the (small, well-understood) diff cleanly. A "merged" PR
+state is a claim about what GitHub *did*, not a guarantee about what
+changed — worth verifying by grepping for the actual expected code, not
+just trusting API/UI status, especially for anything that was built by
+stacking one branch on another mid-session.
+
+**Tradeoffs / open questions** — This class of bug is specific to the
+stack-then-split-via-revert pattern used earlier that same day. Since PRs
+here are usually short-lived and merged quickly, the safer default going
+forward is to avoid the mistake in the first place (double-check `git
+status`/`git branch --show-current` before every commit) rather than
+relying on revert-based cleanup once multiple stacked branches exist.
+
+---
+
+## 2026-09-27 — Configurable day/weather window, and decoupling the two
+
+**Problem / trigger** — The day arc's 6am–10pm span and the weather card's
+hourly range were the same fixed number, both baked into env config. The
+tracked day actually starts around 8am and ends around midnight; separately,
+showing weather from 6am is noise — nobody's checking the forecast before
+they're up.
+
+**Decision** — `dayStart` / `dayEnd` / `weatherStart` join the existing
+settings model (URL query → cookie → this deployment's `DASHBOARD_ARC_FROM`/
+`ARC_TO` → a hardcoded fallback), editable from the same ⚙ panel. Weather
+gets its *own* start, independent of the arc's, but always shares the arc's
+end — there was no complaint about weather cutting off too early, only
+starting too early.
+
+**Reasoning** — Folding these into the *existing* settings/cookie system,
+rather than inventing a new mechanism, was close to free: the precedence
+chain, the persistence, and the panel were all already built for
+theme/density/time. The harder call was *not* reusing the day arc's window
+for weather too, even though they'd always been the same number — once
+you're asking "when does my day start," "when do I want to see the
+forecast start" is a related but different question.
+
+**Alternatives considered** — A single shared "day window" with weather
+just inheriting it (the status quo, just made configurable) — rejected
+because it doesn't fit the request: an 8am–midnight day with a 6am weather
+start needs two numbers, not one made editable.
+
+**Tradeoffs / open questions** — `dayEnd` support stops at `24` (midnight,
+the same calendar day) rather than allowing a day that runs into the next
+calendar day — the latter needs actual date-rollover handling for
+agenda/task times, which nothing asked for yet. Caught and fixed a real
+latent bug along the way: `formatHour` collided hour `24` with noon, both
+reading "12:00pm" — never triggered before because `arcTo` had never been
+anything but a mid-window value like `22`.
+
+---
+
 ## 2026-09-27 — Editing calendar events: scope, single-occurrence semantics, and what's out
 
 **Problem / trigger** — The agenda/day-arc's event popover was read-only.
