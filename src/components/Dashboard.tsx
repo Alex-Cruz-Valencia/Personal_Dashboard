@@ -33,7 +33,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
             <HelloCard user={data.user} today={data.today} dayNote={data.dayNote} />
             <WeatherCard
               weather={data.weather}
-              arc={data.arc}
+              arc={data.weatherArc}
               agenda={data.agenda}
               nowHour={data.today.nowHour}
               settings={settings}
