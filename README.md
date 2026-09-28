@@ -112,6 +112,19 @@ addresses/ids). One calendar failing (revoked access) doesn't blank the
 others — it's dropped and logged, and what's still reachable renders
 normally.
 
+**Editing an event.** Click a block (in the day arc or the agenda list) to
+rename, reschedule (date + start/end time), edit the location, or edit the
+description — every field auto-saves — and to delete it, with a
+confirm step. This needs the `calendar.events` scope (view/edit events on
+every calendar, not calendar-management/sharing) in addition to
+`calendar.readonly`; reconnect (`/api/auth/google/logout` →
+`/api/auth/google`) if you connected before this scope was added. Deleting
+or rescheduling only ever touches the single occurrence you clicked — a
+recurring event's other instances are untouched, the same as Google
+Calendar's own default "This event" behavior. Guests, notifications, and
+recurrence itself aren't editable here — **Open in Calendar** on the same
+card jumps to the real event for anything not covered.
+
 **Needs a reply** curates the inbox rather than showing raw unread: it keeps
 unread, important, and genuine threads (a shared doc, a recruiter, an
 "action required", a real person — read *or* unread, since people reply

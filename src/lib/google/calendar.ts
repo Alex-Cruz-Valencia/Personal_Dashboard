@@ -1,5 +1,5 @@
 /**
- * Phase 4 — Agenda via Google Calendar API v3 (read-only).
+ * Phase 4 — Agenda via Google Calendar API v3 (read/write on events).
  */
 
 import "server-only";
@@ -7,6 +7,11 @@ import { config } from "@/lib/config";
 import { dayBoundsUtc, decimalHourForTimestamp } from "@/lib/time";
 import type { AgendaEvent, EventKind } from "@/lib/types";
 import { getGoogleAccessToken } from "./tokens";
+
+const CAL_BASE = "https://www.googleapis.com/calendar/v3";
+
+/** Cache tag on agenda reads — mutations call `revalidateTag(CALENDAR_TAG)`. */
+export const CALENDAR_TAG = "calendar";
 
 interface GCalDateTime {
   dateTime?: string;
@@ -52,12 +57,12 @@ interface GCalCalendarListResponse {
  * and the "(busy)" fallback already handle that).
  */
 async function discoverCalendarIds(token: string): Promise<string[]> {
-  const url = new URL("https://www.googleapis.com/calendar/v3/users/me/calendarList");
+  const url = new URL(`${CAL_BASE}/users/me/calendarList`);
   url.searchParams.set("minAccessRole", "freeBusyReader");
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 300 },
+    next: { revalidate: 300, tags: [CALENDAR_TAG] },
   });
   if (!res.ok) throw new Error(`Google CalendarList responded ${res.status}`);
   const data = (await res.json()) as GCalCalendarListResponse;
@@ -131,9 +136,7 @@ async function fetchCalendarEvents(
   timeMin: string,
   timeMax: string,
 ): Promise<GCalEvent[]> {
-  const url = new URL(
-    `https://www.googleapis.com/calendar/v3/calendars/${encodeURIComponent(calendarId)}/events`,
-  );
+  const url = new URL(`${CAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events`);
   url.searchParams.set("timeMin", timeMin);
   url.searchParams.set("timeMax", timeMax);
   url.searchParams.set("singleEvents", "true");
@@ -142,7 +145,7 @@ async function fetchCalendarEvents(
 
   const res = await fetch(url, {
     headers: { Authorization: `Bearer ${token}` },
-    next: { revalidate: 60 },
+    next: { revalidate: 60, tags: [CALENDAR_TAG] },
   });
   if (!res.ok) {
     throw new Error(`Google Calendar (${calendarId}) responded ${res.status}`);
@@ -166,10 +169,10 @@ export async function getAgenda(
     calendarIds.map((id) => fetchCalendarEvents(id, token, timeMin, timeMax)),
   );
 
-  const events: { calendarIndex: number; event: GCalEvent }[] = [];
+  const events: { calendarId: string; event: GCalEvent }[] = [];
   results.forEach((result, i) => {
     if (result.status === "fulfilled") {
-      for (const event of result.value) events.push({ calendarIndex: i, event });
+      for (const event of result.value) events.push({ calendarId: calendarIds[i], event });
     } else if (process.env.NODE_ENV !== "production") {
       console.warn(`[calendar] ${calendarIds[i]} → skipped:`, (result.reason as Error).message);
     }
@@ -182,13 +185,15 @@ export async function getAgenda(
     .filter(
       ({ event: e }) => e.status !== "cancelled" && e.start?.dateTime && e.end?.dateTime,
     )
-    .map<AgendaEvent>(({ calendarIndex, event: e }) => {
+    .map<AgendaEvent>(({ calendarId, event: e }) => {
       const kind = classify(e);
       const others = (e.attendees ?? []).filter((a) => !a.self).length;
       return {
-        // Event ids are only unique within their own calendar — prefix with
-        // the calendar's index so two calendars can't collide.
-        id: `${calendarIndex}:${e.id}`,
+        // Event ids are only unique within their own calendar — the real
+        // calendar id (not a positional index, which shifts if discovery
+        // ever returns a different order) makes each id independently
+        // resolvable for a later edit/delete. See `parseCompositeId`.
+        id: compositeId(calendarId, e.id),
         name: e.summary?.trim() || "(busy)",
         where: whereText(e, kind),
         start: decimalHourForTimestamp(e.start.dateTime as string, todayIso, timezone),
@@ -203,4 +208,106 @@ export async function getAgenda(
     })
     .filter((e) => e.end > e.start)
     .sort((a, b) => a.start - b.start);
+}
+
+/* ---------- editing an event ---------- */
+
+/** `AgendaEvent.id` is `<encoded calendar id>:<event id>` — see `getAgenda`. */
+function compositeId(calendarId: string, eventId: string): string {
+  return `${encodeURIComponent(calendarId)}:${eventId}`;
+}
+
+function parseCompositeId(id: string): { calendarId: string; eventId: string } {
+  const sep = id.indexOf(":");
+  // encodeURIComponent always escapes ":", so the first one found is
+  // necessarily the separator, not part of the encoded calendar id.
+  if (sep === -1) throw new Error(`Malformed event id: ${id}`);
+  return { calendarId: decodeURIComponent(id.slice(0, sep)), eventId: id.slice(sep + 1) };
+}
+
+function eventUrl(calendarId: string, eventId: string): string {
+  return `${CAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${eventId}`;
+}
+
+/**
+ * A 403 here has consistently meant "correctly-scoped token, self-organized
+ * event, still rejected" in testing against a Google Workspace (school)
+ * account — almost certainly a domain admin's API access-control policy
+ * restricting Calendar writes for unverified apps, not anything this app's
+ * OAuth flow or request shape can fix. Surfacing that distinction beats a
+ * bare status code.
+ */
+function writeErrorMessage(action: string, status: number): string {
+  if (status === 403) {
+    return (
+      `Google Calendar ${action} responded 403 (Forbidden). If your Google ` +
+      `account is managed by a school or employer, this is usually their ` +
+      `Workspace admin restricting third-party apps from editing Calendar — ` +
+      `not something this app can work around.`
+    );
+  }
+  return `Google Calendar ${action} responded ${status}`;
+}
+
+/**
+ * Delete a single occurrence. `getAgenda` lists with `singleEvents=true`, so
+ * `eventId` here already names one instance, not the recurring series — a
+ * recurring event's other occurrences are untouched, matching Google
+ * Calendar's own default "This event" behavior.
+ */
+export async function deleteEvent(id: string): Promise<void> {
+  const { calendarId, eventId } = parseCompositeId(id);
+  const token = await getGoogleAccessToken();
+  const res = await fetch(eventUrl(calendarId, eventId), {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+  // 410 means it's already gone (e.g. deleted elsewhere) — treat as success.
+  if (!res.ok && res.status !== 410) {
+    throw new Error(writeErrorMessage("delete", res.status));
+  }
+}
+
+export interface EventTimePatch {
+  /** "YYYY-MM-DD" */
+  date: string;
+  /** "HH:MM", 24-hour */
+  time: string;
+  timeZone: string;
+}
+
+export interface EventPatch {
+  summary?: string;
+  location?: string;
+  description?: string;
+  /** Rescheduling: both are required together (Google needs a valid pair). */
+  start?: EventTimePatch;
+  end?: EventTimePatch;
+}
+
+/** Same single-occurrence semantics as `deleteEvent`. */
+export async function updateEvent(id: string, patch: EventPatch): Promise<void> {
+  const { calendarId, eventId } = parseCompositeId(id);
+  const token = await getGoogleAccessToken();
+
+  const body: Record<string, unknown> = {};
+  if (patch.summary !== undefined) body.summary = patch.summary;
+  if (patch.location !== undefined) body.location = patch.location;
+  if (patch.description !== undefined) body.description = patch.description;
+  if (patch.start) {
+    body.start = { dateTime: `${patch.start.date}T${patch.start.time}:00`, timeZone: patch.start.timeZone };
+  }
+  if (patch.end) {
+    body.end = { dateTime: `${patch.end.date}T${patch.end.time}:00`, timeZone: patch.end.timeZone };
+  }
+
+  const res = await fetch(eventUrl(calendarId, eventId), {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) throw new Error(writeErrorMessage("update", res.status));
 }

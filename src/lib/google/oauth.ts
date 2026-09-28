@@ -1,7 +1,7 @@
 /**
  * Phase 4 — Google OAuth2 (installed-app / web flow) for Calendar
- * (read-only) + Gmail (read/modify — trash and label moves need write
- * access; see `gmail.ts`).
+ * (read/write on events) + Gmail (read/modify — trash and label moves need
+ * write access; see `gmail.ts`).
  *
  * This is a single-user, local-dev grade flow: tokens live in an httpOnly
  * cookie on the dashboard's own origin (see `tokens.ts`). For a shared or
@@ -13,6 +13,13 @@ import { config } from "@/lib/config";
 
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
+  // Narrower than the full `calendar` scope (which also covers creating,
+  // deleting and sharing whole *calendars*) — this is read/write on
+  // *events* only, which is all editing/rescheduling/deleting one needs.
+  // Kept alongside calendar.readonly rather than assumed to be a superset
+  // of it, since calendarList discovery (calendar.ts's auto-discovery) is
+  // calendar-level metadata, not an event.
+  "https://www.googleapis.com/auth/calendar.events",
   // Superset of gmail.readonly: read + labels/trash, but never a permanent,
   // bypass-the-trash delete (that needs the much broader mail.google.com
   // scope) — enough for "get rid of it from the inbox view."

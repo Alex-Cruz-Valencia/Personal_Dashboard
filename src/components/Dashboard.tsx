@@ -21,7 +21,11 @@ interface DashboardProps {
  */
 export function Dashboard({ data, settings }: DashboardProps) {
   return (
-    <EventDetailProvider use24={use24Hour(settings)} theme={settings.theme}>
+    <EventDetailProvider
+      use24={use24Hour(settings)}
+      theme={settings.theme}
+      todayIso={data.today.iso}
+    >
       <TaskDetailProvider theme={settings.theme}>
         {/* "system" leaves the attribute off so globals.css can fall through
             to prefers-color-scheme (see the effective-theme block there). */}

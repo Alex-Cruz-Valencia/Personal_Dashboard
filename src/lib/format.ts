@@ -33,6 +33,13 @@ export function formatHour(h: number, use24: boolean): string {
   return `${h12}:${m}${ampm}`;
 }
 
+/** Decimal hour → "HH:MM" (24-hour, zero-padded) for an `<input type="time">`. */
+export function decimalHourToTimeInput(h: number): string {
+  const hh = Math.floor(h) % 24;
+  const mm = Math.round((h - Math.floor(h)) * 60);
+  return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
+}
+
 /** Position of an hour within the arc window, clamped to 0–100. `pct()`. */
 export function arcPct(h: number, arc: ArcWindow): number {
   return Math.max(0, Math.min(100, ((h - arc.from) / (arc.to - arc.from)) * 100));
