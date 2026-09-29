@@ -647,6 +647,45 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .footline { flex-direction: column; gap: 4px; }
 }
 
+/* ---------- blocks too narrow for the reference's in-block label ----------
+   The reference moved a tight block's label outside, straddling the band's
+   bottom edge. Instead the text stays inside, sized by the block's REAL
+   pixel width (container query — % of the arc can't know that): small,
+   wrapped and clamped while it fits; only a genuinely tiny pill drops it for
+   the .arc__sidelabel that `placeSideLabel()` (format.ts) set in free band
+   beside it. The hover tooltip always has the full name + time. */
+.arc__event--tight { container-type: inline-size; }
+.arc__event--tight:not(.arc__event--stacked) { padding: 8px 6px; }
+.arc__event--tight .arc__event-label {
+  position: static; color: inherit; font-size: 11px; line-height: 1.25;
+  white-space: normal; overflow: hidden;
+  display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical;
+}
+.arc__sidelabel {
+  position: absolute; top: 0; padding-top: 9px; display: grid;
+  white-space: nowrap; overflow: hidden;
+}
+.arc__sidelabel--right { left: calc(100% + 6px); }
+.arc__sidelabel--left  { right: calc(100% + 6px); justify-items: end; text-align: right; }
+.arc__sidelabel-name {
+  font-size: 12px; font-weight: 600; line-height: 1.2; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis; max-width: 100%;
+}
+.arc__sidelabel-time { font-size: 11px; font-weight: 500; color: var(--ink-soft); margin-top: 3px; }
+.arc__event:hover .arc__sidelabel-name { text-decoration: underline; text-underline-offset: 2px; }
+/* @container adds no specificity — these must outrank the stacked /
+   tight label rules, hence the doubled class. */
+@container (max-width: 43.99px) {
+  .arc__event.arc__event--tight .arc__event-label,
+  .arc__event.arc__event--tight .arc__event-time { display: none; }
+}
+@container (min-width: 44px) {
+  .arc__event.arc__event--tight .arc__sidelabel { display: none; }
+}
+@media (max-width: 760px) {
+  .arc__sidelabel { display: none; }
+}
+
 /* ---------- overlapping events on the day arc ----------
    Not in the static reference (it never has two blocks at once). Google-
    Calendar-style cascade, turned on its side for a horizontal timeline:
@@ -665,16 +704,17 @@ a:hover { color: var(--ink); text-decoration: underline; }
   display: flex; align-items: baseline; gap: 6px;
   box-shadow: 0 0 0 1.5px var(--surface);
 }
-.arc__event--stacked:not(.arc__event--tight) .arc__event-label {
+.arc__event--stacked .arc__event-label {
   display: block; flex: 0 0 auto; max-width: 100%; min-width: 0;
   line-height: 15px; white-space: nowrap; text-overflow: ellipsis;
 }
-.arc__event--stacked:not(.arc__event--tight) .arc__event-time {
+.arc__event--stacked .arc__event-time {
   flex: 0 1 auto; min-width: 0; margin-top: 0; line-height: 15px;
   white-space: nowrap; overflow: hidden;
 }
-/* too narrow for text: still cascades; its label is an .arc__outlabel */
-.arc__event--stacked.arc__event--tight { padding: 0; display: block; }
+.arc__event--stacked.arc__event--tight { padding-inline: 5px; }
+.arc__event--stacked .arc__sidelabel { padding-top: max(0px, (var(--step) - 15px) / 2); }
+.arc__event--stacked .arc__sidelabel-time { display: none; }
 .arc__event--stacked.arc__event--selected {
   z-index: 3;
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink);
@@ -682,31 +722,6 @@ a:hover { color: var(--ink); text-decoration: underline; }
 @media (max-width: 760px) {
   .arc__event--stacked { --ev-h: 42px; }
   /* a 3-deep cluster leaves ~14px strips here */
-  .arc__event--stacked:not(.arc__event--tight) .arc__event-label { font-size: 11px; line-height: 14px; }
+  .arc__event--stacked .arc__event-label { font-size: 11px; line-height: 14px; }
 }
 
-/* ---------- labels for blocks too narrow for their own text ----------
-   Replaces the reference's tight-label position (which straddled the band's
-   bottom edge and never truncated). `placeOutsideLabel()` in format.ts picks:
-   side  = free band to the right → name + time beside the block, set where
-           an in-block label would sit (Google Calendar's short-event style);
-   below = no room → one line clear under the band (above the task ticks),
-           capped at the next below-label and ellipsized. */
-.arc__outlabel {
-  position: absolute; z-index: 1; cursor: pointer;
-  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
-}
-.arc__outlabel--side { top: 9px; padding-top: 9px; display: grid; }
-.arc__outlabel--side .arc__outlabel-name {
-  font-size: 12px; font-weight: 600; line-height: 1.2; color: var(--ink);
-  overflow: hidden; text-overflow: ellipsis;
-}
-.arc__outlabel--side .arc__outlabel-time { font-size: 11px; font-weight: 500; color: var(--ink-soft); margin-top: 3px; }
-.arc__outlabel--below {
-  top: calc(100% + 3px); font-size: 11.5px; font-weight: 600; line-height: 14px; color: var(--ink-soft);
-}
-.arc__outlabel:hover .arc__outlabel-name { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
-@media (max-width: 760px) {
-  /* no room at this width — the agenda card lists them */
-  .arc__outlabel { display: none; }
-}
