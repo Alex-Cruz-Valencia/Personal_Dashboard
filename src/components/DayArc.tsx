@@ -1,6 +1,6 @@
 "use client";
 
-import type { CSSProperties } from "react";
+import { Fragment, type CSSProperties } from "react";
 import {
   arcRangeLabel,
   buildArcEvents,
@@ -69,30 +69,55 @@ export function DayArc({ agenda, tasks, arc, today, settings }: DayArcProps) {
             const event = agenda[i];
             const selected = isSelected(event);
             return (
-              <div
-                key={`e${i}`}
-                className={`${e.cls}${selected ? " arc__event--selected" : ""}`}
-                style={
-                  {
-                    left: `${e.left}%`,
-                    width: `${e.width}%`,
-                    ...(e.lanes > 1 ? { "--lane": e.lane, "--lanes": e.lanes } : {}),
-                  } as CSSProperties
-                }
-                role="button"
-                tabIndex={0}
-                aria-label={`${event.name}, details`}
-                onClick={(ev) => open(event, ev.currentTarget)}
-                onKeyDown={(ev) => {
-                  if (ev.key === "Enter" || ev.key === " ") {
-                    ev.preventDefault();
-                    open(event, ev.currentTarget);
+              <Fragment key={`e${i}`}>
+                <div
+                  className={`${e.cls}${selected ? " arc__event--selected" : ""}`}
+                  title={e.title}
+                  style={
+                    {
+                      left: `${e.left}%`,
+                      width: `${e.width}%`,
+                      ...(e.lanes > 1 ? { "--lane": e.lane, "--lanes": e.lanes } : {}),
+                    } as CSSProperties
                   }
-                }}
-              >
-                <div className="arc__event-label">{e.label}</div>
-                <div className="arc__event-time">{e.timeLabel}</div>
-              </div>
+                  role="button"
+                  tabIndex={0}
+                  aria-label={`${event.name}, details`}
+                  onClick={(ev) => open(event, ev.currentTarget)}
+                  onKeyDown={(ev) => {
+                    if (ev.key === "Enter" || ev.key === " ") {
+                      ev.preventDefault();
+                      open(event, ev.currentTarget);
+                    }
+                  }}
+                >
+                  {e.outside ? null : (
+                    <>
+                      <div className="arc__event-label">{e.label}</div>
+                      <div className="arc__event-time">{e.timeLabel}</div>
+                    </>
+                  )}
+                </div>
+                {e.outside ? (
+                  // Too narrow for its own text: label beside or below the block
+                  // (see placeOutsideLabel). Mouse-only — the block itself is the
+                  // keyboard target — and it anchors the popover to the block.
+                  <div
+                    className={`arc__outlabel arc__outlabel--${e.outside.mode}`}
+                    style={{ left: `${e.outside.left}%`, maxWidth: `${e.outside.maxWidth}%` }}
+                    title={e.title}
+                    aria-hidden="true"
+                    onClick={(ev) =>
+                      open(event, ev.currentTarget.previousElementSibling as HTMLElement)
+                    }
+                  >
+                    <span className="arc__outlabel-name">{e.label}</span>
+                    {e.outside.mode === "side" ? (
+                      <span className="arc__outlabel-time">{e.timeLabel}</span>
+                    ) : null}
+                  </div>
+                ) : null}
+              </Fragment>
             );
           })}
         </div>

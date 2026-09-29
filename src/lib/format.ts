@@ -134,7 +134,21 @@ export interface ArcEventVM {
   /** Overlap lane (0 = back) and lane count of its overlap group; 0 / 1 when alone. */
   lane: number;
   lanes: number;
+  /** Full name + time range, for the hover tooltip. */
+  title: string;
+  /**
+   * Where a tight block's label goes, since it can't fit inside:
+   * "side" = in the band just right of the block (free time there);
+   * "below" = under the band, truncated before the next outside label.
+   * Percentages of the band width.
+   */
+  outside?: { mode: "side" | "below"; left: string; maxWidth: string };
 }
+
+/** Width of free band (%) a side label needs; below that it goes under. */
+const SIDE_LABEL_MIN = 9;
+/** Breathing room (%) between a block / label and the next thing. */
+const LABEL_GAP = 0.6;
 
 /**
  * Google-Calendar-style cascade for overlapping events. Events are grouped
@@ -181,7 +195,7 @@ export function buildArcEvents(
   use24: boolean,
 ): ArcEventVM[] {
   const lanes = layoutOverlaps(agenda);
-  return agenda.map((e, i) => {
+  const vms = agenda.map((e, i) => {
     // The label stays INSIDE the block wherever it can: full at ≥10%,
     // compact (small, wrapped, no time) down to 6%, and only below that
     // does it move outside the band.
@@ -203,8 +217,50 @@ export function buildArcEvents(
         (tight ? " arc__event--tight" : "") +
         (stacked ? " arc__event--stacked" : ""),
       ...lanes[i],
+      title: `${e.name} · ${formatHour(e.start, use24)} – ${formatHour(e.end, use24)}`,
+      outside: tight ? placeOutsideLabel(agenda, i, arc) : undefined,
     };
   });
+
+  // Below-band labels share one line: each is capped at the next one's start
+  // (and ellipsized by CSS) so neighbours never run into each other.
+  const below = vms
+    .filter((vm) => vm.outside?.mode === "below")
+    .sort((a, b) => Number(a.outside!.left) - Number(b.outside!.left));
+  below.forEach((vm, k) => {
+    const left = Number(vm.outside!.left);
+    const next = below[k + 1] ? Number(below[k + 1].outside!.left) : 100;
+    vm.outside!.maxWidth = Math.max(0, next - left - LABEL_GAP).toFixed(2);
+  });
+  return vms;
+}
+
+/**
+ * Side label if the band is free to the right of event `i` for at least
+ * SIDE_LABEL_MIN; otherwise below the band.
+ */
+function placeOutsideLabel(
+  agenda: AgendaEvent[],
+  i: number,
+  arc: ArcWindow,
+): NonNullable<ArcEventVM["outside"]> {
+  const e = agenda[i];
+  // Anything still running after this block ends blocks the band from
+  // wherever it (or this block's end) starts.
+  let blockedAt = arc.to;
+  agenda.forEach((o, j) => {
+    if (j !== i && o.end > e.end) blockedAt = Math.min(blockedAt, Math.max(o.start, e.end));
+  });
+  const end = arcPct(e.end, arc);
+  const free = arcPct(blockedAt, arc) - end;
+  if (free >= SIDE_LABEL_MIN) {
+    return {
+      mode: "side",
+      left: (end + LABEL_GAP).toFixed(2),
+      maxWidth: (free - 2 * LABEL_GAP).toFixed(2),
+    };
+  }
+  return { mode: "below", left: arcPct(e.start, arc).toFixed(2), maxWidth: "0" };
 }
 
 export function buildHourLines(arc: ArcWindow): { left: string }[] {
