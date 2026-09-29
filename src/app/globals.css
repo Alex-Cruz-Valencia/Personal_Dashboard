@@ -673,9 +673,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
   flex: 0 1 auto; min-width: 0; margin-top: 0; line-height: 15px;
   white-space: nowrap; overflow: hidden;
 }
-/* too narrow for text: still cascades, label stays outside below the band */
+/* too narrow for text: still cascades; its label is an .arc__outlabel */
 .arc__event--stacked.arc__event--tight { padding: 0; display: block; }
-.arc__event--stacked.arc__event--tight .arc__event-label { top: calc(100% + 4px); }
 .arc__event--stacked.arc__event--selected {
   z-index: 3;
   box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink);
@@ -684,4 +683,30 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .arc__event--stacked { --ev-h: 42px; }
   /* a 3-deep cluster leaves ~14px strips here */
   .arc__event--stacked:not(.arc__event--tight) .arc__event-label { font-size: 11px; line-height: 14px; }
+}
+
+/* ---------- labels for blocks too narrow for their own text ----------
+   Replaces the reference's tight-label position (which straddled the band's
+   bottom edge and never truncated). `placeOutsideLabel()` in format.ts picks:
+   side  = free band to the right → name + time beside the block, set where
+           an in-block label would sit (Google Calendar's short-event style);
+   below = no room → one line clear under the band (above the task ticks),
+           capped at the next below-label and ellipsized. */
+.arc__outlabel {
+  position: absolute; z-index: 1; cursor: pointer;
+  overflow: hidden; white-space: nowrap; text-overflow: ellipsis;
+}
+.arc__outlabel--side { top: 9px; padding-top: 9px; display: grid; }
+.arc__outlabel--side .arc__outlabel-name {
+  font-size: 12px; font-weight: 600; line-height: 1.2; color: var(--ink);
+  overflow: hidden; text-overflow: ellipsis;
+}
+.arc__outlabel--side .arc__outlabel-time { font-size: 11px; font-weight: 500; color: var(--ink-soft); margin-top: 3px; }
+.arc__outlabel--below {
+  top: calc(100% + 3px); font-size: 11.5px; font-weight: 600; line-height: 14px; color: var(--ink-soft);
+}
+.arc__outlabel:hover .arc__outlabel-name { color: var(--ink); text-decoration: underline; text-underline-offset: 2px; }
+@media (max-width: 760px) {
+  /* no room at this width — the agenda card lists them */
+  .arc__outlabel { display: none; }
 }
