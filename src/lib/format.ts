@@ -131,6 +131,48 @@ export interface ArcEventVM {
   left: string;
   width: string;
   cls: string;
+  /** Overlap lane (0 = back) and lane count of its overlap group; 0 / 1 when alone. */
+  lane: number;
+  lanes: number;
+}
+
+/**
+ * Google-Calendar-style cascade for overlapping events. Events are grouped
+ * into clusters of (transitively) overlapping time; within a cluster each
+ * takes the first lane whose previous occupant has already ended. Earlier /
+ * longer events land in the back lanes, so each later one is drawn offset
+ * over them — every event's title strip stays visible.
+ *
+ * Returns `{ lane, lanes }` per event, in the original agenda order.
+ */
+export function layoutOverlaps(
+  agenda: Pick<AgendaEvent, "start" | "end">[],
+): { lane: number; lanes: number }[] {
+  const out = agenda.map(() => ({ lane: 0, lanes: 1 }));
+  const order = agenda
+    .map((e, i) => ({ start: e.start, end: Math.max(e.end, e.start), i }))
+    .sort((a, b) => a.start - b.start || b.end - a.end);
+
+  let cluster: number[] = [];
+  let laneEnds: number[] = [];
+  let clusterEnd = -Infinity;
+  const flush = () => {
+    for (const i of cluster) out[i].lanes = laneEnds.length;
+    cluster = [];
+    laneEnds = [];
+  };
+
+  for (const e of order) {
+    if (e.start >= clusterEnd) flush();
+    let lane = laneEnds.findIndex((end) => end <= e.start);
+    if (lane === -1) lane = laneEnds.length;
+    laneEnds[lane] = e.end;
+    out[e.i].lane = lane;
+    cluster.push(e.i);
+    clusterEnd = cluster.length === 1 ? e.end : Math.max(clusterEnd, e.end);
+  }
+  flush();
+  return out;
 }
 
 export function buildArcEvents(
@@ -138,13 +180,18 @@ export function buildArcEvents(
   arc: ArcWindow,
   use24: boolean,
 ): ArcEventVM[] {
-  return agenda.map((e) => {
+  const lanes = layoutOverlaps(agenda);
+  return agenda.map((e, i) => {
     // The label stays INSIDE the block wherever it can: full at ≥10%,
     // compact (small, wrapped, no time) down to 6%, and only below that
     // does it move outside the band.
     const w = Math.max(0.7, arcPct(e.end, arc) - arcPct(e.start, arc));
-    const compact = w < 10 && w >= 6;
     const tight = w < 6;
+    // Overlapping events share the band as a cascade of single-line strips;
+    // that replaces the compact treatment (tight blocks still cascade, but
+    // keep their outside label — see `.arc__event--stacked` in globals.css).
+    const stacked = lanes[i].lanes > 1;
+    const compact = w < 10 && w >= 6 && !stacked;
     return {
       label: e.name,
       timeLabel: formatHour(e.start, use24),
@@ -153,7 +200,9 @@ export function buildArcEvents(
       cls:
         `arc__event arc__event--${e.kind}` +
         (compact ? " arc__event--compact" : "") +
-        (tight ? " arc__event--tight" : ""),
+        (tight ? " arc__event--tight" : "") +
+        (stacked ? " arc__event--stacked" : ""),
+      ...lanes[i],
     };
   });
 }
