@@ -17,8 +17,9 @@
   (`0e114d1c-17f4-4cf4-9af5-6e2d7e880dc0`).
 - Additions **not** in the static reference, kept visually minimal and
   token-only (see the marked sections at the end of `globals.css`): the ⚙
-  `SettingsPanel` in the footer, per-card empty states (`.card__empty`), and
-  the `StaleTag` "Sample" marker.
+  `SettingsPanel` in the footer, per-card empty states (`.card__empty`), the
+  `StaleTag` "Sample" marker, and the day-arc overlap cascade
+  (`.arc__event--stacked`; lanes from `layoutOverlaps()` in `format.ts`).
 - All times are **decimal hours in the viewer's local day** (9.5 = 9:30am).
 - Location + timezone are resolved per-request by `src/lib/location.ts`
   (query → device cookie → env → default) and threaded into weather, tasks,

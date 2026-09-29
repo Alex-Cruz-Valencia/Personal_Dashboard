@@ -646,3 +646,42 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .columns { grid-template-columns: 1fr; }
   .footline { flex-direction: column; gap: 4px; }
 }
+
+/* ---------- overlapping events on the day arc ----------
+   Not in the static reference (it never has two blocks at once). Google-
+   Calendar-style cascade, turned on its side for a horizontal timeline:
+   `layoutOverlaps()` in format.ts gives each event a --lane within its
+   overlap group of --lanes. Back lanes keep the full block height; each
+   later lane starts one --step lower and draws on top with a surface-colored
+   ring, so every event keeps a visible single-line title strip. Bottoms stay
+   aligned, same radius and colors as a lone block — only geometry changes. */
+.arc__event--stacked {
+  --ev-h: 56px;
+  --step: min(28px, calc(var(--ev-h) / var(--lanes)));
+  top: calc(9px + var(--lane) * var(--step));
+  height: calc(var(--ev-h) - var(--lane) * var(--step));
+  z-index: calc(1 + min(var(--lane), 2));
+  padding: max(0px, (var(--step) - 15px) / 2) 9px 0;
+  display: flex; align-items: baseline; gap: 6px;
+  box-shadow: 0 0 0 1.5px var(--surface);
+}
+.arc__event--stacked:not(.arc__event--tight) .arc__event-label {
+  display: block; flex: 0 0 auto; max-width: 100%; min-width: 0;
+  line-height: 15px; white-space: nowrap; text-overflow: ellipsis;
+}
+.arc__event--stacked:not(.arc__event--tight) .arc__event-time {
+  flex: 0 1 auto; min-width: 0; margin-top: 0; line-height: 15px;
+  white-space: nowrap; overflow: hidden;
+}
+/* too narrow for text: still cascades, label stays outside below the band */
+.arc__event--stacked.arc__event--tight { padding: 0; display: block; }
+.arc__event--stacked.arc__event--tight .arc__event-label { top: calc(100% + 4px); }
+.arc__event--stacked.arc__event--selected {
+  z-index: 3;
+  box-shadow: 0 0 0 2px var(--surface), 0 0 0 4px var(--ink);
+}
+@media (max-width: 760px) {
+  .arc__event--stacked { --ev-h: 42px; }
+  /* a 3-deep cluster leaves ~14px strips here */
+  .arc__event--stacked:not(.arc__event--tight) .arc__event-label { font-size: 11px; line-height: 14px; }
+}

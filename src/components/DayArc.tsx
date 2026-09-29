@@ -1,5 +1,6 @@
 "use client";
 
+import type { CSSProperties } from "react";
 import {
   arcRangeLabel,
   buildArcEvents,
@@ -71,7 +72,13 @@ export function DayArc({ agenda, tasks, arc, today, settings }: DayArcProps) {
               <div
                 key={`e${i}`}
                 className={`${e.cls}${selected ? " arc__event--selected" : ""}`}
-                style={{ left: `${e.left}%`, width: `${e.width}%` }}
+                style={
+                  {
+                    left: `${e.left}%`,
+                    width: `${e.width}%`,
+                    ...(e.lanes > 1 ? { "--lane": e.lane, "--lanes": e.lanes } : {}),
+                  } as CSSProperties
+                }
                 role="button"
                 tabIndex={0}
                 aria-label={`${event.name}, details`}
