@@ -813,3 +813,26 @@ a:hover { color: var(--ink); text-decoration: underline; }
   -webkit-mask-image: linear-gradient(90deg, transparent, #000 44px, #000 calc(100% - 44px), transparent);
           mask-image: linear-gradient(90deg, transparent, #000 44px, #000 calc(100% - 44px), transparent);
 }
+
+/* ---------- overlap strips that can say more (expanded view) ----------
+   `stackedText()` in format.ts knows each strip's visible room in px:
+   wrap   = open area (front lane, or left of the lane drawn over it): the
+            name wraps to --lines within --open of the width, time below;
+   strip2 = just its own 30px strip, but name + time won't fit on one
+            line: the name takes two small lines and the time drops. */
+.arc__event.arc__event--stacked.arc__event--wrap { display: block; }
+.arc__event--stacked.arc__event--wrap .arc__event-label {
+  max-width: var(--open); white-space: normal; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: var(--lines);
+}
+.dayarc--expanded .arc__event.arc__event--stacked.arc__event--wrap .arc__event-time { display: none; }
+.dayarc--expanded .arc__event.arc__event--stacked.arc__event--wrap.arc__event--wraptime .arc__event-time {
+  display: block; max-width: var(--open); margin-top: 2px;
+  overflow: hidden; text-overflow: ellipsis;
+}
+.arc__event.arc__event--stacked.arc__event--strip2 { align-items: flex-start; padding-top: 2px; }
+.arc__event--stacked.arc__event--strip2 .arc__event-label {
+  white-space: normal; font-size: 11.5px; line-height: 13px; overflow-wrap: anywhere;
+  display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
+}
+.dayarc--expanded .arc__event.arc__event--stacked.arc__event--strip2 .arc__event-time { display: none; }
