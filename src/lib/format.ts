@@ -128,6 +128,9 @@ export function agendaCountLabel(agenda: AgendaEvent[]): string {
 export interface ArcEventVM {
   label: string;
   timeLabel: string;
+  /** "10:30 – 11:30am" and the location line — shown in the expanded view. */
+  rangeLabel: string;
+  where: string;
   left: string;
   width: string;
   cls: string;
@@ -191,18 +194,20 @@ export function layoutOverlaps(
 }
 
 /**
- * Expanded day arc: pixels per hour, sized so the SHORTEST event gets about
- * EXPANDED_MIN_EVENT_PX — the zoom follows the day's content rather than a
- * fixed factor. Clamped so a day of long blocks still zooms a little and a
- * 5-minute blip doesn't blow the arc up to a mile wide.
+ * Expanded day arc: pixels per hour the day NEEDS so its shortest event
+ * gets ~EXPANDED_MIN_EVENT_PX — room for name, time range and location.
+ * The zoom follows the day's content rather than a fixed factor. No floor:
+ * `DayArc` takes max(this, what fits the card), so a day that already fits
+ * doesn't scroll at all. Capped so a 5-minute blip can't make the arc a
+ * mile wide.
  */
-export const EXPANDED_MIN_EVENT_PX = 96;
+export const EXPANDED_MIN_EVENT_PX = 150;
 export function expandedHourPx(agenda: Pick<AgendaEvent, "start" | "end">[]): number {
   const shortest = Math.min(
     ...agenda.map((e) => e.end - e.start).filter((d) => d > 0),
   );
   const px = Number.isFinite(shortest) ? EXPANDED_MIN_EVENT_PX / shortest : 0;
-  return Math.round(Math.max(90, Math.min(200, px)));
+  return Math.round(Math.min(280, px));
 }
 
 export function buildArcEvents(
@@ -231,6 +236,8 @@ export function buildArcEvents(
     return {
       label: e.name,
       timeLabel: formatHour(e.start, use24),
+      rangeLabel: `${formatHour(e.start, use24)} – ${formatHour(e.end, use24)}`,
+      where: e.where,
       left: arcPct(e.start, arc).toFixed(2),
       width: w.toFixed(2),
       cls:

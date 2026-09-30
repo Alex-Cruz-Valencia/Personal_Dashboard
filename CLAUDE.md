@@ -21,8 +21,10 @@
   `StaleTag` "Sample" marker, the day-arc overlap cascade
   (`.arc__event--stacked`; lanes from `layoutOverlaps()` in `format.ts`),
   narrow-block labels (container queries on `.arc__event--tight`; side label
-  from `placeSideLabel()`), and the arc's "Expand" zoom (`.dayarc--expanded`;
-  px/hour from `expandedHourPx()`, remembered in localStorage).
+  from `placeSideLabel()`), and the arc's "Expand" zoom (`.dayarc--expanded`, **on by default**;
+  px/hour = max(`expandedHourPx()`, what fits the card), bigger bubbles with
+  range + location, edge fades + mouse drag-to-pan via `useDragPan`,
+  remembered in localStorage).
 - All times are **decimal hours in the viewer's local day** (9.5 = 9:30am).
 - Location + timezone are resolved per-request by `src/lib/location.ts`
   (query → device cookie → env → default) and threaded into weather, tasks,
