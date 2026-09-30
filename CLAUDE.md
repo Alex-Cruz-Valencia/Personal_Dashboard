@@ -31,7 +31,8 @@
   never edits the reference rules (the day arc's band + event blocks get
   their own glass rules there too, via a per-kind `--ev-c`; glass also
   overrides `--cal-*` with a pastel Okabe–Ito triad — periwinkle / apricot
-  / mint — Solid keeps the reference's), and falls back
+  / mint — and `--accent*` with teal (+ `--accent-deep` for the note
+  text); Solid keeps the reference's), and falls back
   to solid under
   `prefers-reduced-transparency` / `prefers-contrast: more`.
 - **Removed from the reference:** the day arc's task-due ticks + legend

@@ -86,6 +86,35 @@ bluish-green, still colorblind-distinct from periwinkle and apricot
 
 ---
 
+## 2026-09-30 — Teal accent in glass mode
+
+**Problem / trigger** — The site-wide accent (date, "shape of the day"
+note, active toggles, links, location dot) was the reference's green; the
+user wanted teal.
+
+**Decision** — Glass overrides `--accent` / `--accent-tint` with teal
+(#0B6F75 / #E2F2F3 light, #4DC3C4 / #163134 dark) and adds
+`--accent-deep` for the note's text (the reference hard-codes a deep
+green there). The ambient backdrop's green glow shifted to teal to match.
+Solid keeps the reference green.
+
+**Reasoning** — The accent carries small text, so it had to stay dark
+enough: a first teal (#0E7A80) put the 10px "SHAPE OF THE DAY" tag at
+4.43:1 on its tint, just under AA; #0B6F75 gets 5.9:1 on white and 5.1:1
+on the tint (dark: 6.5:1). Scoped to glass, like the calendar palette, so
+Solid remains a faithful fallback to the reference.
+
+**Alternatives considered** — Changing the reference tokens globally
+(simpler, but Solid would stop matching the design source); a brighter
+cyan (reads more "teal" but fails contrast for small text in light mode).
+
+**Tradeoffs / open questions** — Teal sits near the calendar's mint
+"personal" color; they're different enough in lightness and use (text/UI
+vs event fills), but worth watching. If the user prefers teal everywhere,
+including Solid, it's a one-token move into `:root`.
+
+---
+
 ## 2026-09-30 — Task-due ticks removed from the day arc
 
 **Problem / trigger** — The arc's legend had a fourth entry, "task due",
