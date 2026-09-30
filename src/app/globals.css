@@ -655,7 +655,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
    the .arc__sidelabel that `placeSideLabel()` (format.ts) set in free band
    beside it. The hover tooltip always has the full name + time. */
 .arc__event--tight { container-type: inline-size; }
-.arc__event--tight:not(.arc__event--stacked) { padding: 8px 6px; }
+.arc__event--tight:not(.arc__event--stacked) { padding: 8px 3px; }
 .arc__event--tight .arc__event-label {
   position: static; color: inherit; font-size: 11px; line-height: 1.25;
   white-space: normal; overflow: hidden;
@@ -675,9 +675,30 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .arc__event:hover .arc__sidelabel-name { text-decoration: underline; text-underline-offset: 2px; }
 /* @container adds no specificity — these must outrank the stacked /
    tight label rules, hence the doubled class. */
+/* under 44px: still show the start of the name inside — written vertically
+   in a lone block (tall and thin), as a single faded line in a stacked
+   strip (short and thin). The label spans the whole block so the fade only
+   bites when the name actually runs out of room. */
 @container (max-width: 43.99px) {
-  .arc__event.arc__event--tight .arc__event-label,
   .arc__event.arc__event--tight .arc__event-time { display: none; }
+  .arc__event.arc__event--tight .arc__event-label {
+    display: block; margin: 0 auto; height: 100%;
+    writing-mode: vertical-rl; transform: rotate(180deg);
+    font-size: 10.5px; line-height: 12px; white-space: nowrap; overflow: hidden;
+    -webkit-mask-image: linear-gradient(to bottom, #000 calc(100% - 9px), transparent);
+            mask-image: linear-gradient(to bottom, #000 calc(100% - 9px), transparent);
+  }
+  .arc__event.arc__event--tight.arc__event--stacked .arc__event-label {
+    margin: 0; height: auto; width: 100%; max-width: none;
+    writing-mode: horizontal-tb; transform: none; font-size: 10px;
+    -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 7px), transparent);
+            mask-image: linear-gradient(to right, #000 calc(100% - 7px), transparent);
+  }
+}
+/* a hairline (container sizes are the content box, i.e. block − 6px
+   padding): no legible glyph fits — the side label / tooltip carry it */
+@container (max-width: 7.99px) {
+  .arc__event.arc__event--tight .arc__event-label { display: none; }
 }
 @container (min-width: 44px) {
   .arc__event.arc__event--tight .arc__sidelabel { display: none; }
@@ -712,7 +733,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   flex: 0 1 auto; min-width: 0; margin-top: 0; line-height: 15px;
   white-space: nowrap; overflow: hidden;
 }
-.arc__event--stacked.arc__event--tight { padding-inline: 5px; }
+.arc__event--stacked.arc__event--tight { padding-inline: 3px; }
 .arc__event--stacked .arc__sidelabel { padding-top: max(0px, (var(--step) - 15px) / 2); }
 .arc__event--stacked .arc__sidelabel-time { display: none; }
 .arc__event--stacked.arc__event--selected {
