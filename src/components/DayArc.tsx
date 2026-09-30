@@ -4,7 +4,6 @@ import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type 
 import {
   arcRangeLabel,
   buildArcEvents,
-  buildArcTasks,
   buildHourLines,
   buildScaleLabels,
   arcPct,
@@ -13,18 +12,17 @@ import {
 } from "@/lib/format";
 import type { DashboardSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
-import type { AgendaEvent, ArcWindow, Task, TodayInfo } from "@/lib/types";
+import type { AgendaEvent, ArcWindow, TodayInfo } from "@/lib/types";
 import { useEventDetail } from "./EventDetail";
 
 interface DayArcProps {
   agenda: AgendaEvent[];
-  tasks: Task[];
   arc: ArcWindow;
   today: TodayInfo;
   settings: DashboardSettings;
 }
 
-export function DayArc({ agenda, tasks, arc, today, settings }: DayArcProps) {
+export function DayArc({ agenda, arc, today, settings }: DayArcProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const [expanded, setExpanded] = useExpanded();
@@ -41,7 +39,6 @@ export function DayArc({ agenda, tasks, arc, today, settings }: DayArcProps) {
   const arcWidth = hourPx ? Math.round(hours * hourPx) : undefined;
   const hourLines = buildHourLines(arc);
   const arcEvents = buildArcEvents(agenda, arc, use24, hourPx);
-  const arcTasks = buildArcTasks(tasks, arc);
   const scaleLabels = buildScaleLabels(arc, use24, expanded ? 1 : 2);
   const nowPct = arcPct(today.nowHour, arc);
   const nowLeft = nowPct.toFixed(2);
@@ -87,10 +84,6 @@ export function DayArc({ agenda, tasks, arc, today, settings }: DayArcProps) {
             <span>
               <i className="dayarc__swatch" style={{ background: "var(--cal-personal)" }} />
               personal
-            </span>
-            <span>
-              <i className="dayarc__swatch" style={{ background: "var(--ink-faint)" }} />
-              task due
             </span>
           </div>
           <button
@@ -170,11 +163,10 @@ export function DayArc({ agenda, tasks, arc, today, settings }: DayArcProps) {
             <div className="arc__now-label">NOW {nowLabel}</div>
           </div>
 
-          <div className="arc__ticks">
-            {arcTasks.map((t, i) => (
-              <div key={`t${i}`} className="arc__task-tick" style={{ left: `${t.left}%` }} />
-            ))}
-          </div>
+          {/* The reference drew task-due ticks here; tasks aren't calendar
+              events, so they're left to the task card. The row stays as the
+              spacer the NOW pin reaches into. */}
+          <div className="arc__ticks" />
 
           <div className="arc__scale">
             {scaleLabels.map((s, i) => (

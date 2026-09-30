@@ -949,28 +949,28 @@ a:hover { color: var(--ink); text-decoration: underline; }
    reference's solid blocks show instead. */
 /* Glass swaps the reference's blue / amber / slate calendar kinds for a
    softer, more colorful pastel triad (Okabe–Ito-derived, so still
-   colorblind-safe — blue / orange / reddish-purple, never red-vs-green):
-   periwinkle meetings, apricot focus blocks, orchid personal time. Set on
+   colorblind-safe — blue / orange / bluish-green, never red-vs-green):
+   periwinkle meetings, apricot focus blocks, mint personal time. Set on
    .morning (and the event popover) so the legend, agenda rails and blocks
    all follow; Solid keeps the reference colors. */
 .morning--glass,
 :root:has(.morning--glass) .eventedit {
   --cal-meeting:  #6C8EF0;
   --cal-focus:    #EE9A4E;
-  --cal-personal: #D576AE;
+  --cal-personal: #3FAE95;
 }
 .morning--glass[data-theme="dark"],
 :root:has(.morning--glass[data-theme="dark"]) .eventedit {
   --cal-meeting:  #93AEFF;
   --cal-focus:    #F7B97E;
-  --cal-personal: #EBA0CB;
+  --cal-personal: #7FD6C1;
 }
 @media (prefers-color-scheme: dark) {
   .morning--glass:not([data-theme]),
   :root:has(.morning--glass:not([data-theme])) .eventedit {
     --cal-meeting:  #93AEFF;
     --cal-focus:    #F7B97E;
-    --cal-personal: #EBA0CB;
+    --cal-personal: #7FD6C1;
   }
 }
 /* pastels are too light for small text on their own — the popover's kind

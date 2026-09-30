@@ -46,7 +46,6 @@ export function Dashboard({ data, settings }: DashboardProps) {
 
           <DayArc
             agenda={data.agenda}
-            tasks={data.tasks}
             arc={data.arc}
             today={data.today}
             settings={settings}
