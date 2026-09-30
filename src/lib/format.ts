@@ -380,15 +380,6 @@ export function buildScaleLabels(
   return labels;
 }
 
-export function buildArcTasks(
-  tasks: Task[],
-  arc: ArcWindow,
-): { left: string }[] {
-  return tasks
-    .filter((t) => t.dueHour != null)
-    .map((t) => ({ left: arcPct(t.dueHour as number, arc).toFixed(2) }));
-}
-
 export function arcRangeLabel(arc: ArcWindow, use24: boolean): string {
   return `${formatHour(arc.from, use24)} – ${formatHour(arc.to, use24)}`;
 }

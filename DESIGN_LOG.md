@@ -79,7 +79,35 @@ taken from the Okabe–Ito colorblind-safe palette (blue / orange /
 reddish-purple) so the reference's "never red-vs-green" rule still holds.
 Block text is a deep shade mixed toward black (58%) so even the apricot
 holds 4.68:1 on its tint; the popover's kind label mixes toward --ink.
-Solid mode keeps the reference colors.
+Solid mode keeps the reference colors. *Last tweak:* the orchid pink didn't land —
+personal is now mint/teal (#3FAE95; #7FD6C1 in dark), Okabe–Ito's
+bluish-green, still colorblind-distinct from periwinkle and apricot
+(text 5.16:1 on its tint).
+
+---
+
+## 2026-09-30 — Task-due ticks removed from the day arc
+
+**Problem / trigger** — The arc's legend had a fourth entry, "task due",
+with small dots on the timeline for Todoist tasks with a due time. Tasks
+aren't calendar events — the user doesn't put them on their calendar — so
+a calendar color and marker for them read as noise.
+
+**Decision** — Removed the legend entry and the dots (and the now-unused
+`buildArcTasks` / `tasks` prop). Tasks live only in the Today's tasks card.
+The ticks row stays as an empty spacer, since the NOW pin reaches into it.
+
+**Reasoning** — The arc should mirror the calendar the user actually
+keeps; a second kind of mark with its own color diluted the color language
+the recent glass/pastel work was sharpening.
+
+**Alternatives considered** — Keeping the dots but dropping the legend
+(unexplained marks); showing due-tasks as outlined pseudo-events (more
+calendar-like, but still implies they're scheduled when they aren't).
+
+**Tradeoffs / open questions** — This diverges from the reference design,
+which had the ticks. If time-specific tasks start mattering on the
+timeline, they could come back as an opt-in setting.
 
 ---
 

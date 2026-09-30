@@ -30,10 +30,12 @@
   `:root:has(.morning--glass)` (so body + portalled popovers follow); it
   never edits the reference rules (the day arc's band + event blocks get
   their own glass rules there too, via a per-kind `--ev-c`; glass also
-  overrides `--cal-*` with a pastel Okabe–Ito triad, Solid keeps the
-  reference's), and falls back
+  overrides `--cal-*` with a pastel Okabe–Ito triad — periwinkle / apricot
+  / mint — Solid keeps the reference's), and falls back
   to solid under
   `prefers-reduced-transparency` / `prefers-contrast: more`.
+- **Removed from the reference:** the day arc's task-due ticks + legend
+  entry (tasks aren't calendar events; they stay in the task card).
 - All times are **decimal hours in the viewer's local day** (9.5 = 9:30am).
 - Location + timezone are resolved per-request by `src/lib/location.ts`
   (query → device cookie → env → default) and threaded into weather, tasks,
