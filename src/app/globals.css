@@ -726,12 +726,17 @@ a:hover { color: var(--ink); text-decoration: underline; }
   box-shadow: 0 0 0 1.5px var(--surface);
 }
 .arc__event--stacked .arc__event-label {
-  display: block; flex: 0 0 auto; max-width: 100%; min-width: 0;
+  display: block; flex: 0 1 auto; max-width: 100%; min-width: 0;
   line-height: 15px; white-space: nowrap; text-overflow: ellipsis;
 }
 .arc__event--stacked .arc__event-time {
-  flex: 0 1 auto; min-width: 0; margin-top: 0; line-height: 15px;
-  white-space: nowrap; overflow: hidden;
+  flex: 0 0 auto; margin-top: 0; line-height: 15px; white-space: nowrap;
+}
+/* the time goes whole or not at all — a strip too short for name + time
+   keeps the name (a clipped "1:0" reads as noise) */
+.arc__event--stacked { container-type: inline-size; }
+@container (max-width: 139.99px) {
+  .arc__event.arc__event--stacked .arc__event-time { display: none; }
 }
 .arc__event--stacked.arc__event--tight { padding-inline: 3px; }
 .arc__event--stacked .arc__sidelabel { padding-top: max(0px, (var(--step) - 15px) / 2); }
@@ -746,3 +751,46 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .arc__event--stacked .arc__event-label { font-size: 11px; line-height: 14px; }
 }
 
+
+/* ---------- expanded day arc ----------
+   Not in the reference. "Expand" in the arc header zooms the timeline so
+   the day's SHORTEST event gets ~96px (`expandedHourPx()` in format.ts,
+   clamped 90–200px/hour) and lets it scroll sideways, landing on "now".
+   The band also grows taller so overlap cascades get roomier strips.
+   Everything else — colors, radii, label rules — is the normal arc's. */
+.dayarc__tools { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.dayarc__expand {
+  font: inherit; font-size: 11.5px; font-weight: 600; letter-spacing: 0.02em;
+  color: var(--ink-soft); background: var(--surface-2); border: 1px solid var(--line);
+  padding: 4px 11px; border-radius: 999px; cursor: pointer;
+}
+.dayarc__expand:hover { color: var(--ink); }
+.dayarc__expand[aria-pressed="true"] { color: var(--accent); background: var(--accent-tint); border-color: transparent; }
+.dayarc__expand:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+.dayarc--expanded .arc__scroller {
+  overflow-x: auto; overscroll-behavior-x: contain; scrollbar-width: thin;
+  /* bleed to the card's edges, and leave room for the NOW pill / focus ring
+     that a scroll container would otherwise clip */
+  margin: -12px -22px 0; padding: 12px 22px 6px;
+}
+/* a grid item defaults to min-width:auto and would grow to the arc's width
+   instead of letting the scroller scroll */
+.dayarc--expanded { min-width: 0; }
+.dayarc--expanded .arc { min-width: 100%; }
+.dayarc--expanded .arc__band { height: 104px; }
+.dayarc--expanded .arc__event { height: 86px; padding: 10px 12px; }
+.dayarc--expanded .arc__event--stacked { --ev-h: 86px; --step: min(30px, calc(var(--ev-h) / var(--lanes))); padding-top: max(0px, (var(--step) - 15px) / 2); padding-bottom: 0; }
+.dayarc--expanded .arc__event--tight:not(.arc__event--stacked) { padding: 10px 3px; }
+.dayarc--expanded .arc__event--stacked.arc__event--tight { padding-inline: 3px; }
+.dayarc--expanded .arc__event-label { -webkit-line-clamp: 3; }
+.dayarc--expanded .arc__now { height: 120px; }
+@media (max-width: 760px) {
+  /* the reference hides every arc time on phones; zoomed, there's room */
+  .dayarc--expanded .arc__event:not(.arc__event--compact):not(.arc__event--tight) .arc__event-time { display: block; }
+  .dayarc--expanded .arc__event--stacked:not(.arc__event--tight) .arc__event-time { display: inline; }
+}
+/* …but a strip's time still goes whole or not at all (outranks the above) */
+@container (max-width: 139.99px) {
+  .dayarc--expanded .arc__event.arc__event--stacked:not(.arc__event--tight) .arc__event-time { display: none; }
+}

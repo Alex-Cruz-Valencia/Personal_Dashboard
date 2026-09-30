@@ -190,23 +190,44 @@ export function layoutOverlaps(
   return out;
 }
 
+/**
+ * Expanded day arc: pixels per hour, sized so the SHORTEST event gets about
+ * EXPANDED_MIN_EVENT_PX — the zoom follows the day's content rather than a
+ * fixed factor. Clamped so a day of long blocks still zooms a little and a
+ * 5-minute blip doesn't blow the arc up to a mile wide.
+ */
+export const EXPANDED_MIN_EVENT_PX = 96;
+export function expandedHourPx(agenda: Pick<AgendaEvent, "start" | "end">[]): number {
+  const shortest = Math.min(
+    ...agenda.map((e) => e.end - e.start).filter((d) => d > 0),
+  );
+  const px = Number.isFinite(shortest) ? EXPANDED_MIN_EVENT_PX / shortest : 0;
+  return Math.round(Math.max(90, Math.min(200, px)));
+}
+
 export function buildArcEvents(
   agenda: AgendaEvent[],
   arc: ArcWindow,
   use24: boolean,
+  /** Expanded view: the arc's real width is known, so size classes by px. */
+  hourPx?: number,
 ): ArcEventVM[] {
   const lanes = layoutOverlaps(agenda);
   return agenda.map((e, i) => {
     // The label always stays INSIDE the block: full at ≥10%, compact (small,
     // wrapped, no time) down to 6%, and tight below that — where CSS sizes
     // the text by the block's real pixel width and only drops it (for the
-    // side label) when there's genuinely no room.
+    // side label) when there's genuinely no room. The % cut-offs are the
+    // reference's; with a known hourPx they become their px equivalents at
+    // the reference's ~1100px band (66 / 110px).
     const w = Math.max(0.7, arcPct(e.end, arc) - arcPct(e.start, arc));
-    const tight = w < 6;
+    const px = hourPx ? (e.end - e.start) * hourPx : undefined;
+    const tight = px !== undefined ? px < 66 : w < 6;
     // Overlapping events share the band as a cascade of single-line strips;
     // that replaces the compact treatment.
     const stacked = lanes[i].lanes > 1;
-    const compact = w < 10 && w >= 6 && !stacked;
+    const compact =
+      !stacked && !tight && (px !== undefined ? px < 110 : w < 10);
     return {
       label: e.name,
       timeLabel: formatHour(e.start, use24),
@@ -264,9 +285,11 @@ export function buildHourLines(arc: ArcWindow): { left: string }[] {
 export function buildScaleLabels(
   arc: ArcWindow,
   use24: boolean,
+  /** Hours between labels — 1 in the expanded view, where there's room. */
+  step = 2,
 ): { left: string; label: string }[] {
   const labels: { left: string; label: string }[] = [];
-  for (let h = arc.from; h <= arc.to; h += 2) {
+  for (let h = arc.from; h <= arc.to; h += step) {
     labels.push({
       left: arcPct(h, arc).toFixed(2),
       label: formatHour(h, use24).replace(":00", ""),
