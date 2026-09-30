@@ -754,9 +754,10 @@ a:hover { color: var(--ink); text-decoration: underline; }
 
 /* ---------- expanded day arc ----------
    Not in the reference. "Expand" in the arc header zooms the timeline so
-   the day's SHORTEST event gets ~96px (`expandedHourPx()` in format.ts,
-   clamped 90–200px/hour) and lets it scroll sideways, landing on "now".
-   The band also grows taller so overlap cascades get roomier strips.
+   the day's SHORTEST event gets ~150px (`expandedHourPx()` in format.ts,
+   capped at 280px/hour), scrolling sideways only when the card is too
+   narrow for that, landing on "now". On by default. The band grows taller
+   and lone bubbles add the time range and a location line.
    Everything else — colors, radii, label rules — is the normal arc's. */
 .dayarc__tools { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
 .dayarc__expand {
@@ -778,13 +779,20 @@ a:hover { color: var(--ink); text-decoration: underline; }
    instead of letting the scroller scroll */
 .dayarc--expanded { min-width: 0; }
 .dayarc--expanded .arc { min-width: 100%; }
-.dayarc--expanded .arc__band { height: 104px; }
-.dayarc--expanded .arc__event { height: 86px; padding: 10px 12px; }
-.dayarc--expanded .arc__event--stacked { --ev-h: 86px; --step: min(30px, calc(var(--ev-h) / var(--lanes))); padding-top: max(0px, (var(--step) - 15px) / 2); padding-bottom: 0; }
+.dayarc--expanded .arc__band { height: 118px; }
+/* not stacked: those derive their own height from --ev-h and their lane */
+.dayarc--expanded .arc__event:not(.arc__event--stacked) { height: 100px; padding: 11px 12px; }
+.dayarc--expanded .arc__event--stacked { --ev-h: 100px; --step: min(30px, calc(var(--ev-h) / var(--lanes))); padding-top: max(0px, (var(--step) - 15px) / 2); padding-bottom: 0; }
 .dayarc--expanded .arc__event--tight:not(.arc__event--stacked) { padding: 10px 3px; }
 .dayarc--expanded .arc__event--stacked.arc__event--tight { padding-inline: 3px; }
-.dayarc--expanded .arc__event-label { -webkit-line-clamp: 3; }
-.dayarc--expanded .arc__now { height: 120px; }
+.dayarc--expanded .arc__event:not(.arc__event--stacked):not(.arc__event--tight) .arc__event-label { font-size: 12.5px; -webkit-line-clamp: 2; }
+.dayarc--expanded .arc__now { height: 134px; }
+/* the bigger bubble's extra line: location / call / attendees */
+.arc__event-where { display: none; }
+.dayarc--expanded .arc__event:not(.arc__event--stacked):not(.arc__event--compact):not(.arc__event--tight) .arc__event-where {
+  display: block; font-size: 11px; font-weight: 500; opacity: 0.8; margin-top: 3px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
 @media (max-width: 760px) {
   /* the reference hides every arc time on phones; zoomed, there's room */
   .dayarc--expanded .arc__event:not(.arc__event--compact):not(.arc__event--tight) .arc__event-time { display: block; }
@@ -793,4 +801,15 @@ a:hover { color: var(--ink); text-decoration: underline; }
 /* …but a strip's time still goes whole or not at all (outranks the above) */
 @container (max-width: 139.99px) {
   .dayarc--expanded .arc__event.arc__event--stacked:not(.arc__event--tight) .arc__event-time { display: none; }
+}
+/* scroll affordances: fade whichever edge has more day beyond it, and a
+   grab cursor for mouse drag-to-pan (useDragPan in DayArc) */
+.dayarc--expanded .arc__scroller { cursor: grab; }
+.dayarc--expanded .arc__scroller--dragging { cursor: grabbing; user-select: none; }
+.dayarc--expanded .arc__scroller--dragging .arc__event { cursor: grabbing; }
+.arc__scroller--more-left  { -webkit-mask-image: linear-gradient(90deg, transparent, #000 44px); mask-image: linear-gradient(90deg, transparent, #000 44px); }
+.arc__scroller--more-right { -webkit-mask-image: linear-gradient(90deg, #000 calc(100% - 44px), transparent); mask-image: linear-gradient(90deg, #000 calc(100% - 44px), transparent); }
+.arc__scroller--more-left.arc__scroller--more-right {
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000 44px, #000 calc(100% - 44px), transparent);
+          mask-image: linear-gradient(90deg, transparent, #000 44px, #000 calc(100% - 44px), transparent);
 }

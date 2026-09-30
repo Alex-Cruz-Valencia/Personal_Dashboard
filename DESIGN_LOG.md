@@ -20,6 +20,42 @@ Newest first. Each entry:
 
 ---
 
+## 2026-09-30 — Scrolling day arc with bigger bubbles, on by default (trial)
+
+**Problem / trigger** — Even with "Expand" available, the default arc
+squeezed a packed day into the card's width, so most blocks carried only a
+clipped name. The ask: make the bubbles bigger when needed and let the
+calendar scroll sideways, so each one can say more.
+
+**Decision** — Expanded is now the default (an explicit "Fit day" is
+remembered). The zoom sizes the day so its shortest event gets ~150px,
+capped at 280px/hour, and **never less than the card's own width**: a
+day that already fits doesn't scroll at all. Lone bubbles grow to 100px
+tall and show the name (2 lines), the time *range*, and a location / call /
+attendee line. Scrolling gets a soft fade on whichever edge has more day
+beyond it, plus click-and-drag panning for mouse users (a mouse wheel can't
+scroll sideways; trackpads and touch already can). A drag never opens an
+event; a click still does.
+
+**Reasoning** — "Bigger if needed" maps directly to max(needed, fits): the
+scroll only appears when the day is dense enough to deserve it. The fades
+answer "is there more?" without extra UI chrome. Drag-to-pan beats hijacking
+the vertical wheel, which would trap page scrolling whenever the pointer
+crosses the arc.
+
+**Alternatives considered** — Converting vertical wheel to horizontal
+scroll (traps page scroll); ‹ › arrow buttons (more chrome, slower than a
+drag); making the whole card taller instead of wider (doesn't fix the
+horizontal squeeze that causes clipping).
+
+**Tradeoffs / open questions** — A dense day becomes several card-widths
+long (today: 4480px), so you see a window of the day, not all of it.
+"Fit day" is the escape hatch; whether expanded stays the default is the
+point of this trial. Overlap strips still show one line (name + range);
+the front strip has spare height that could carry the location too.
+
+---
+
 ## 2026-09-30 — Short events on the day arc: always name them inside, and an "Expand" zoom
 
 **Problem / trigger** — The day arc is a single horizontal strip scaled to
