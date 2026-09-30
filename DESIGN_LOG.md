@@ -20,6 +20,49 @@ Newest first. Each entry:
 
 ---
 
+## 2026-09-30 — Short events on the day arc: always name them inside, and an "Expand" zoom
+
+**Problem / trigger** — The day arc is a single horizontal strip scaled to
+fit the card, so a 15–30 minute event is a sliver. Three rounds of fixes
+chased where its name should go: first below the band (read as broken,
+collided with neighbours), then inside-or-beside with a hard cut-off (a
+block under 44px still showed nothing inside). The feedback each time was
+the same: the block itself should say *something*, and it'd be nice to see
+the day "expanded" when it's crowded.
+
+**Decision** — Two parts. (1) A block always shows at least the start of
+its name inside, chosen by its real pixel width (CSS container queries, not
+% of the day): wrapped text when there's room; under 44px, the name written
+*vertically* in a lone block (tall and thin) or a single faded line in an
+overlap strip (short and thin); blank only under ~14px. Overlap strips drop
+the time entirely rather than clip it to "1:0". (2) An "Expand" toggle in
+the arc header zooms the timeline so the day's *shortest* event gets ~96px
+(clamped 90–200px/hour), makes the band taller for roomier overlap strips,
+scrolls sideways, and opens on "now". Remembered per browser.
+
+**Reasoning** — Every earlier attempt moved the name *away* from the block,
+which breaks the one-glance mapping between a block and its label. Vertical
+text uses the dimension a thin block actually has. For the zoom, sizing to
+the shortest event makes it adaptive: a sparse day barely zooms, a packed
+one zooms more — no zoom slider to fiddle with. Opening on "now" matches
+why you look at a morning dashboard.
+
+**Alternatives considered** — Initials ("ETM") in tiny blocks: compact but
+unrecognizable next to the real names. A zoom slider or +/- buttons: more
+control than a glanceable dashboard needs. Auto-trimming the day to
+first-to-last event ("fit to events"): helps, but changes the scale under
+you as the day's events change; could still be a later option. A vertical
+Google-style day view: a different layout entirely, not the design's arc.
+
+**Tradeoffs / open questions** — Vertical text is slower to read than
+horizontal; it's a fallback, and the tooltip / popover / agenda carry the
+full name. Expanded mode means the whole day is no longer visible at once —
+hence a one-click toggle back ("Fit day") rather than making it the
+default. The expand preference is per browser (localStorage), not in the ⚙
+settings cookie, since it's a viewing convenience rather than a setting.
+
+---
+
 ## 2026-09-28 — A PR that GitHub called "merged" but wasn't, and why
 
 **Problem / trigger** — Asked to change the day-arc window to 8am–midnight,
