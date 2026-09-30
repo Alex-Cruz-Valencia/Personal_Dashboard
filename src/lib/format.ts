@@ -137,17 +137,18 @@ export interface ArcEventVM {
   /** Full name + time range, for the hover tooltip. */
   title: string;
   /**
-   * Where a tight block's label goes, since it can't fit inside:
-   * "side" = in the band just right of the block (free time there);
-   * "below" = under the band, truncated before the next outside label.
-   * Percentages of the band width.
+   * Fallback label for a tight block, used only when the block turns out to
+   * be too few pixels wide to show its own text (a CSS container query on
+   * the block decides — see globals.css). Sits in free band beside the
+   * block; `maxWidth` is a % of the BLOCK's width, since it renders inside it.
+   * Absent when both sides are crowded (the hover tooltip still names it).
    */
-  outside?: { mode: "side" | "below"; left: string; maxWidth: string };
+  side?: { dir: "right" | "left"; maxWidth: string };
 }
 
-/** Width of free band (%) a side label needs; below that it goes under. */
-const SIDE_LABEL_MIN = 9;
-/** Breathing room (%) between a block / label and the next thing. */
+/** Free band (% of the arc) a side label needs to be worth showing. */
+const SIDE_LABEL_MIN = 7;
+/** Breathing room (%) between a block and its side label / the next thing. */
 const LABEL_GAP = 0.6;
 
 /**
@@ -195,15 +196,15 @@ export function buildArcEvents(
   use24: boolean,
 ): ArcEventVM[] {
   const lanes = layoutOverlaps(agenda);
-  const vms = agenda.map((e, i) => {
-    // The label stays INSIDE the block wherever it can: full at ≥10%,
-    // compact (small, wrapped, no time) down to 6%, and only below that
-    // does it move outside the band.
+  return agenda.map((e, i) => {
+    // The label always stays INSIDE the block: full at ≥10%, compact (small,
+    // wrapped, no time) down to 6%, and tight below that — where CSS sizes
+    // the text by the block's real pixel width and only drops it (for the
+    // side label) when there's genuinely no room.
     const w = Math.max(0.7, arcPct(e.end, arc) - arcPct(e.start, arc));
     const tight = w < 6;
     // Overlapping events share the band as a cascade of single-line strips;
-    // that replaces the compact treatment (tight blocks still cascade, but
-    // keep their outside label — see `.arc__event--stacked` in globals.css).
+    // that replaces the compact treatment.
     const stacked = lanes[i].lanes > 1;
     const compact = w < 10 && w >= 6 && !stacked;
     return {
@@ -218,49 +219,38 @@ export function buildArcEvents(
         (stacked ? " arc__event--stacked" : ""),
       ...lanes[i],
       title: `${e.name} · ${formatHour(e.start, use24)} – ${formatHour(e.end, use24)}`,
-      outside: tight ? placeOutsideLabel(agenda, i, arc) : undefined,
+      side: tight ? placeSideLabel(agenda, i, arc, w) : undefined,
     };
   });
-
-  // Below-band labels share one line: each is capped at the next one's start
-  // (and ellipsized by CSS) so neighbours never run into each other.
-  const below = vms
-    .filter((vm) => vm.outside?.mode === "below")
-    .sort((a, b) => Number(a.outside!.left) - Number(b.outside!.left));
-  below.forEach((vm, k) => {
-    const left = Number(vm.outside!.left);
-    const next = below[k + 1] ? Number(below[k + 1].outside!.left) : 100;
-    vm.outside!.maxWidth = Math.max(0, next - left - LABEL_GAP).toFixed(2);
-  });
-  return vms;
 }
 
 /**
- * Side label if the band is free to the right of event `i` for at least
- * SIDE_LABEL_MIN; otherwise below the band.
+ * Free band to the right of event `i` (preferred), else to its left, as a
+ * side label for when the block is too narrow for its own text.
  */
-function placeOutsideLabel(
+function placeSideLabel(
   agenda: AgendaEvent[],
   i: number,
   arc: ArcWindow,
-): NonNullable<ArcEventVM["outside"]> {
+  widthPct: number,
+): ArcEventVM["side"] {
   const e = agenda[i];
-  // Anything still running after this block ends blocks the band from
-  // wherever it (or this block's end) starts.
-  let blockedAt = arc.to;
+  // Right: anything still running after this block ends blocks the band from
+  // wherever it (or this block's end) starts. Left: mirror image.
+  let rightStop = arc.to;
+  let leftStop = arc.from;
   agenda.forEach((o, j) => {
-    if (j !== i && o.end > e.end) blockedAt = Math.min(blockedAt, Math.max(o.start, e.end));
+    if (j === i) return;
+    if (o.end > e.end) rightStop = Math.min(rightStop, Math.max(o.start, e.end));
+    if (o.start < e.start) leftStop = Math.max(leftStop, Math.min(o.end, e.start));
   });
-  const end = arcPct(e.end, arc);
-  const free = arcPct(blockedAt, arc) - end;
-  if (free >= SIDE_LABEL_MIN) {
-    return {
-      mode: "side",
-      left: (end + LABEL_GAP).toFixed(2),
-      maxWidth: (free - 2 * LABEL_GAP).toFixed(2),
-    };
-  }
-  return { mode: "below", left: arcPct(e.start, arc).toFixed(2), maxWidth: "0" };
+  const right = arcPct(rightStop, arc) - arcPct(e.end, arc);
+  const left = arcPct(e.start, arc) - arcPct(leftStop, arc);
+  const asBlockPct = (free: number) =>
+    (((free - 2 * LABEL_GAP) / widthPct) * 100).toFixed(1);
+  if (right >= SIDE_LABEL_MIN) return { dir: "right", maxWidth: asBlockPct(right) };
+  if (left >= SIDE_LABEL_MIN) return { dir: "left", maxWidth: asBlockPct(left) };
+  return undefined;
 }
 
 export function buildHourLines(arc: ArcWindow): { left: string }[] {
