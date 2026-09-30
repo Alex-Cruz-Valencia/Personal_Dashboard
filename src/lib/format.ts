@@ -201,13 +201,13 @@ export function layoutOverlaps(
  * doesn't scroll at all. Capped so a 5-minute blip can't make the arc a
  * mile wide.
  */
-export const EXPANDED_MIN_EVENT_PX = 150;
+export const EXPANDED_MIN_EVENT_PX = 120;
 export function expandedHourPx(agenda: Pick<AgendaEvent, "start" | "end">[]): number {
   const shortest = Math.min(
     ...agenda.map((e) => e.end - e.start).filter((d) => d > 0),
   );
   const px = Number.isFinite(shortest) ? EXPANDED_MIN_EVENT_PX / shortest : 0;
-  return Math.round(Math.min(280, px));
+  return Math.round(Math.min(200, px));
 }
 
 export function buildArcEvents(
