@@ -51,7 +51,10 @@ horizontal squeeze that causes clipping).
 **Tradeoffs / open questions** — A dense day becomes several card-widths
 long (today: 4480px), so you see a window of the day, not all of it.
 "Fit day" is the escape hatch; whether expanded stays the default is the
-point of this trial. Overlap strips still show one line (name + range);
+point of this trial. *Update, same day:* after using it, 4480px felt like
+too much scrolling — dialed back to ~120px per shortest event and a
+200px/hour cap (today: 3200px, about 30% shorter); bubbles still carry
+name, range and location. Overlap strips still show one line (name + range);
 the front strip has spare height that could carry the location too.
 
 ---

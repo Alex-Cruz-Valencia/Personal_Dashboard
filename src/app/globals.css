@@ -754,8 +754,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
 
 /* ---------- expanded day arc ----------
    Not in the reference. "Expand" in the arc header zooms the timeline so
-   the day's SHORTEST event gets ~150px (`expandedHourPx()` in format.ts,
-   capped at 280px/hour), scrolling sideways only when the card is too
+   the day's SHORTEST event gets ~120px (`expandedHourPx()` in format.ts,
+   capped at 200px/hour), scrolling sideways only when the card is too
    narrow for that, landing on "now". On by default. The band grows taller
    and lone bubbles add the time range and a location line.
    Everything else — colors, radii, label rules — is the normal arc's. */
