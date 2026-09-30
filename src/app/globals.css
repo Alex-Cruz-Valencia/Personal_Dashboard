@@ -865,6 +865,10 @@ a:hover { color: var(--ink); text-decoration: underline; }
   --glass-blur: blur(28px) saturate(170%);
   --glass-chip: rgba(255, 255, 255, 0.55);
   --glass-line: rgba(21, 24, 26, 0.08);
+  /* calendar: the separator ring between overlapping blocks, and the
+     band's inner light edge */
+  --glass-ring: rgba(255, 255, 255, 0.85);
+  --glass-band-hi: inset 0 1px 0 rgba(255, 255, 255, 0.75), inset 0 0 0 1px rgba(255, 255, 255, 0.45);
 }
 :root:has(.morning--glass):has(.morning[data-theme="dark"]) {
   --glass-backdrop:
@@ -880,6 +884,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
   --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 44px -18px rgba(0, 0, 0, 0.75);
   --glass-chip: rgba(255, 255, 255, 0.06);
   --glass-line: rgba(255, 255, 255, 0.08);
+  --glass-ring: rgba(11, 15, 14, 0.75);
+  --glass-band-hi: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
 }
 @media (prefers-color-scheme: dark) {
   :root:has(.morning--glass):not(:has(.morning[data-theme="light"])) {
@@ -896,6 +902,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
     --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 44px -18px rgba(0, 0, 0, 0.75);
     --glass-chip: rgba(255, 255, 255, 0.06);
     --glass-line: rgba(255, 255, 255, 0.08);
+    --glass-ring: rgba(11, 15, 14, 0.75);
+    --glass-band-hi: inset 0 1px 0 rgba(255, 255, 255, 0.06), inset 0 0 0 1px rgba(255, 255, 255, 0.05);
   }
 }
 
@@ -929,6 +937,80 @@ a:hover { color: var(--ink); text-decoration: underline; }
           backdrop-filter: blur(36px) saturate(180%);
 }
 
+
+/* ---------- glass on the calendar ----------
+   Same material, tuned for the day arc: the daylight band turns into a
+   translucent track (the ambient glow shows through) with an inner light
+   edge; event blocks become tinted glass — their kind color kept strong
+   (~88%) so white/ink text keeps its contrast, a lighter top for the sheen,
+   a thin inner light edge, a soft shadow in their own color, and a light
+   blur of what's behind. Structure and sizing are untouched. color-mix()
+   falls back to the solid kind color where unsupported. */
+.morning--glass .arc__event--meeting  { --ev-c: var(--cal-meeting); }
+.morning--glass .arc__event--focus    { --ev-c: var(--cal-focus); }
+.morning--glass .arc__event--personal { --ev-c: var(--cal-personal); }
+.morning--glass .arc__event {
+  background:
+    linear-gradient(180deg,
+      color-mix(in srgb, color-mix(in srgb, var(--ev-c) 84%, white) 92%, transparent) 0%,
+      color-mix(in srgb, var(--ev-c) 88%, transparent) 55%,
+      color-mix(in srgb, var(--ev-c) 86%, transparent) 100%);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
+    0 8px 18px -10px color-mix(in srgb, var(--ev-c) 75%, transparent);
+  -webkit-backdrop-filter: blur(10px) saturate(150%);
+          backdrop-filter: blur(10px) saturate(150%);
+}
+/* overlap cascade: a frosted separator instead of the solid surface ring */
+.morning--glass .arc__event.arc__event--stacked {
+  box-shadow:
+    0 0 0 1.5px var(--glass-ring),
+    inset 0 1px 0 rgba(255, 255, 255, 0.35),
+    0 8px 18px -10px color-mix(in srgb, var(--ev-c) 75%, transparent);
+}
+.morning--glass .arc__event.arc__event--selected {
+  box-shadow: 0 0 0 2px var(--glass-ring), 0 0 0 4px var(--ink);
+}
+.morning--glass .arc__now-label { box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.35); }
+
+/* the daylight band — reference stops, a touch richer, at ~60–80% so
+   the backdrop reads through without washing the daylight colors out. Theme selectors mirror the reference's own band overrides (and
+   out-rank them), light first so the dark rules below win when they apply. */
+.morning--glass[data-theme="light"] .arc__band,
+.morning--glass:not([data-theme]) .arc__band {
+  background: linear-gradient(90deg,
+    rgba(226, 229, 224, 0.8) 0%, rgba(244, 228, 204, 0.82) 14%,
+    rgba(252, 240, 216, 0.82) 32%, rgba(226, 238, 250, 0.82) 52%,
+    rgba(249, 232, 206, 0.82) 76%, rgba(240, 218, 190, 0.82) 90%,
+    rgba(226, 225, 218, 0.8) 100%);
+  box-shadow: var(--glass-band-hi);
+}
+.morning--glass[data-theme="dark"] .arc__band {
+  background: linear-gradient(90deg,
+    rgba(27, 32, 40, 0.58) 0%, rgba(51, 41, 31, 0.58) 14%,
+    rgba(69, 57, 42, 0.58) 32%, rgba(46, 60, 70, 0.58) 52%,
+    rgba(69, 55, 42, 0.58) 76%, rgba(44, 38, 32, 0.58) 90%,
+    rgba(26, 31, 34, 0.58) 100%);
+  box-shadow: var(--glass-band-hi);
+}
+@media (prefers-color-scheme: dark) {
+  .morning--glass:not([data-theme]) .arc__band {
+    background: linear-gradient(90deg,
+      rgba(27, 32, 40, 0.58) 0%, rgba(51, 41, 31, 0.58) 14%,
+      rgba(69, 57, 42, 0.58) 32%, rgba(46, 60, 70, 0.58) 52%,
+      rgba(69, 55, 42, 0.58) 76%, rgba(44, 38, 32, 0.58) 90%,
+      rgba(26, 31, 34, 0.58) 100%);
+  }
+}
+
+/* agenda card: the "happening now" row becomes a translucent tint */
+.morning--glass .event--now,
+.morning--glass .event--now:hover {
+  background: color-mix(in srgb, var(--accent-tint) 70%, transparent);
+  box-shadow: inset 0 1px 0 rgba(255, 255, 255, 0.35);
+}
+
 /* Accessibility: honor the OS asking for less transparency / more contrast
    by going back to the reference's solid surfaces. */
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
@@ -943,6 +1025,11 @@ a:hover { color: var(--ink); text-decoration: underline; }
     background: var(--surface) !important;
     border-color: var(--line) !important;
     box-shadow: var(--shadow) !important;
+    -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
+  }
+  .morning--glass .arc__event {
+    background: var(--ev-c) !important;
     -webkit-backdrop-filter: none !important;
             backdrop-filter: none !important;
   }
