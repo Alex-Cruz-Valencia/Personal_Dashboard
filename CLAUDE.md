@@ -29,7 +29,9 @@
   a layer at the very end of `globals.css` driven by `--glass-*` tokens and
   `:root:has(.morning--glass)` (so body + portalled popovers follow); it
   never edits the reference rules (the day arc's band + event blocks get
-  their own glass rules there too, via a per-kind `--ev-c`), and falls back
+  their own glass rules there too, via a per-kind `--ev-c`; glass also
+  overrides `--cal-*` with a pastel Okabe–Ito triad, Solid keeps the
+  reference's), and falls back
   to solid under
   `prefers-reduced-transparency` / `prefers-contrast: more`.
 - All times are **decimal hours in the viewer's local day** (9.5 = 9:30am).

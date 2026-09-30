@@ -947,12 +947,45 @@ a:hover { color: var(--ink); text-decoration: underline; }
    heavy slabs on top of it. The daylight band becomes a translucent track.
    Structure and sizing are untouched. Where color-mix() is unsupported the
    reference's solid blocks show instead. */
+/* Glass swaps the reference's blue / amber / slate calendar kinds for a
+   softer, more colorful pastel triad (Okabe–Ito-derived, so still
+   colorblind-safe — blue / orange / reddish-purple, never red-vs-green):
+   periwinkle meetings, apricot focus blocks, orchid personal time. Set on
+   .morning (and the event popover) so the legend, agenda rails and blocks
+   all follow; Solid keeps the reference colors. */
+.morning--glass,
+:root:has(.morning--glass) .eventedit {
+  --cal-meeting:  #6C8EF0;
+  --cal-focus:    #EE9A4E;
+  --cal-personal: #D576AE;
+}
+.morning--glass[data-theme="dark"],
+:root:has(.morning--glass[data-theme="dark"]) .eventedit {
+  --cal-meeting:  #93AEFF;
+  --cal-focus:    #F7B97E;
+  --cal-personal: #EBA0CB;
+}
+@media (prefers-color-scheme: dark) {
+  .morning--glass:not([data-theme]),
+  :root:has(.morning--glass:not([data-theme])) .eventedit {
+    --cal-meeting:  #93AEFF;
+    --cal-focus:    #F7B97E;
+    --cal-personal: #EBA0CB;
+  }
+}
+/* pastels are too light for small text on their own — the popover's kind
+   label uses a deep (light, in dark mode) shade, mixed toward --ink */
+:root:has(.morning--glass) .eventedit__kind--meeting  { color: color-mix(in srgb, var(--cal-meeting) 60%, var(--ink)); }
+:root:has(.morning--glass) .eventedit__kind--focus    { color: color-mix(in srgb, var(--cal-focus) 60%, var(--ink)); }
+:root:has(.morning--glass) .eventedit__kind--personal { color: color-mix(in srgb, var(--cal-personal) 60%, var(--ink)); }
+
 .morning--glass .arc__event--meeting  { --ev-c: var(--cal-meeting); }
 .morning--glass .arc__event--focus    { --ev-c: var(--cal-focus); }
 .morning--glass .arc__event--personal { --ev-c: var(--cal-personal); }
 /* .morning twice: must out-rank the reference's (system-)dark text colors */
 .morning.morning--glass .arc__event {
-  --ev-ink: color-mix(in srgb, var(--ev-c) 72%, black);
+  /* deep enough to hold ≥4.5:1 on the tint even for the apricot */
+  --ev-ink: color-mix(in srgb, var(--ev-c) 58%, black);
   --ev-fill-top: color-mix(in srgb, var(--ev-c) 20%, rgba(255, 255, 255, 0.86));
   --ev-fill-bot: color-mix(in srgb, var(--ev-c) 30%, rgba(255, 255, 255, 0.72));
   --ev-hi: rgba(255, 255, 255, 0.8);

@@ -71,7 +71,15 @@ style events on glass: a light tint of the kind color (~20–30%) over
 frosted glass, a solid 3px color bar on the leading edge, and text in a
 deep shade of the same color (a light shade in dark mode). The color
 coding survives via the bar + tint + text hue; the blocks now read as
-part of the glass. Solid mode is unchanged (reference colors).
+part of the glass. Solid mode is unchanged (reference colors). *And then:*
+the blue/amber/slate kind colors themselves felt unappealing in glass.
+Glass now uses a pastel triad — periwinkle meetings (#6C8EF0), apricot
+focus (#EE9A4E), orchid personal (#D576AE), lighter variants in dark —
+taken from the Okabe–Ito colorblind-safe palette (blue / orange /
+reddish-purple) so the reference's "never red-vs-green" rule still holds.
+Block text is a deep shade mixed toward black (58%) so even the apricot
+holds 4.68:1 on its tint; the popover's kind label mixes toward --ink.
+Solid mode keeps the reference colors.
 
 ---
 
