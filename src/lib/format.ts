@@ -147,6 +147,15 @@ export interface ArcEventVM {
    * Absent when both sides are crowded (the hover tooltip still names it).
    */
   side?: { dir: "right" | "left"; maxWidth: string };
+  /**
+   * Overlap strips in the expanded view (where every size is known in px):
+   * extra classes + CSS vars letting the name wrap into whatever part of the
+   * block no later lane draws over. See `stackedText()`.
+   */
+  textCls?: string;
+  textVars?: Record<string, string | number>;
+  /** The time line only has room for the start time, not the range. */
+  shortTime?: boolean;
 }
 
 /** Free band (% of the arc) a side label needs to be worth showing. */
@@ -248,8 +257,74 @@ export function buildArcEvents(
       ...lanes[i],
       title: `${e.name} · ${formatHour(e.start, use24)} – ${formatHour(e.end, use24)}`,
       side: tight ? placeSideLabel(agenda, i, arc, w) : undefined,
+      ...(stacked && !tight && hourPx
+        ? stackedText(agenda, lanes, i, hourPx, use24)
+        : {}),
     };
   });
+}
+
+/* Geometry of the expanded arc's overlap cascade — mirrors globals.css
+   (`.dayarc--expanded .arc__event--stacked`: --ev-h 100px, --step
+   min(30px, ev-h / lanes), 9px side padding, 15px lines). */
+const X_EV_H = 100;
+const X_STEP_MAX = 30;
+const X_LINE = 15;
+const X_PAD_X = 9;
+
+/**
+ * How an overlap strip's text fits, expanded view only. A later lane is
+ * drawn on top of the lower part of this block from wherever it starts, so:
+ * - "wrap": the block has open room — it's the front lane, or the lane over
+ *   it starts well into it — so the name wraps (up to 3 lines) within that
+ *   open width, with the time below when there's height for it;
+ * - "strip2": only its own strip shows, but the strip is tall enough for two
+ *   small lines — used when name + time won't fit on one;
+ * - otherwise the single-line strip (name … time).
+ */
+function stackedText(
+  agenda: AgendaEvent[],
+  lanes: { lane: number; lanes: number }[],
+  i: number,
+  hourPx: number,
+  use24: boolean,
+): Pick<ArcEventVM, "textCls" | "textVars" | "shortTime"> {
+  const e = agenda[i];
+  const { lane, lanes: n } = lanes[i];
+  const dur = e.end - e.start;
+  const step = Math.min(X_STEP_MAX, X_EV_H / n);
+  const height = X_EV_H - lane * step;
+  const padTop = Math.max(0, (step - X_LINE) / 2);
+
+  // Where the first later lane drawn over this block starts, as a fraction
+  // of the block's width (1 = nothing covers it).
+  let open = 1;
+  agenda.forEach((o, j) => {
+    if (lanes[j].lane > lane && o.start < e.end && o.end > e.start) {
+      open = Math.min(open, Math.max(0, (o.start - e.start) / dur));
+    }
+  });
+  const openPx = open * dur * hourPx - 2 * X_PAD_X;
+  const avail = height - padTop - 6;
+
+  if (openPx >= 70 && avail >= 2 * X_LINE) {
+    const withTime = avail >= 3 * X_LINE + 2 && openPx >= 80;
+    const lines = Math.min(3, Math.floor((avail - (withTime ? X_LINE + 2 : 0)) / X_LINE));
+    const range = `${formatHour(e.start, use24)} – ${formatHour(e.end, use24)}`;
+    return {
+      shortTime: range.length * 6.4 > openPx,
+      textCls: " arc__event--wrap" + (withTime ? " arc__event--wraptime" : ""),
+      textVars: { "--open": `${(open * 100).toFixed(1)}%`, "--lines": Math.max(1, lines) },
+    };
+  }
+
+  // Rough one-line fit check for name + range at the strip's font sizes.
+  const range = `${formatHour(e.start, use24)} – ${formatHour(e.end, use24)}`;
+  const needPx = e.name.length * 6.6 + range.length * 6 + 6;
+  if (step >= 28 && needPx > dur * hourPx - 2 * X_PAD_X) {
+    return { textCls: " arc__event--strip2" };
+  }
+  return {};
 }
 
 /**

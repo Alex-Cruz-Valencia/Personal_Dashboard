@@ -121,13 +121,14 @@ export function DayArc({ agenda, tasks, arc, today, settings }: DayArcProps) {
               return (
                 <div
                   key={`e${i}`}
-                  className={`${e.cls}${selected ? " arc__event--selected" : ""}`}
+                  className={`${e.cls}${e.textCls ?? ""}${selected ? " arc__event--selected" : ""}`}
                   title={e.title}
                   style={
                     {
                       left: `${e.left}%`,
                       width: `${e.width}%`,
                       ...(e.lanes > 1 ? { "--lane": e.lane, "--lanes": e.lanes } : {}),
+                    ...e.textVars,
                     } as CSSProperties
                   }
                   role="button"
@@ -143,7 +144,7 @@ export function DayArc({ agenda, tasks, arc, today, settings }: DayArcProps) {
                 >
                   <div className="arc__event-label">{e.label}</div>
                   <div className="arc__event-time">
-                    {expanded ? e.rangeLabel : e.timeLabel}
+                    {expanded && !e.shortTime ? e.rangeLabel : e.timeLabel}
                   </div>
                   {expanded && e.where ? (
                     <div className="arc__event-where">{e.where}</div>
