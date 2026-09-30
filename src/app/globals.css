@@ -852,7 +852,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
    ========================================================================== */
 :root:has(.morning--glass) {
   --glass-backdrop:
-    radial-gradient(60% 55% at 8% 0%, rgba(160, 214, 190, 0.55) 0%, transparent 70%),
+    radial-gradient(60% 55% at 8% 0%, rgba(148, 212, 214, 0.55) 0%, transparent 70%),
     radial-gradient(50% 50% at 92% 6%, rgba(172, 204, 238, 0.55) 0%, transparent 70%),
     radial-gradient(55% 55% at 78% 100%, rgba(246, 214, 176, 0.5) 0%, transparent 70%),
     radial-gradient(45% 45% at 0% 95%, rgba(200, 214, 240, 0.4) 0%, transparent 70%),
@@ -872,7 +872,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 }
 :root:has(.morning--glass):has(.morning[data-theme="dark"]) {
   --glass-backdrop:
-    radial-gradient(60% 55% at 8% 0%, rgba(38, 104, 80, 0.45) 0%, transparent 70%),
+    radial-gradient(60% 55% at 8% 0%, rgba(24, 100, 106, 0.45) 0%, transparent 70%),
     radial-gradient(50% 50% at 92% 6%, rgba(40, 74, 120, 0.45) 0%, transparent 70%),
     radial-gradient(55% 55% at 78% 100%, rgba(110, 72, 32, 0.35) 0%, transparent 70%),
     radial-gradient(45% 45% at 0% 95%, rgba(52, 58, 110, 0.3) 0%, transparent 70%),
@@ -890,7 +890,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 @media (prefers-color-scheme: dark) {
   :root:has(.morning--glass):not(:has(.morning[data-theme="light"])) {
     --glass-backdrop:
-      radial-gradient(60% 55% at 8% 0%, rgba(38, 104, 80, 0.45) 0%, transparent 70%),
+      radial-gradient(60% 55% at 8% 0%, rgba(24, 100, 106, 0.45) 0%, transparent 70%),
       radial-gradient(50% 50% at 92% 6%, rgba(40, 74, 120, 0.45) 0%, transparent 70%),
       radial-gradient(55% 55% at 78% 100%, rgba(110, 72, 32, 0.35) 0%, transparent 70%),
       radial-gradient(45% 45% at 0% 95%, rgba(52, 58, 110, 0.3) 0%, transparent 70%),
@@ -920,6 +920,35 @@ a:hover { color: var(--ink); text-decoration: underline; }
   --surface-2: var(--glass-chip);
   --line: var(--glass-line);
 }
+
+/* Glass swaps the reference's green accent for teal. Deep enough in light
+   (#0B6F75: 5.9:1 on white, ≥4.5:1 on its own tint) for the small accent
+   text it carries — the
+   date, links, active toggles; brighter in dark. --accent-deep replaces the
+   reference's hard-coded deep-green "shape of the day" text. Solid keeps
+   the reference green. */
+.morning--glass,
+:root:has(.morning--glass) :is(.settings, .taskedit, .eventedit, .replymove) {
+  --accent:      #0B6F75;
+  --accent-tint: #E2F2F3;
+  --accent-deep: #0E3B3E;
+}
+.morning--glass[data-theme="dark"],
+:root:has(.morning--glass[data-theme="dark"]) :is(.settings, .taskedit, .eventedit, .replymove) {
+  --accent:      #4DC3C4;
+  --accent-tint: #163134;
+  --accent-deep: #CBEBEC;
+}
+@media (prefers-color-scheme: dark) {
+  .morning--glass:not([data-theme]),
+  :root:has(.morning--glass:not([data-theme])) :is(.settings, .taskedit, .eventedit, .replymove) {
+    --accent:      #4DC3C4;
+    --accent-tint: #163134;
+    --accent-deep: #CBEBEC;
+  }
+}
+/* .morning twice: out-ranks the reference's (system-)dark overrides */
+.morning.morning--glass .hello__note-text { color: var(--accent-deep); }
 
 .morning--glass .card {
   background: var(--glass-fill);
