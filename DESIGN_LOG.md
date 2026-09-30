@@ -64,7 +64,14 @@ inner light edge, a shadow in their own color, a light blur), overlap
 strips got a frosted separator ring instead of the solid one, and the
 daylight band became a translucent track. The band first went too pale on
 the light glass card at ~58% opacity; raised to ~80% with slightly richer
-stops so the time-of-day colors still read.
+stops so the time-of-day colors still read. *Then:* the tinted-glass blocks still
+"looked a little weird" — saturated slabs with white text, just glossier,
+clashing with the airy cards. Switched to how Apple Calendar / Fluent
+style events on glass: a light tint of the kind color (~20–30%) over
+frosted glass, a solid 3px color bar on the leading edge, and text in a
+deep shade of the same color (a light shade in dark mode). The color
+coding survives via the bar + tint + text hue; the blocks now read as
+part of the glass. Solid mode is unchanged (reference colors).
 
 ---
 

@@ -939,38 +939,60 @@ a:hover { color: var(--ink); text-decoration: underline; }
 
 
 /* ---------- glass on the calendar ----------
-   Same material, tuned for the day arc: the daylight band turns into a
-   translucent track (the ambient glow shows through) with an inner light
-   edge; event blocks become tinted glass — their kind color kept strong
-   (~88%) so white/ink text keeps its contrast, a lighter top for the sheen,
-   a thin inner light edge, a soft shadow in their own color, and a light
-   blur of what's behind. Structure and sizing are untouched. color-mix()
-   falls back to the solid kind color where unsupported. */
+   The day arc in the same material, styled the way modern glass calendars
+   (Apple Calendar, Fluent) do it: each event is a LIGHT tint of its kind
+   color over frosted glass, a solid color bar on its leading edge, and text
+   in a deep shade of that same color (a light shade in dark mode) — the
+   color coding stays, but the blocks read as part of the glass instead of
+   heavy slabs on top of it. The daylight band becomes a translucent track.
+   Structure and sizing are untouched. Where color-mix() is unsupported the
+   reference's solid blocks show instead. */
 .morning--glass .arc__event--meeting  { --ev-c: var(--cal-meeting); }
 .morning--glass .arc__event--focus    { --ev-c: var(--cal-focus); }
 .morning--glass .arc__event--personal { --ev-c: var(--cal-personal); }
-.morning--glass .arc__event {
-  background:
-    linear-gradient(180deg,
-      color-mix(in srgb, color-mix(in srgb, var(--ev-c) 84%, white) 92%, transparent) 0%,
-      color-mix(in srgb, var(--ev-c) 88%, transparent) 55%,
-      color-mix(in srgb, var(--ev-c) 86%, transparent) 100%);
+/* .morning twice: must out-rank the reference's (system-)dark text colors */
+.morning.morning--glass .arc__event {
+  --ev-ink: color-mix(in srgb, var(--ev-c) 72%, black);
+  --ev-fill-top: color-mix(in srgb, var(--ev-c) 20%, rgba(255, 255, 255, 0.86));
+  --ev-fill-bot: color-mix(in srgb, var(--ev-c) 30%, rgba(255, 255, 255, 0.72));
+  --ev-hi: rgba(255, 255, 255, 0.8);
+  --ev-edge: color-mix(in srgb, var(--ev-c) 34%, transparent);
+  color: var(--ev-ink);
+  background: linear-gradient(180deg, var(--ev-fill-top), var(--ev-fill-bot));
   box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.14),
-    0 8px 18px -10px color-mix(in srgb, var(--ev-c) 75%, transparent);
-  -webkit-backdrop-filter: blur(10px) saturate(150%);
-          backdrop-filter: blur(10px) saturate(150%);
+    inset 3px 0 0 var(--ev-c),
+    inset 0 1px 0 var(--ev-hi),
+    inset 0 0 0 1px var(--ev-edge),
+    0 6px 16px -10px color-mix(in srgb, var(--ev-c) 55%, transparent);
+  -webkit-backdrop-filter: blur(14px) saturate(160%);
+          backdrop-filter: blur(14px) saturate(160%);
 }
-/* overlap cascade: a frosted separator instead of the solid surface ring */
-.morning--glass .arc__event.arc__event--stacked {
+.morning.morning--glass[data-theme="dark"] .arc__event {
+  --ev-ink: color-mix(in srgb, var(--ev-c) 55%, white);
+  --ev-fill-top: color-mix(in srgb, var(--ev-c) 30%, rgba(30, 35, 34, 0.8));
+  --ev-fill-bot: color-mix(in srgb, var(--ev-c) 20%, rgba(20, 24, 23, 0.72));
+  --ev-hi: rgba(255, 255, 255, 0.08);
+  --ev-edge: color-mix(in srgb, var(--ev-c) 30%, transparent);
+}
+@media (prefers-color-scheme: dark) {
+  .morning.morning--glass:not([data-theme]) .arc__event {
+    --ev-ink: color-mix(in srgb, var(--ev-c) 55%, white);
+    --ev-fill-top: color-mix(in srgb, var(--ev-c) 30%, rgba(30, 35, 34, 0.8));
+    --ev-fill-bot: color-mix(in srgb, var(--ev-c) 20%, rgba(20, 24, 23, 0.72));
+    --ev-hi: rgba(255, 255, 255, 0.08);
+    --ev-edge: color-mix(in srgb, var(--ev-c) 30%, transparent);
+  }
+}
+/* overlap cascade: a frosted separator ring around each strip */
+.morning.morning--glass .arc__event.arc__event--stacked {
   box-shadow:
     0 0 0 1.5px var(--glass-ring),
-    inset 0 1px 0 rgba(255, 255, 255, 0.35),
-    0 8px 18px -10px color-mix(in srgb, var(--ev-c) 75%, transparent);
+    inset 3px 0 0 var(--ev-c),
+    inset 0 1px 0 var(--ev-hi),
+    inset 0 0 0 1px var(--ev-edge);
 }
-.morning--glass .arc__event.arc__event--selected {
-  box-shadow: 0 0 0 2px var(--glass-ring), 0 0 0 4px var(--ink);
+.morning.morning--glass .arc__event.arc__event--selected {
+  box-shadow: inset 3px 0 0 var(--ev-c), 0 0 0 2px var(--glass-ring), 0 0 0 4px var(--ink);
 }
 .morning--glass .arc__now-label { box-shadow: 0 6px 16px -6px rgba(0, 0, 0, 0.35); }
 
@@ -1028,8 +1050,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
     -webkit-backdrop-filter: none !important;
             backdrop-filter: none !important;
   }
+  /* the tinted blocks go opaque: same tint, mixed into the solid surface */
   .morning--glass .arc__event {
-    background: var(--ev-c) !important;
+    background: color-mix(in srgb, var(--ev-c) 18%, var(--surface)) !important;
     -webkit-backdrop-filter: none !important;
             backdrop-filter: none !important;
   }
