@@ -24,7 +24,12 @@
   from `placeSideLabel()`), and the arc's "Expand" zoom (`.dayarc--expanded`, **on by default**;
   px/hour = max(`expandedHourPx()`, what fits the card), bigger bubbles with
   range + location, edge fades + mouse drag-to-pan via `useDragPan`,
-  remembered in localStorage).
+  remembered in localStorage), and **glass surfaces** (`.morning--glass`,
+  the default; `settings.surface` "glass" | "solid", ⚙ → Surfaces). Glass is
+  a layer at the very end of `globals.css` driven by `--glass-*` tokens and
+  `:root:has(.morning--glass)` (so body + portalled popovers follow); it
+  never edits the reference rules, and falls back to solid under
+  `prefers-reduced-transparency` / `prefers-contrast: more`.
 - All times are **decimal hours in the viewer's local day** (9.5 = 9:30am).
 - Location + timezone are resolved per-request by `src/lib/location.ts`
   (query → device cookie → env → default) and threaded into weather, tasks,

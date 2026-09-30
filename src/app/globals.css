@@ -836,3 +836,114 @@ a:hover { color: var(--ink); text-decoration: underline; }
   display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2;
 }
 .dayarc--expanded .arc__event.arc__event--stacked.arc__event--strip2 .arc__event-time { display: none; }
+
+/* =============================================================================
+   GLASS SURFACES — not in the static reference; the default look.
+   `.morning--glass` (⚙ Surfaces → Glass) turns the reference's opaque cards
+   into frosted glass over a soft ambient backdrop, following NN/g's
+   glassmorphism guidance: translucent fill + heavy background blur ("more
+   blur is better"), a faint light edge and top highlight for thickness, a
+   calm backdrop we control (so text contrast stays predictable), used on
+   surfaces only — the day arc, chips and colors are untouched. Solid is one
+   click away, and the OS's reduce-transparency / increase-contrast settings
+   force it (see the end of this section). Everything is driven by the
+   --glass-* tokens below; :has() reads the choice (and the effective theme)
+   off .morning so <body> and the portalled popovers follow it too.
+   ========================================================================== */
+:root:has(.morning--glass) {
+  --glass-backdrop:
+    radial-gradient(60% 55% at 8% 0%, rgba(160, 214, 190, 0.55) 0%, transparent 70%),
+    radial-gradient(50% 50% at 92% 6%, rgba(172, 204, 238, 0.55) 0%, transparent 70%),
+    radial-gradient(55% 55% at 78% 100%, rgba(246, 214, 176, 0.5) 0%, transparent 70%),
+    radial-gradient(45% 45% at 0% 95%, rgba(200, 214, 240, 0.4) 0%, transparent 70%),
+    #EEF2EE;
+  --glass-fill: linear-gradient(145deg, rgba(255, 255, 255, 0.8), rgba(255, 255, 255, 0.6));
+  --glass-fill-strong: linear-gradient(145deg, rgba(255, 255, 255, 0.92), rgba(255, 255, 255, 0.8));
+  --glass-edge: rgba(255, 255, 255, 0.75);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  --glass-shadow: 0 1px 2px rgba(21, 24, 26, 0.04), 0 16px 40px -18px rgba(28, 58, 48, 0.28);
+  --glass-blur: blur(28px) saturate(170%);
+  --glass-chip: rgba(255, 255, 255, 0.55);
+  --glass-line: rgba(21, 24, 26, 0.08);
+}
+:root:has(.morning--glass):has(.morning[data-theme="dark"]) {
+  --glass-backdrop:
+    radial-gradient(60% 55% at 8% 0%, rgba(38, 104, 80, 0.45) 0%, transparent 70%),
+    radial-gradient(50% 50% at 92% 6%, rgba(40, 74, 120, 0.45) 0%, transparent 70%),
+    radial-gradient(55% 55% at 78% 100%, rgba(110, 72, 32, 0.35) 0%, transparent 70%),
+    radial-gradient(45% 45% at 0% 95%, rgba(52, 58, 110, 0.3) 0%, transparent 70%),
+    #0B0F0E;
+  --glass-fill: linear-gradient(145deg, rgba(40, 46, 44, 0.62), rgba(22, 26, 25, 0.5));
+  --glass-fill-strong: linear-gradient(145deg, rgba(40, 46, 44, 0.9), rgba(26, 30, 29, 0.84));
+  --glass-edge: rgba(255, 255, 255, 0.09);
+  --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+  --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 44px -18px rgba(0, 0, 0, 0.75);
+  --glass-chip: rgba(255, 255, 255, 0.06);
+  --glass-line: rgba(255, 255, 255, 0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:has(.morning--glass):not(:has(.morning[data-theme="light"])) {
+    --glass-backdrop:
+      radial-gradient(60% 55% at 8% 0%, rgba(38, 104, 80, 0.45) 0%, transparent 70%),
+      radial-gradient(50% 50% at 92% 6%, rgba(40, 74, 120, 0.45) 0%, transparent 70%),
+      radial-gradient(55% 55% at 78% 100%, rgba(110, 72, 32, 0.35) 0%, transparent 70%),
+      radial-gradient(45% 45% at 0% 95%, rgba(52, 58, 110, 0.3) 0%, transparent 70%),
+      #0B0F0E;
+    --glass-fill: linear-gradient(145deg, rgba(40, 46, 44, 0.62), rgba(22, 26, 25, 0.5));
+    --glass-fill-strong: linear-gradient(145deg, rgba(40, 46, 44, 0.9), rgba(26, 30, 29, 0.84));
+    --glass-edge: rgba(255, 255, 255, 0.09);
+    --glass-hi: inset 0 1px 0 rgba(255, 255, 255, 0.08);
+    --glass-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 18px 44px -18px rgba(0, 0, 0, 0.75);
+    --glass-chip: rgba(255, 255, 255, 0.06);
+    --glass-line: rgba(255, 255, 255, 0.08);
+  }
+}
+
+/* the ambient backdrop the glass sits on — fixed, so it doesn't scroll away */
+:root:has(.morning--glass) body::before {
+  content: ""; position: fixed; inset: 0; z-index: -1; pointer-events: none;
+  background: var(--glass-backdrop);
+}
+.morning--glass { background: transparent; }
+
+/* chips, pills, inputs and hovers inside glass go translucent too */
+.morning--glass,
+:root:has(.morning--glass) :is(.settings, .taskedit, .eventedit, .replymove) {
+  --surface-2: var(--glass-chip);
+  --line: var(--glass-line);
+}
+
+.morning--glass .card {
+  background: var(--glass-fill);
+  border-color: var(--glass-edge);
+  box-shadow: var(--glass-hi), var(--glass-shadow);
+  -webkit-backdrop-filter: var(--glass-blur);
+          backdrop-filter: var(--glass-blur);
+}
+/* popovers float over busy content, so they're more opaque + blurrier */
+:root:has(.morning--glass) :is(.settings, .taskedit, .eventedit, .replymove) {
+  background: var(--glass-fill-strong);
+  border-color: var(--glass-edge);
+  box-shadow: var(--glass-hi), var(--glass-shadow);
+  -webkit-backdrop-filter: blur(36px) saturate(180%);
+          backdrop-filter: blur(36px) saturate(180%);
+}
+
+/* Accessibility: honor the OS asking for less transparency / more contrast
+   by going back to the reference's solid surfaces. */
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  :root:has(.morning--glass) body::before { display: none; }
+  .morning--glass { background: var(--canvas); }
+  .morning--glass,
+  :root:has(.morning--glass) :is(.settings, .taskedit, .eventedit, .replymove) {
+    --surface-2: inherit; --line: inherit;
+  }
+  .morning--glass .card,
+  :root:has(.morning--glass) :is(.settings, .taskedit, .eventedit, .replymove) {
+    background: var(--surface) !important;
+    border-color: var(--line) !important;
+    box-shadow: var(--shadow) !important;
+    -webkit-backdrop-filter: none !important;
+            backdrop-filter: none !important;
+  }
+}

@@ -37,7 +37,7 @@ component never knows whether a value is live or mock.
 | `EmailList` | needs a reply | Phase 4 |
 | `Footline` | free-time + refreshed-at | clock + agenda |
 
-Presentation knobs (`theme`, `timeFormat`, `density`, plus `dayStart`/
+Presentation knobs (`theme`, `surface`, `timeFormat`, `density`, plus `dayStart`/
 `dayEnd`/`weatherStart` below) are set from the **⚙ panel in the footer**
 (persisted in the `dashboard_prefs` cookie) or from the URL:
 `/?theme=dark&density=focused&timeFormat=24-hour&dayStart=8&dayEnd=24`. A URL
@@ -45,7 +45,10 @@ param wins over the cookie, which wins over `DASHBOARD_ARC_FROM`/`ARC_TO`
 (this deployment's own env-configured default), which wins over a final
 hardcoded fallback. `theme` defaults to `system` — it follows the viewer's OS
 light/dark setting via `prefers-color-scheme` — and `light`/`dark` force one
-regardless of the OS.
+regardless of the OS. `surface` defaults to `glass` (frosted translucent
+cards over a soft ambient backdrop); `solid` gives the reference's opaque
+cards, and the OS's reduce-transparency / increase-contrast settings force
+solid automatically.
 
 **Day / weather window.** `dayStart`/`dayEnd` move the day arc's visible
 span (`dayEnd` can go up to `24` for midnight — the arc's scale stays

@@ -20,6 +20,47 @@ Newest first. Each entry:
 
 ---
 
+## 2026-09-30 — Glass surfaces, on by default with a Solid switch
+
+**Problem / trigger** — Wanted the dashboard to feel cleaner and more
+modern, in the style of Apple/Microsoft "material" glass UIs; shared NN/g's
+*Glassmorphism: Definition and Best Practices* as the brief.
+
+**Decision** — A glass layer on top of the reference stylesheet rather
+than a rewrite of it: cards become frosted (translucent gradient fill,
+28px background blur + saturation, a faint light edge and a top highlight
+for thickness) over a soft, fixed ambient backdrop (mint / sky / peach
+glows in light; deep green / blue / amber in dark). Popovers are more
+opaque and blurrier. It's the default, with ⚙ → Surfaces → Solid
+restoring the reference's opaque cards, and the OS's "reduce
+transparency" / "increase contrast" settings forcing Solid automatically.
+
+**Reasoning** — Straight from the article: glass needs something behind it
+("glassmorphic elements stand out when placed in front of gradients"), so
+the backdrop is part of the design, not decoration — and because we control
+it, it stays calm, which keeps text contrast predictable ("if you have
+control of what appears behind a translucent component, opt for simple
+backgrounds"). Heavy blur because "more blur is better". Opacity kept high
+(~60–80%) so the existing ink colors keep their contrast. Glass is applied
+to surfaces only — the day arc, event colors and chips are unchanged — per
+"best when utilized sparingly". The Solid switch and OS-setting fallback
+are the article's "let users adjust transparency".
+
+**Alternatives considered** — Restyling the reference CSS in place (loses
+the clean separation that lets a design re-port still apply); glass on
+every element including chips and event blocks (busier, and hurts the
+calendar color language); a photo or animated backdrop (the article warns
+busy backgrounds hurt readability and focus).
+
+**Tradeoffs / open questions** — `backdrop-filter` costs GPU on large
+blurred areas; fine on modern hardware, but a very old device may prefer
+Solid. The ambient backdrop only shows in the gaps between cards and
+through them, so the effect is deliberately subtle. `prefers-reduced-
+transparency` isn't supported in every browser yet; where it isn't, the
+Solid switch is the manual fallback.
+
+---
+
 ## 2026-09-30 — Scrolling day arc with bigger bubbles, on by default (trial)
 
 **Problem / trigger** — Even with "Expand" available, the default arc

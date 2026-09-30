@@ -8,6 +8,7 @@ import {
   use24Hour,
   type DashboardSettings,
   type Density,
+  type Surface,
   type Theme,
   type TimeFormat,
 } from "@/lib/settings";
@@ -76,6 +77,15 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
               ["system", "System"],
             ]}
             onPick={(theme) => update({ theme })}
+          />
+          <Segmented<Surface>
+            label="Surfaces"
+            value={settings.surface}
+            options={[
+              ["glass", "Glass"],
+              ["solid", "Solid"],
+            ]}
+            onPick={(surface) => update({ surface })}
           />
           <Segmented<Density>
             label="Density"

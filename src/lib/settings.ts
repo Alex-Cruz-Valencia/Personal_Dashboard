@@ -13,11 +13,14 @@ export const PREFS_COOKIE = "dashboard_prefs";
 export type Theme = "light" | "dark" | "system";
 export type TimeFormat = "12-hour" | "24-hour";
 export type Density = "comfortable" | "focused";
+/** "glass" = translucent frosted cards over an ambient backdrop; "solid" = the reference's opaque cards. */
+export type Surface = "glass" | "solid";
 
 export interface DashboardSettings {
   theme: Theme;
   timeFormat: TimeFormat;
   density: Density;
+  surface: Surface;
   /** Visible span of the day arc, in whole local hours. 24 = midnight (end of day). */
   dayStart: number;
   dayEnd: number;
@@ -38,6 +41,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   theme: "system",
   timeFormat: "12-hour",
   density: "comfortable",
+  surface: "glass",
   dayStart: 6,
   dayEnd: 22,
   weatherStart: 6,
@@ -88,6 +92,7 @@ export function parseSettings(
       ["comfortable", "focused"],
       base.density,
     ),
+    surface: pick(searchParams.surface, ["glass", "solid"], base.surface),
     dayStart: safeStart,
     dayEnd: safeEnd,
     weatherStart: Math.min(
@@ -115,6 +120,9 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   }
   if (obj.density === "comfortable" || obj.density === "focused") {
     out.density = obj.density;
+  }
+  if (obj.surface === "glass" || obj.surface === "solid") {
+    out.surface = obj.surface;
   }
   if (typeof obj.dayStart === "number" && obj.dayStart >= 0 && obj.dayStart <= 24) {
     out.dayStart = obj.dayStart;
