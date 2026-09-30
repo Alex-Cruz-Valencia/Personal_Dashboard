@@ -57,7 +57,14 @@ blurred areas; fine on modern hardware, but a very old device may prefer
 Solid. The ambient backdrop only shows in the gaps between cards and
 through them, so the effect is deliberately subtle. `prefers-reduced-
 transparency` isn't supported in every browser yet; where it isn't, the
-Solid switch is the manual fallback.
+Solid switch is the manual fallback. *Follow-up, same day:* extended to the
+calendar at the user's request — event blocks became tinted glass (kind
+color kept at ~88% so text contrast holds, a lighter top for sheen, a thin
+inner light edge, a shadow in their own color, a light blur), overlap
+strips got a frosted separator ring instead of the solid one, and the
+daylight band became a translucent track. The band first went too pale on
+the light glass card at ~58% opacity; raised to ~80% with slightly richer
+stops so the time-of-day colors still read.
 
 ---
 
