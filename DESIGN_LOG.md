@@ -110,8 +110,11 @@ cyan (reads more "teal" but fails contrast for small text in light mode).
 
 **Tradeoffs / open questions** — Teal sits near the calendar's mint
 "personal" color; they're different enough in lightness and use (text/UI
-vs event fills), but worth watching. If the user prefers teal everywhere,
-including Solid, it's a one-token move into `:root`.
+vs event fills), but worth watching. *Follow-up, same day:* the user
+wanted teal everywhere, Solid included — the reference's accent tokens
+(and its hard-coded deep-green note text) now carry the teal directly,
+noted in the globals.css header as a deliberate divergence from the
+source, and the glass-only override was removed.
 
 ---
 
