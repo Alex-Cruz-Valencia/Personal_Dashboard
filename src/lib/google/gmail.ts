@@ -15,7 +15,7 @@ import "server-only";
 import { config } from "@/lib/config";
 import { relativeAge } from "@/lib/time";
 import type { Reply, Urgency } from "@/lib/types";
-import { getGoogleAccessToken } from "./tokens";
+import { googleFetch } from "./tokens";
 
 const BASE = "https://gmail.googleapis.com/gmail/v1/users/me";
 
@@ -54,11 +54,17 @@ function displayName(from: string): string {
 }
 
 const MAILER_RE = /(mailer[-_]?daemon|postmaster|bounce[s]?|delivery[-_]?status)@/i;
+const BOT_SENDER_RE = /\[bot\]/i;
 
 /** Bulk / automated mail a human isn't expected to act on. */
 function looksLikeBulk(msg: GmailMessage): boolean {
   const labels = msg.labelIds ?? [];
   const important = labels.includes("IMPORTANT");
+
+  // Automation accounts ("vercel[bot]", "dependabot[bot]" — GitHub's naming
+  // for app/bot users) never need a reply, even when Gmail flags them
+  // important, which it does for notifications on your own repos.
+  if (BOT_SENDER_RE.test(header(msg, "From"))) return true;
 
   if (labels.includes("CATEGORY_PROMOTIONS")) return true;
   if (labels.includes("CATEGORY_SOCIAL")) return true;
@@ -105,15 +111,11 @@ function classify(
 }
 
 export async function getReplies(): Promise<Reply[]> {
-  const token = await getGoogleAccessToken();
-  const auth = { Authorization: `Bearer ${token}` };
-
   const listUrl = new URL(`${BASE}/messages`);
   listUrl.searchParams.set("q", config.google.gmailQuery);
   listUrl.searchParams.set("maxResults", "40");
 
-  const listRes = await fetch(listUrl, {
-    headers: auth,
+  const listRes = await googleFetch(listUrl, {
     next: { revalidate: 90, tags: [GMAIL_TAG] },
   });
   if (!listRes.ok) throw new Error(`Gmail list responded ${listRes.status}`);
@@ -129,8 +131,7 @@ export async function getReplies(): Promise<Reply[]> {
       for (const h of ["From", "Subject", "List-Unsubscribe", "Precedence"]) {
         url.searchParams.append("metadataHeaders", h);
       }
-      const res = await fetch(url, {
-        headers: auth,
+      const res = await googleFetch(url, {
         next: { revalidate: 90, tags: [GMAIL_TAG] },
       });
       if (!res.ok) throw new Error(`Gmail message ${id} responded ${res.status}`);
@@ -187,10 +188,8 @@ export interface GmailLabelInfo {
   backgroundColor?: string;
 }
 
-async function fetchAllLabels(token: string): Promise<GmailLabelEntry[]> {
-  const res = await fetch(`${BASE}/labels`, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
+async function fetchAllLabels(): Promise<GmailLabelEntry[]> {
+  const res = await googleFetch(`${BASE}/labels`);
   if (!res.ok) throw new Error(`Gmail labels responded ${res.status}`);
   const data = (await res.json()) as { labels?: GmailLabelEntry[] };
   return data.labels ?? [];
@@ -201,8 +200,7 @@ async function fetchAllLabels(token: string): Promise<GmailLabelEntry[]> {
  * with Gmail's own color for each, when the user set one.
  */
 export async function listGmailLabels(): Promise<GmailLabelInfo[]> {
-  const token = await getGoogleAccessToken();
-  const labels = await fetchAllLabels(token);
+  const labels = await fetchAllLabels();
   return labels
     .filter((l) => l.type === "user")
     .map((l) => ({
@@ -214,16 +212,15 @@ export async function listGmailLabels(): Promise<GmailLabelInfo[]> {
 }
 
 /** Gmail needs a label id, not its name, to modify a message. */
-async function findOrCreateLabelId(name: string, token: string): Promise<string> {
-  const existing = (await fetchAllLabels(token)).find(
+async function findOrCreateLabelId(name: string): Promise<string> {
+  const existing = (await fetchAllLabels()).find(
     (l) => l.name.toLowerCase() === name.toLowerCase(),
   );
   if (existing) return existing.id;
 
-  const res = await fetch(`${BASE}/labels`, {
+  const res = await googleFetch(`${BASE}/labels`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
       "content-type": "application/json",
     },
     body: JSON.stringify({
@@ -239,10 +236,8 @@ async function findOrCreateLabelId(name: string, token: string): Promise<string>
 
 /** Move to Trash — recoverable in Gmail for 30 days, same as clicking the trash icon there. */
 export async function trashMessage(id: string): Promise<void> {
-  const token = await getGoogleAccessToken();
-  const res = await fetch(`${BASE}/messages/${id}/trash`, {
+  const res = await googleFetch(`${BASE}/messages/${id}/trash`, {
     method: "POST",
-    headers: { Authorization: `Bearer ${token}` },
   });
   if (!res.ok) throw new Error(`Gmail trash responded ${res.status}`);
 }
@@ -253,12 +248,10 @@ export async function trashMessage(id: string): Promise<void> {
  * left alone — same as Gmail's own move-to-label behavior.
  */
 export async function moveMessageToLabel(id: string, labelName: string): Promise<void> {
-  const token = await getGoogleAccessToken();
-  const labelId = await findOrCreateLabelId(labelName, token);
-  const res = await fetch(`${BASE}/messages/${id}/modify`, {
+  const labelId = await findOrCreateLabelId(labelName);
+  const res = await googleFetch(`${BASE}/messages/${id}/modify`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
       "content-type": "application/json",
     },
     body: JSON.stringify({ addLabelIds: [labelId], removeLabelIds: ["INBOX"] }),

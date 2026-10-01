@@ -149,7 +149,8 @@ Calendar's own default "This event" behavior. Guests, notifications, and
 recurrence itself aren't editable here — **Open in Calendar** on the same
 card jumps to the real event for anything not covered.
 
-**Needs a reply** curates the inbox rather than showing raw unread: it keeps
+**Needs a reply** curates the inbox rather than showing raw unread (bot
+senders like `vercel[bot]` are always dropped): it keeps
 unread, important, and genuine threads (a shared doc, a recruiter, an
 "action required", a real person — read *or* unread, since people reply
 later) and drops promotions, social and bulk newsletters. Override the search

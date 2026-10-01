@@ -109,6 +109,11 @@
   calendar failing doesn't blank the rest; ids are prefixed with their
   calendar's index since Google's event ids are only unique within a
   calendar.
+- Every Gmail/Calendar call goes through `googleFetch` (`tokens.ts`), which
+  attaches the token and, on a 401, refreshes once, persists and retries —
+  never call Google with a hand-built `Authorization` header. The stored
+  `expiresAt` isn't proof a token works: Google invalidated one early on
+  2026-09-30 and the dashboard sat on sample mail until this existed.
 - Gmail scope is `gmail.modify`, not `gmail.readonly` — `EmailList`'s
   Trash/Move actions need it. `trashMessage`/`moveMessageToLabel`/
   `listGmailLabels` (`src/lib/google/gmail.ts`) back `/api/replies/[id]/

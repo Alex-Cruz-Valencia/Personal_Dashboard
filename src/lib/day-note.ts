@@ -31,8 +31,12 @@ export function deterministicDayNote(
   const firstMeeting = agenda
     .filter((e) => e.kind === "meeting" && e.start > nowHour)
     .sort((a, b) => a.start - b.start)[0];
+  // Best task to point at: urgent, then normal, then someday — only an
+  // empty list leaves the note without one.
   const topTask =
-    tasks.find((t) => t.priority === 1) ?? tasks.find((t) => t.priority === 2);
+    tasks.find((t) => t.priority === 1) ??
+    tasks.find((t) => t.priority === 2) ??
+    tasks[0];
   // No quotes around names (they read heavy); the task is wrapped in
   // **…** so HelloCard can set it in bold — see `renderNote`.
   const task = topTask ? `**${topTask.name.replace(/\*\*/g, "")}**` : "";
@@ -41,7 +45,14 @@ export function deterministicDayNote(
     const window = minutesLabel(Math.max(1, Math.round((firstMeeting.start - nowHour) * 60)));
     const meeting = firstMeeting.name;
     if (!topTask) {
-      return `${window} until your next meeting, ${meeting} at ${formatHour(firstMeeting.start, use24)}.`;
+      switch (style) {
+        case "gentle":
+          return `${window} until ${meeting}, and your list is clear.`;
+        case "plain":
+          return `${window} until ${meeting}; no tasks left.`;
+        default:
+          return `${window} before ${meeting} — your list is clear.`;
+      }
     }
     const fits = taskMinutes(topTask) <= (firstMeeting.start - nowHour) * 60;
     switch (style) {
@@ -56,10 +67,24 @@ export function deterministicDayNote(
     }
   }
 
-  if (!topTask) return "Nothing scheduled and nothing urgent — an unusually open day.";
-
   // No meetings left: how much plannable time is there until the day ends?
   const free = buildPlan(agenda, [], nowHour, dayEnd).freeMinutes;
+  const until = formatHour(dayEnd, use24).replace(":00", "");
+
+  if (!topTask) {
+    switch (style) {
+      case "gentle":
+        return free > 0
+          ? "Your list is clear — the rest of the day is yours."
+          : "Your list is clear — enjoy the evening.";
+      case "plain":
+        return "No meetings left and no tasks.";
+      default:
+        return free > 0
+          ? `${minutesLabel(free)} free until ${until} — your list is clear.`
+          : "Your list is clear — that's a wrap for today.";
+    }
+  }
   if (free === 0) {
     switch (style) {
       case "gentle":
@@ -77,8 +102,8 @@ export function deterministicDayNote(
       return `No meetings left; your top priority is ${task}.`;
     default:
       return taskMinutes(topTask) <= free
-        ? `${minutesLabel(free)} free until ${formatHour(dayEnd, use24).replace(":00", "")} — focus on ${task}.`
-        : `${minutesLabel(free)} free until ${formatHour(dayEnd, use24).replace(":00", "")} — get started on ${task}.`;
+        ? `${minutesLabel(free)} free until ${until} — focus on ${task}.`
+        : `${minutesLabel(free)} free until ${until} — get started on ${task}.`;
   }
 }
 

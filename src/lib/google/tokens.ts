@@ -81,6 +81,30 @@ export async function getGoogleAccessToken(): Promise<string> {
   return refreshed.accessToken;
 }
 
+/**
+ * `fetch` for Google APIs: attaches the access token and, if Google rejects
+ * it (401), refreshes once, persists the new token and retries. The stored
+ * expiry isn't proof a token still works — Google can invalidate an access
+ * token early, and without this the dashboard kept sending a dead token
+ * (sample mail, no calendar) until its recorded expiry passed.
+ */
+export async function googleFetch(input: string | URL, init: RequestInit = {}): Promise<Response> {
+  const send = (token: string) =>
+    fetch(input, {
+      ...init,
+      headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` },
+    });
+
+  const res = await send(await getGoogleAccessToken());
+  if (res.status !== 401) return res;
+
+  const tokens = await readGoogleTokens();
+  if (!tokens?.refreshToken) return res;
+  const refreshed = await refreshAccessToken(tokens.refreshToken);
+  await writeGoogleTokens(refreshed);
+  return send(refreshed.accessToken);
+}
+
 export function isGoogleConnected(): Promise<boolean> {
   return readGoogleTokens().then((t) => t != null);
 }

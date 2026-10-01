@@ -86,6 +86,34 @@ bluish-green, still colorblind-distinct from periwinkle and apricot
 
 ---
 
+## 2026-09-30 — Day note: no more "unusually open day"; mail self-heals
+
+**Problem / trigger** — Two things on the live dashboard: the note said
+"Nothing scheduled and nothing urgent — an unusually open day" while a
+task was still on the list, and the mail card showed sample emails.
+
+**Decision** —
+- The note only considered Urgent/Normal tasks; with just a Someday task
+  left, it fell through to that line. Now it falls back urgent → normal →
+  someday, and a truly empty list gets per-voice lines ("4h 35m free until
+  10pm — your list is clear.", "Your list is clear — enjoy the evening.",
+  "No meetings left and no tasks."). Briefly removed the "Shape of the
+  day" label, then kept it — the user wanted new wording, not a new frame.
+- Google had invalidated the stored access token before its recorded
+  expiry; the app trusted the expiry and kept sending a dead token, so
+  Gmail 401'd and the card fell back to sample mail. All Google calls now
+  go through `googleFetch`, which refreshes and retries once on a 401.
+- With mail live again, the inbox was only `vercel[bot]` PR notifications
+  (Gmail marks them Important). Bot senders are now always dropped — they
+  never need a reply — so the card honestly shows "Inbox is clear".
+
+**Reasoning** — Each was the UI saying something untrue (an "open day"
+with work left; "sample" mail on a connected account; bots "needing a
+reply"). Self-healing auth beats a "reconnect Google" prompt because the
+refresh token was fine.
+
+---
+
 ## 2026-09-30 — The agenda becomes a Plan card
 
 **Problem / trigger** — Once the day arc showed names, times and locations,
