@@ -24,7 +24,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     dayStart: settings.dayStart,
     dayEnd: settings.dayEnd,
     weatherStart: settings.weatherStart,
-  }, { noteStyle: settings.noteStyle, use24: settings.timeFormat === "24-hour" });
+  }, {
+    noteStyle: settings.noteStyle,
+    use24: settings.timeFormat === "24-hour",
+    windDown: settings.windDown,
+  });
   return (
     <>
       <Dashboard data={data} settings={settings} />

@@ -2,7 +2,7 @@ import { NextResponse } from "next/server";
 import { getDaySummary } from "@/lib/anthropic/summary";
 import { config, features } from "@/lib/config";
 import { getDashboardData } from "@/lib/dashboard-data";
-import { deterministicDayNote } from "@/lib/day-note";
+import { deterministicDayNote, WIND_DOWN_HOUR } from "@/lib/day-note";
 import type { NoteStyle } from "@/lib/settings";
 import type { AgendaEvent, Task, Weather } from "@/lib/types";
 
@@ -32,6 +32,7 @@ interface SummaryBody {
   /** Note voice (timely | gentle | plain) and end of day, as in ⚙ settings. */
   style?: NoteStyle;
   dayEnd?: number;
+  windDown?: number;
 }
 
 export async function POST(request: Request) {
@@ -49,9 +50,9 @@ export async function POST(request: Request) {
     );
   }
 
-  if (!features.anthropic) {
+  if (!features.anthropic || body.nowHour >= (body.windDown ?? WIND_DOWN_HOUR)) {
     return NextResponse.json({
-      note: deterministicDayNote(body.nowHour, body.tasks, body.agenda ?? [], { style: body.style, dayEnd: body.dayEnd }),
+      note: deterministicDayNote(body.nowHour, body.tasks, body.agenda ?? [], { style: body.style, dayEnd: body.dayEnd, windDown: body.windDown }),
       source: "mock",
       model: null,
     });

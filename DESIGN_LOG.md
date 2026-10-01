@@ -86,6 +86,28 @@ bluish-green, still colorblind-distinct from periwinkle and apricot
 
 ---
 
+## 2026-09-30 — Wind down: no work after 9pm
+
+**Problem / trigger** — The user didn't want the dashboard pointing at
+work late at night ("focus on …" at 10pm).
+
+**Decision** — A ⚙ "Wind down at" setting (default 9pm, 24 = off). From
+then on the day note is a wind-down line in the chosen voice ("That's it
+for today — time to wind down."; if an event is still running: "Last thing
+on the calendar wraps at 10:30pm — then wind down.") and the Plan card
+replaces its suggestions with "Done planning for today". Before it, free
+time and Plan suggestions only run up to wind-down ("2h 15m free until
+9pm"), so nothing gets scheduled past it. No AI call after wind-down.
+
+**Reasoning** — A morning dashboard left open in the evening shouldn't
+nag; the calendar countdown stays because events are commitments, tasks
+aren't. Capping free time at wind-down keeps the numbers honest.
+
+**Alternatives considered** — Hard-coding 9pm (user asked for a setting);
+blanking the note entirely (a gentle line reads better than an empty box).
+
+---
+
 ## 2026-09-30 — Day note: no more "unusually open day"; mail self-heals
 
 **Problem / trigger** — Two things on the live dashboard: the note said

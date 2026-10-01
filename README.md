@@ -38,7 +38,7 @@ component never knows whether a value is live or mock.
 | `EmailList` | needs a reply | Phase 4 |
 | `Footline` | free-time + refreshed-at | clock + agenda |
 
-Presentation knobs (`theme`, `surface`, `noteStyle`, `timeFormat`, `density`, plus `dayStart`/
+Presentation knobs (`theme`, `surface`, `noteStyle`, `windDown`, `timeFormat`, `density`, plus `dayStart`/
 `dayEnd`/`weatherStart` below) are set from the **⚙ panel in the footer**
 (persisted in the `dashboard_prefs` cookie) or from the URL:
 `/?theme=dark&density=focused&timeFormat=24-hour&dayStart=8&dayEnd=24`. A URL
@@ -47,7 +47,10 @@ param wins over the cookie, which wins over `DASHBOARD_ARC_FROM`/`ARC_TO`
 hardcoded fallback. `theme` defaults to `system` — it follows the viewer's OS
 light/dark setting via `prefers-color-scheme` — and `light`/`dark` force one
 regardless of the OS. `noteStyle` (`timely` · `gentle` · `plain`) picks the
-voice of the shape-of-the-day note. `surface` defaults to `glass` (frosted translucent
+voice of the shape-of-the-day note. `windDown` (hour, default `21`;
+`24` = never) is when the dashboard stops pointing at work: the note just
+suggests winding down, and the Plan card stops suggesting tasks (before it,
+free time only counts up to wind-down). `surface` defaults to `glass` (frosted translucent
 cards over a soft ambient backdrop); `solid` gives the reference's opaque
 cards, and the OS's reduce-transparency / increase-contrast settings force
 solid automatically.

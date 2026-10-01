@@ -33,6 +33,11 @@ export interface DashboardSettings {
    * itself starts early). Always ends at `dayEnd`.
    */
   weatherStart: number;
+  /**
+   * From this hour on, nothing points at work: the day note just suggests
+   * winding down and the Plan card stops suggesting tasks. 24 = never.
+   */
+  windDown: number;
 }
 
 /**
@@ -49,6 +54,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   dayStart: 6,
   dayEnd: 22,
   weatherStart: 6,
+  windDown: 21,
 };
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -104,6 +110,7 @@ export function parseSettings(
       pickHour(searchParams.weatherStart, base.weatherStart),
       safeEnd - 1,
     ),
+    windDown: pickHour(searchParams.windDown, base.windDown),
   };
 }
 
@@ -140,6 +147,9 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   }
   if (typeof obj.weatherStart === "number" && obj.weatherStart >= 0 && obj.weatherStart <= 24) {
     out.weatherStart = obj.weatherStart;
+  }
+  if (typeof obj.windDown === "number" && obj.windDown >= 0 && obj.windDown <= 24) {
+    out.windDown = obj.windDown;
   }
   return out;
 }

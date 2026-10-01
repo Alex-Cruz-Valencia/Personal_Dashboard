@@ -922,6 +922,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .plan__block:focus-visible, .plan__skip:focus-visible, .plan__task:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 .plan__breather { margin: 0; font-size: 12px; color: var(--ink-soft); }
 .plan__breather--top { margin-bottom: 14px; }
+/* after settings.windDown: no suggestions, just this */
+.plan__winddown { margin: 2px 0 0; font-size: 13px; font-weight: 500; line-height: 1.45; color: var(--ink-soft); }
 .plan__notice { margin: 10px 0 0; font-size: 12px; font-weight: 600; }
 .plan__notice--ok { color: var(--accent); }
 .plan__notice--error { color: var(--negative); }

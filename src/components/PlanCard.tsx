@@ -40,9 +40,14 @@ export function PlanCard({ agenda, tasks, today, arc, settings, sources }: PlanC
   const [pending, setPending] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
 
+  // Wind-down (⚙ setting, 9pm default): suggestions only run up to it, and
+  // after it the card stops pointing at work entirely.
+  const planEnd = Math.min(arc.to, settings.windDown);
+  const windingDown = today.nowHour >= settings.windDown;
+
   const plan = useMemo(
-    () => buildPlan(agenda, tasks, today.nowHour, arc.to, skipped),
-    [agenda, tasks, today.nowHour, arc.to, skipped],
+    () => buildPlan(agenda, tasks, today.nowHour, planEnd, skipped),
+    [agenda, tasks, today.nowHour, planEnd, skipped],
   );
   const canBlock = sources.calendar === "live";
   const hasTasks = sources.tasks !== "off";
@@ -107,7 +112,7 @@ export function PlanCard({ agenda, tasks, today, arc, settings, sources }: PlanC
     <section className="card column--plan">
       <div className="card__head">
         <h2 className="card__title">Plan</h2>
-        {!nothingConnected && !plan.dayOver ? (
+        {!nothingConnected && !windingDown && !plan.dayOver ? (
           <div className="card__count">{minutesLabel(plan.freeMinutes)} free</div>
         ) : null}
         <StaleTag source={sources.calendar} />
@@ -132,106 +137,112 @@ export function PlanCard({ agenda, tasks, today, arc, settings, sources }: PlanC
               </p>
             )}
 
-            <div className="plan__label">Open time</div>
-            {plan.dayOver ? (
-              <p className="card__empty">That’s the day — nothing left to plan.</p>
-            ) : gaps.length === 0 ? (
-              <p className="card__empty">
-                Booked solid until {formatHour(arc.to, use24)}.
-              </p>
+            {windingDown ? (
+              <p className="plan__winddown">Done planning for today — time to wind down.</p>
             ) : (
-              <ul className="plan__gaps">
-                {gaps.map((g) => (
-                  <li key={g.start} className="plan__gap">
-                    <div className="plan__gap-head">
-                      <span className="plan__gap-time">
-                        {formatHour(g.start, use24)} – {formatHour(g.end, use24)}
-                      </span>
-                      <span className="plan__gap-len">{minutesLabel(g.minutes)}</span>
-                    </div>
-                    {g.suggestions.length > 0 ? (
-                      <ul className="plan__slots">
-                        {g.suggestions.map((sug) => (
-                          <li key={sug.task.id} className="plan__slot">
-                            <i className={`plan__prio plan__prio--p${sug.task.priority}`} />
-                            <button
-                              type="button"
-                              className="plan__task"
-                              onClick={(ev) => openTask(sug.task, ev.currentTarget)}
-                            >
-                              {sug.task.name}
-                              <span>{minutesLabel(sug.minutes)}</span>
-                            </button>
-                            <div className="plan__actions">
-                              {canBlock ? (
+              <>
+                <div className="plan__label">Open time</div>
+                {plan.dayOver ? (
+                  <p className="card__empty">That’s the day — nothing left to plan.</p>
+                ) : gaps.length === 0 ? (
+                  <p className="card__empty">
+                    Booked solid until {formatHour(planEnd, use24)}.
+                  </p>
+                ) : (
+                  <ul className="plan__gaps">
+                    {gaps.map((g) => (
+                      <li key={g.start} className="plan__gap">
+                        <div className="plan__gap-head">
+                          <span className="plan__gap-time">
+                            {formatHour(g.start, use24)} – {formatHour(g.end, use24)}
+                          </span>
+                          <span className="plan__gap-len">{minutesLabel(g.minutes)}</span>
+                        </div>
+                        {g.suggestions.length > 0 ? (
+                          <ul className="plan__slots">
+                            {g.suggestions.map((sug) => (
+                              <li key={sug.task.id} className="plan__slot">
+                                <i className={`plan__prio plan__prio--p${sug.task.priority}`} />
                                 <button
                                   type="button"
-                                  className="plan__block"
-                                  disabled={pending !== null}
-                                  onClick={() => block(g, sug)}
-                                  title={`Put it on your calendar, ${formatHour(g.start, use24)}–${formatHour(g.start + sug.minutes / 60, use24)}`}
+                                  className="plan__task"
+                                  onClick={(ev) => openTask(sug.task, ev.currentTarget)}
                                 >
-                                  {pending === sug.task.id ? "Adding…" : "Block"}
+                                  {sug.task.name}
+                                  <span>{minutesLabel(sug.minutes)}</span>
                                 </button>
-                              ) : null}
-                              <button
-                                type="button"
-                                className="plan__skip"
-                                aria-label={`Suggest something other than ${sug.task.name}`}
-                                title="Suggest something else"
-                                onClick={() => skip(sug.task.id!)}
-                              >
-                                ↻
-                              </button>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    ) : (
-                      <p className="plan__breather">
-                        {hasTasks
-                          ? "Nothing on your list fits — a breather."
-                          : "Connect Todoist to fill this."}
-                      </p>
-                    )}
-                  </li>
-                ))}
-              </ul>
-            )}
+                                <div className="plan__actions">
+                                  {canBlock ? (
+                                    <button
+                                      type="button"
+                                      className="plan__block"
+                                      disabled={pending !== null}
+                                      onClick={() => block(g, sug)}
+                                      title={`Put it on your calendar, ${formatHour(g.start, use24)}–${formatHour(g.start + sug.minutes / 60, use24)}`}
+                                    >
+                                      {pending === sug.task.id ? "Adding…" : "Block"}
+                                    </button>
+                                  ) : null}
+                                  <button
+                                    type="button"
+                                    className="plan__skip"
+                                    aria-label={`Suggest something other than ${sug.task.name}`}
+                                    title="Suggest something else"
+                                    onClick={() => skip(sug.task.id!)}
+                                  >
+                                    ↻
+                                  </button>
+                                </div>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className="plan__breather">
+                            {hasTasks
+                              ? "Nothing on your list fits — a breather."
+                              : "Connect Todoist to fill this."}
+                          </p>
+                        )}
+                      </li>
+                    ))}
+                  </ul>
+                )}
 
-            {plan.scheduled.length > 0 ? (
-              <>
-                <div className="plan__label plan__label--gap">Scheduled</div>
-                <ul className="plan__slots">
-                  {plan.scheduled.map((st) => (
-                    <li key={st.task.id} className="plan__slot plan__slot--scheduled">
-                      <i className="plan__check" aria-hidden="true" />
-                      <button
-                        type="button"
-                        className="plan__task"
-                        onClick={(ev) => openTask(st.task, ev.currentTarget)}
-                      >
-                        {st.task.name}
-                        <span>
-                          {formatHour(st.event.start, use24)} – {formatHour(st.event.end, use24)}
-                        </span>
-                      </button>
-                      <div className="plan__actions">
-                        <button
-                          type="button"
-                          className="plan__unblock"
-                          disabled={pending !== null}
-                          onClick={() => unblock(st)}
-                          title="Remove this block from your calendar (the task stays in Todoist)"
-                        >
-                          {pending === st.task.id ? "Removing…" : "Unblock"}
-                        </button>
-                      </div>
-                    </li>
-                  ))}
-                </ul>
+                {plan.scheduled.length > 0 ? (
+                  <>
+                    <div className="plan__label plan__label--gap">Scheduled</div>
+                    <ul className="plan__slots">
+                      {plan.scheduled.map((st) => (
+                        <li key={st.task.id} className="plan__slot plan__slot--scheduled">
+                          <i className="plan__check" aria-hidden="true" />
+                          <button
+                            type="button"
+                            className="plan__task"
+                            onClick={(ev) => openTask(st.task, ev.currentTarget)}
+                          >
+                            {st.task.name}
+                            <span>
+                              {formatHour(st.event.start, use24)} – {formatHour(st.event.end, use24)}
+                            </span>
+                          </button>
+                          <div className="plan__actions">
+                            <button
+                              type="button"
+                              className="plan__unblock"
+                              disabled={pending !== null}
+                              onClick={() => unblock(st)}
+                              title="Remove this block from your calendar (the task stays in Todoist)"
+                            >
+                              {pending === st.task.id ? "Removing…" : "Unblock"}
+                            </button>
+                          </div>
+                        </li>
+                      ))}
+                    </ul>
+                  </>
+                ) : null}
               </>
-            ) : null}
+            )}
 
             {notice ? (
               <p className={`plan__notice plan__notice--${notice.kind}`} role="status">

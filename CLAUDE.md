@@ -40,7 +40,9 @@
 - **Day note** (`src/lib/day-note.ts`): three voices via `settings.noteStyle`
   (timely default / gentle / plain); the task name is wrapped `**…**` and
   `HelloCard` bolds it via `splitNote` (the AI prompt asks for the same
-  marker); no quotes around names.
+  marker); no quotes around names. From `settings.windDown` (default 21,
+  ⚙ "Wind down at") the note is a fixed wind-down line (no AI call) and
+  `PlanCard` hides suggestions; before it, free time is capped at wind-down.
 - **List rows**: tasks, replies and Plan suggestions share one row style
   (`--row-hover` / `--row-lift`, no divider lines, neutral hover — never a
   colored text change).
