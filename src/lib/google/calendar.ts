@@ -6,7 +6,7 @@ import "server-only";
 import { config } from "@/lib/config";
 import { dayBoundsUtc, decimalHourForTimestamp } from "@/lib/time";
 import type { AgendaEvent, EventKind } from "@/lib/types";
-import { getGoogleAccessToken } from "./tokens";
+import { googleFetch } from "./tokens";
 
 const CAL_BASE = "https://www.googleapis.com/calendar/v3";
 
@@ -56,12 +56,11 @@ interface GCalCalendarListResponse {
  * share is still included (its events just come back opaque; `classify()`
  * and the "(busy)" fallback already handle that).
  */
-async function discoverCalendarIds(token: string): Promise<string[]> {
+async function discoverCalendarIds(): Promise<string[]> {
   const url = new URL(`${CAL_BASE}/users/me/calendarList`);
   url.searchParams.set("minAccessRole", "freeBusyReader");
 
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
+  const res = await googleFetch(url, {
     next: { revalidate: 300, tags: [CALENDAR_TAG] },
   });
   if (!res.ok) throw new Error(`Google CalendarList responded ${res.status}`);
@@ -132,7 +131,6 @@ function toPlainText(html: string | undefined): string | undefined {
 /** One calendar's events for the day. Thrown errors are the caller's problem. */
 async function fetchCalendarEvents(
   calendarId: string,
-  token: string,
   timeMin: string,
   timeMax: string,
 ): Promise<GCalEvent[]> {
@@ -143,8 +141,7 @@ async function fetchCalendarEvents(
   url.searchParams.set("orderBy", "startTime");
   url.searchParams.set("maxResults", "25");
 
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
+  const res = await googleFetch(url, {
     next: { revalidate: 60, tags: [CALENDAR_TAG] },
   });
   if (!res.ok) {
@@ -158,15 +155,14 @@ export async function getAgenda(
   todayIso: string,
   timezone: string,
 ): Promise<AgendaEvent[]> {
-  const token = await getGoogleAccessToken();
   const { timeMin, timeMax } = dayBoundsUtc(todayIso, timezone);
-  const calendarIds = await discoverCalendarIds(token);
+  const calendarIds = await discoverCalendarIds();
 
   // One failed/inaccessible shared calendar (revoked access, a typo'd id)
   // shouldn't blank out the whole agenda — merge whatever succeeded and log
   // the rest, the same way `dashboard-data.ts` degrades other sources.
   const results = await Promise.allSettled(
-    calendarIds.map((id) => fetchCalendarEvents(id, token, timeMin, timeMax)),
+    calendarIds.map((id) => fetchCalendarEvents(id, timeMin, timeMax)),
   );
 
   const events: { calendarId: string; event: GCalEvent }[] = [];
@@ -257,10 +253,8 @@ function writeErrorMessage(action: string, status: number): string {
  */
 export async function deleteEvent(id: string): Promise<void> {
   const { calendarId, eventId } = parseCompositeId(id);
-  const token = await getGoogleAccessToken();
-  const res = await fetch(eventUrl(calendarId, eventId), {
+  const res = await googleFetch(eventUrl(calendarId, eventId), {
     method: "DELETE",
-    headers: { Authorization: `Bearer ${token}` },
   });
   // 410 means it's already gone (e.g. deleted elsewhere) — treat as success.
   if (!res.ok && res.status !== 410) {
@@ -288,7 +282,6 @@ export interface EventPatch {
 /** Same single-occurrence semantics as `deleteEvent`. */
 export async function updateEvent(id: string, patch: EventPatch): Promise<void> {
   const { calendarId, eventId } = parseCompositeId(id);
-  const token = await getGoogleAccessToken();
 
   const body: Record<string, unknown> = {};
   if (patch.summary !== undefined) body.summary = patch.summary;
@@ -301,10 +294,9 @@ export async function updateEvent(id: string, patch: EventPatch): Promise<void> 
     body.end = { dateTime: `${patch.end.date}T${patch.end.time}:00`, timeZone: patch.end.timeZone };
   }
 
-  const res = await fetch(eventUrl(calendarId, eventId), {
+  const res = await googleFetch(eventUrl(calendarId, eventId), {
     method: "PATCH",
     headers: {
-      Authorization: `Bearer ${token}`,
       "content-type": "application/json",
     },
     body: JSON.stringify(body),
@@ -325,11 +317,9 @@ export interface NewEvent {
  * composite id (same shape `getAgenda` produces).
  */
 export async function createEvent(input: NewEvent): Promise<string> {
-  const token = await getGoogleAccessToken();
-  const res = await fetch(`${CAL_BASE}/calendars/primary/events`, {
+  const res = await googleFetch(`${CAL_BASE}/calendars/primary/events`, {
     method: "POST",
     headers: {
-      Authorization: `Bearer ${token}`,
       "content-type": "application/json",
     },
     body: JSON.stringify({
