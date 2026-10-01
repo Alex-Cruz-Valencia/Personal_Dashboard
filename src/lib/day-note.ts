@@ -19,6 +19,8 @@ export interface DayNoteOptions {
   style?: NoteStyle;
   /** End of the viewer's day (decimal hour), for "free until …". */
   dayEnd?: number;
+  /** From this hour the note only suggests winding down (settings.windDown). */
+  windDown?: number;
   use24?: boolean;
 }
 
@@ -26,8 +28,13 @@ export function deterministicDayNote(
   nowHour: number,
   tasks: Task[],
   agenda: AgendaEvent[],
-  { style = "timely", dayEnd = 22, use24 = false }: DayNoteOptions = {},
+  { style = "timely", dayEnd: lastHour = 22, windDown = WIND_DOWN_HOUR, use24 = false }: DayNoteOptions = {},
 ): string {
+  // From wind-down on, the note stops pointing at work at all — and before
+  // it, free time only counts up to wind-down, not the end of the day.
+  if (nowHour >= windDown) return windDownNote(nowHour, agenda, style, use24);
+  const dayEnd = Math.min(lastHour, windDown);
+
   const firstMeeting = agenda
     .filter((e) => e.kind === "meeting" && e.start > nowHour)
     .sort((a, b) => a.start - b.start)[0];
@@ -38,7 +45,7 @@ export function deterministicDayNote(
     tasks.find((t) => t.priority === 2) ??
     tasks[0];
   // No quotes around names (they read heavy); the task is wrapped in
-  // **…** so HelloCard can set it in bold — see `renderNote`.
+  // **…** so HelloCard can set it in bold — see `splitNote`.
   const task = topTask ? `**${topTask.name.replace(/\*\*/g, "")}**` : "";
 
   if (firstMeeting) {
@@ -104,6 +111,44 @@ export function deterministicDayNote(
       return taskMinutes(topTask) <= free
         ? `${minutesLabel(free)} free until ${until} — focus on ${task}.`
         : `${minutesLabel(free)} free until ${until} — get started on ${task}.`;
+  }
+}
+
+/** Default wind-down (9pm) — the user's own is `settings.windDown`. */
+export const WIND_DOWN_HOUR = 21;
+
+/**
+ * The evening note: no tasks, no "focus on". If something's still on the
+ * calendar tonight, it says when the day actually ends.
+ */
+function windDownNote(
+  nowHour: number,
+  agenda: AgendaEvent[],
+  style: NoteStyle,
+  use24: boolean,
+): string {
+  const lastEnd = Math.max(
+    0,
+    ...agenda.filter((e) => e.end > nowHour).map((e) => e.end),
+  );
+  if (lastEnd > nowHour) {
+    const at = formatHour(lastEnd, use24).replace(":00", "");
+    switch (style) {
+      case "gentle":
+        return `Almost there — one more thing until ${at}, then rest.`;
+      case "plain":
+        return `Last event ends at ${at}.`;
+      default:
+        return `Last thing on the calendar wraps at ${at} — then wind down.`;
+    }
+  }
+  switch (style) {
+    case "gentle":
+      return "Time to start winding down for the night.";
+    case "plain":
+      return "Done for the day.";
+    default:
+      return "That's it for today — time to wind down.";
   }
 }
 

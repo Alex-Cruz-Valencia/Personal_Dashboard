@@ -6,7 +6,7 @@
 import "server-only";
 import { getDaySummary } from "./anthropic/summary";
 import { config, features, forceMock, isDemoMode } from "./config";
-import { deterministicDayNote } from "./day-note";
+import { deterministicDayNote, WIND_DOWN_HOUR } from "./day-note";
 import type { NoteStyle } from "./settings";
 import { getAgenda } from "./google/calendar";
 import { getReplies } from "./google/gmail";
@@ -67,6 +67,8 @@ export interface DayWindow {
 export interface NotePrefs {
   noteStyle?: NoteStyle;
   use24?: boolean;
+  /** settings.windDown — after it, the note never points at work. */
+  windDown?: number;
 }
 
 export async function getDashboardData(
@@ -78,7 +80,8 @@ export async function getDashboardData(
   },
   prefs: NotePrefs = {},
 ): Promise<DashboardData> {
-  const noteOpts = { style: prefs.noteStyle, dayEnd: window.dayEnd, use24: prefs.use24 };
+  const windDown = prefs.windDown ?? WIND_DOWN_HOUR;
+  const noteOpts = { style: prefs.noteStyle, dayEnd: window.dayEnd, windDown, use24: prefs.use24 };
   const arc = { from: window.dayStart, to: window.dayEnd };
   const weatherArc = { from: window.weatherStart, to: window.dayEnd };
 
@@ -126,7 +129,9 @@ export async function getDashboardData(
       : reverseGeocode(location.latitude, location.longitude),
   ]);
 
-  const summary = features.anthropic
+  // After wind-down the note is a fixed line — no AI call (it would point
+  // at work).
+  const summary = features.anthropic && today.nowHour < windDown
     ? await settle(
         "summary",
         () =>

@@ -131,12 +131,20 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
               onCommit={(dayEnd) => update({ dayEnd })}
             />
           </div>
-          <HourField
-            label="Weather starts"
-            value={settings.weatherStart}
-            use24={use24}
-            onCommit={(weatherStart) => update({ weatherStart })}
-          />
+          <div className="settings__row2">
+            <HourField
+              label="Weather starts"
+              value={settings.weatherStart}
+              use24={use24}
+              onCommit={(weatherStart) => update({ weatherStart })}
+            />
+            <HourField
+              label="Wind down at"
+              value={settings.windDown}
+              use24={use24}
+              onCommit={(windDown) => update({ windDown })}
+            />
+          </div>
         </Popover>
       ) : null}
     </>
