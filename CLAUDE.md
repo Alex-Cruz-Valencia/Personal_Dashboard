@@ -31,10 +31,12 @@
   never edits the reference rules (the day arc's band + event blocks get
   their own glass rules there too, via a per-kind `--ev-c`; glass also
   overrides `--cal-*` with a pastel Okabe–Ito triad — periwinkle / apricot
-  / mint — and `--accent*` with teal (+ `--accent-deep` for the note
-  text); Solid keeps the reference's), and falls back
+  / mint; Solid keeps the reference's), and falls back
   to solid under
   `prefers-reduced-transparency` / `prefers-contrast: more`.
+- **Changed from the reference:** the accent is teal (`--accent`
+  #0B6F75 / #4DC3C4 dark, `--accent-tint`, and the note text) in every
+  mode, instead of the source's green.
 - **Removed from the reference:** the day arc's task-due ticks + legend
   entry (tasks aren't calendar events; they stay in the task card).
 - All times are **decimal hours in the viewer's local day** (9.5 = 9:30am).
