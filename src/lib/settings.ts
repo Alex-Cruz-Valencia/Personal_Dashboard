@@ -15,12 +15,15 @@ export type TimeFormat = "12-hour" | "24-hour";
 export type Density = "comfortable" | "focused";
 /** "glass" = translucent frosted cards over an ambient backdrop; "solid" = the reference's opaque cards. */
 export type Surface = "glass" | "solid";
+/** Voice of the "shape of the day" note — see src/lib/day-note.ts. */
+export type NoteStyle = "timely" | "gentle" | "plain";
 
 export interface DashboardSettings {
   theme: Theme;
   timeFormat: TimeFormat;
   density: Density;
   surface: Surface;
+  noteStyle: NoteStyle;
   /** Visible span of the day arc, in whole local hours. 24 = midnight (end of day). */
   dayStart: number;
   dayEnd: number;
@@ -42,6 +45,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   timeFormat: "12-hour",
   density: "comfortable",
   surface: "glass",
+  noteStyle: "timely",
   dayStart: 6,
   dayEnd: 22,
   weatherStart: 6,
@@ -93,6 +97,7 @@ export function parseSettings(
       base.density,
     ),
     surface: pick(searchParams.surface, ["glass", "solid"], base.surface),
+    noteStyle: pick(searchParams.noteStyle, ["timely", "gentle", "plain"], base.noteStyle),
     dayStart: safeStart,
     dayEnd: safeEnd,
     weatherStart: Math.min(
@@ -123,6 +128,9 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   }
   if (obj.surface === "glass" || obj.surface === "solid") {
     out.surface = obj.surface;
+  }
+  if (obj.noteStyle === "timely" || obj.noteStyle === "gentle" || obj.noteStyle === "plain") {
+    out.noteStyle = obj.noteStyle;
   }
   if (typeof obj.dayStart === "number" && obj.dayStart >= 0 && obj.dayStart <= 24) {
     out.dayStart = obj.dayStart;

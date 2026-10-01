@@ -1,11 +1,11 @@
 import { use24Hour, type DashboardSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
-import { CalendarAgenda } from "./CalendarAgenda";
 import { DayArc } from "./DayArc";
 import { EmailList } from "./EmailList";
 import { EventDetailProvider } from "./EventDetail";
 import { Footline } from "./Footline";
 import { HelloCard } from "./HelloCard";
+import { PlanCard } from "./PlanCard";
 import { TaskDetailProvider } from "./TaskDetail";
 import { TaskList } from "./TaskList";
 import { WeatherCard } from "./WeatherCard";
@@ -53,11 +53,13 @@ export function Dashboard({ data, settings }: DashboardProps) {
 
           <div className="columns">
             <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
-            <CalendarAgenda
+            <PlanCard
               agenda={data.agenda}
+              tasks={data.tasks}
               today={data.today}
+              arc={data.arc}
               settings={settings}
-              source={data.sources.calendar}
+              sources={{ calendar: data.sources.calendar, tasks: data.sources.tasks }}
             />
             <EmailList
               replies={data.replies}

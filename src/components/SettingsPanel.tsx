@@ -8,6 +8,7 @@ import {
   use24Hour,
   type DashboardSettings,
   type Density,
+  type NoteStyle,
   type Surface,
   type Theme,
   type TimeFormat,
@@ -86,6 +87,16 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
               ["solid", "Solid"],
             ]}
             onPick={(surface) => update({ surface })}
+          />
+          <Segmented<NoteStyle>
+            label="Day note"
+            value={settings.noteStyle}
+            options={[
+              ["timely", "Timely"],
+              ["gentle", "Gentle"],
+              ["plain", "Plain"],
+            ]}
+            onPick={(noteStyle) => update({ noteStyle })}
           />
           <Segmented<Density>
             label="Density"

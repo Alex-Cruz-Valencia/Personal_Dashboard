@@ -37,8 +37,16 @@
 - **Changed from the reference:** the accent is teal (`--accent`
   #0B6F75 / #4DC3C4 dark, `--accent-tint`, and the note text) in every
   mode, instead of the source's green.
+- **Day note** (`src/lib/day-note.ts`): three voices via `settings.noteStyle`
+  (timely default / gentle / plain); the task name is wrapped `**…**` and
+  `HelloCard` bolds it via `splitNote` (the AI prompt asks for the same
+  marker); no quotes around names.
+- **List rows**: tasks, replies and Plan suggestions share one row style
+  (`--row-hover` / `--row-lift`, no divider lines, neutral hover — never a
+  colored text change).
 - **Removed from the reference:** the day arc's task-due ticks + legend
-  entry (tasks aren't calendar events; they stay in the task card).
+  entry (tasks aren't calendar events; they stay in the task card), and the
+  agenda card (replaced by `PlanCard`).
 - All times are **decimal hours in the viewer's local day** (9.5 = 9:30am).
 - Location + timezone are resolved per-request by `src/lib/location.ts`
   (query → device cookie → env → default) and threaded into weather, tasks,
@@ -47,8 +55,12 @@
 - Client components (the reference is static, so these add interaction):
   `WeatherCard` (temperature-curve scrub); `TaskList` (checkbox completes,
   click a task → `TaskDetail` editor popover — priority/due/project/labels/
-  deadline/duration/notes, auto-saves per field; `+ Add task`); `DayArc` +
-  `CalendarAgenda` (click → `EventDetail` popover); `LocationSync`;
+  deadline/duration/notes, auto-saves per field; `+ Add task`); `DayArc`
+  (click → `EventDetail` popover); `PlanCard` (replaced the agenda list —
+  countdown ring, open gaps filled by `buildPlan()` in `src/lib/plan.ts`,
+  Block → `POST /api/events` tagged `[todoist:<id>]` in the description,
+  Unblock → `DELETE /api/events/[id]`; never writes to Todoist);
+  `LocationSync`;
   `AutoRefresh` (60s `router.refresh()` while visible); `SettingsPanel`
   (writes the `dashboard_prefs` cookie, then `router.refresh()`).
 - Settings precedence (`src/lib/settings.ts` → read in `page.tsx`): URL query

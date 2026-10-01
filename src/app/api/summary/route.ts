@@ -3,6 +3,7 @@ import { getDaySummary } from "@/lib/anthropic/summary";
 import { config, features } from "@/lib/config";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { deterministicDayNote } from "@/lib/day-note";
+import type { NoteStyle } from "@/lib/settings";
 import type { AgendaEvent, Task, Weather } from "@/lib/types";
 
 /**
@@ -28,6 +29,9 @@ interface SummaryBody {
   weather: Weather;
   tasks: Task[];
   agenda: AgendaEvent[];
+  /** Note voice (timely | gentle | plain) and end of day, as in ⚙ settings. */
+  style?: NoteStyle;
+  dayEnd?: number;
 }
 
 export async function POST(request: Request) {
@@ -47,7 +51,7 @@ export async function POST(request: Request) {
 
   if (!features.anthropic) {
     return NextResponse.json({
-      note: deterministicDayNote(body.nowHour, body.tasks, body.agenda ?? []),
+      note: deterministicDayNote(body.nowHour, body.tasks, body.agenda ?? [], { style: body.style, dayEnd: body.dayEnd }),
       source: "mock",
       model: null,
     });
@@ -60,12 +64,13 @@ export async function POST(request: Request) {
       weather: body.weather,
       tasks: body.tasks,
       agenda: body.agenda ?? [],
+      style: body.style,
     });
     return NextResponse.json({ note, source: "live", model: config.anthropic.model });
   } catch (err) {
     return NextResponse.json(
       {
-        note: deterministicDayNote(body.nowHour, body.tasks, body.agenda ?? []),
+        note: deterministicDayNote(body.nowHour, body.tasks, body.agenda ?? [], { style: body.style, dayEnd: body.dayEnd }),
         source: "mock",
         error: (err as Error).message,
       },

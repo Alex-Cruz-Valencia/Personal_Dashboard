@@ -9,6 +9,8 @@ import "server-only";
 import Anthropic from "@anthropic-ai/sdk";
 import { config } from "@/lib/config";
 import { formatHour } from "@/lib/format";
+import { NOTE_STYLE_PROMPT } from "@/lib/day-note";
+import type { NoteStyle } from "@/lib/settings";
 import type { AgendaEvent, Task, Weather } from "@/lib/types";
 
 export interface SummaryInput {
@@ -17,13 +19,17 @@ export interface SummaryInput {
   weather: Weather;
   tasks: Task[];
   agenda: AgendaEvent[];
+  /** Voice to match (⚙ → Day note); defaults to timely. */
+  style?: NoteStyle;
 }
 
 const SYSTEM = [
   "You write the single 'Shape of the day' line for a personal morning dashboard.",
   "Rules: exactly one sentence, under 24 words. Plain and specific.",
-  "No greeting, no name, no emoji, no preamble, no quotation marks.",
-  "Look at the free time before the first meeting and the top priorities, and name the one thing that best fits that window.",
+  "No greeting, no name, no emoji, no preamble, no quotation marks (not even around task or meeting names).",
+  "Look at the free time before the first meeting and the top priorities, and say which task best fits that window.",
+  "Avoid stock phrases like 'the one thing worth' or 'best spent on'.",
+  "Wrap the task's name in double asterisks, like **Task name** (it renders bold); no other markdown.",
 ].join(" ");
 
 function buildContext(input: SummaryInput): string {
@@ -65,7 +71,7 @@ export async function getDaySummary(input: SummaryInput): Promise<string> {
     model: config.anthropic.model,
     max_tokens: 512,
     output_config: { effort: "low" },
-    system: SYSTEM,
+    system: `${SYSTEM} ${NOTE_STYLE_PROMPT[input.style ?? "timely"]}`,
     messages: [{ role: "user", content: buildContext(input) }],
   });
 

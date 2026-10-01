@@ -839,6 +839,149 @@ a:hover { color: var(--ink); text-decoration: underline; }
 }
 .dayarc--expanded .arc__event.arc__event--stacked.arc__event--strip2 .arc__event-time { display: none; }
 
+/* ---------- plan card (not in the static reference; replaces the agenda) ----------
+   The day arc already shows the schedule, so this column answers "what now?":
+   a name-free countdown ring to the next event, today's open gaps with the
+   Todoist tasks that fit (`buildPlan()` in src/lib/plan.ts), and what's
+   already been blocked from here. Token-only. */
+/* countdown: name-free — the arc says WHAT, this says WHEN */
+.plan__clock {
+  display: grid; grid-template-columns: 48px minmax(0, 1fr) auto; gap: 12px; align-items: center;
+  padding: 10px 12px; margin-bottom: 14px; border-radius: var(--radius);
+  background: var(--surface-2); cursor: pointer; transition: background .12s ease;
+}
+.plan__clock:hover { background: var(--accent-tint); }
+.plan__clock:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.plan__ring { width: 48px; height: 48px; display: block; }
+.plan__ring-track { fill: none; stroke: var(--line); stroke-width: 4; }
+.plan__ring-fill {
+  fill: none; stroke: var(--accent); stroke-width: 4; stroke-linecap: round;
+  transition: stroke-dashoffset .6s ease;
+}
+.plan__clock-big { font-family: var(--font-display); font-size: 24px; font-weight: 600; line-height: 1.05; letter-spacing: -0.02em; }
+.plan__clock-sub { font-size: 11.5px; font-weight: 500; color: var(--ink-soft); margin-top: 3px; }
+.plan__join {
+  font-size: 11.5px; font-weight: 700; color: var(--surface); background: var(--accent);
+  padding: 5px 12px; border-radius: 999px; white-space: nowrap;
+}
+.plan__join:hover { color: var(--surface); text-decoration: none; filter: brightness(1.08); }
+
+.plan__label {
+  font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+  color: var(--ink-faint); margin: 0 0 4px;
+}
+.plan__label--gap { margin-top: 14px; }
+.plan__gaps { list-style: none; margin: 0; padding: 0; }
+.plan__gap { padding: 10px 0; border-top: 1px solid var(--line); }
+.plan__gap:first-child { border-top: 0; padding-top: 4px; }
+.plan__gap-head { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 6px; }
+.plan__gap-time { font-size: 13px; font-weight: 600; }
+.plan__gap-len {
+  font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-tint);
+  padding: 2px 8px; border-radius: 999px; white-space: nowrap;
+}
+.plan__slots { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.plan__slot {
+  display: grid; grid-template-columns: 8px minmax(0, 1fr) auto; gap: 9px; align-items: center;
+  padding: 5px 6px; margin: 0 -6px; border-radius: var(--radius-sm);
+}
+.plan__slot:hover { background: var(--surface-2); }
+.plan__prio { width: 8px; height: 8px; border-radius: 999px; background: var(--p3); }
+.plan__prio--p1 { background: var(--p1); }
+.plan__prio--p2 { background: var(--p2); }
+.plan__task {
+  font: inherit; font-size: 13.5px; font-weight: 600; line-height: 1.3; text-align: left;
+  color: var(--ink); background: none; border: 0; padding: 0; cursor: pointer; min-width: 0;
+  overflow-wrap: anywhere;
+}
+.plan__task:hover { color: var(--accent); }
+.plan__task span { display: block; font-size: 11px; font-weight: 500; color: var(--ink-faint); margin-top: 1px; }
+.plan__actions { display: flex; align-items: center; gap: 2px; }
+.plan__block {
+  font: inherit; font-size: 11px; font-weight: 700; color: var(--accent); background: var(--accent-tint);
+  border: 0; padding: 4px 10px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+}
+.plan__block:hover:not(:disabled) { background: var(--accent); color: var(--surface); }
+.plan__block:disabled { opacity: 0.55; cursor: default; }
+.plan__skip {
+  font: inherit; font-size: 13px; line-height: 1; color: var(--ink-faint); background: transparent;
+  border: 0; width: 24px; height: 24px; border-radius: 999px; cursor: pointer;
+}
+.plan__skip:hover { color: var(--ink); background: var(--surface-2); }
+/* scheduled: already on the calendar from here — the task itself is still open */
+.plan__check {
+  width: 8px; height: 8px; border-radius: 999px; box-sizing: border-box;
+  border: 2px solid var(--accent); background: transparent;
+}
+.plan__unblock {
+  font: inherit; font-size: 11px; font-weight: 600; color: var(--ink-faint); background: transparent;
+  border: 1px solid var(--line); padding: 3px 9px; border-radius: 999px; cursor: pointer; white-space: nowrap;
+}
+.plan__unblock:hover:not(:disabled) { color: var(--negative); border-color: currentColor; }
+.plan__unblock:disabled { opacity: 0.55; cursor: default; }
+.plan__block:focus-visible, .plan__skip:focus-visible, .plan__task:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.plan__breather { margin: 0; font-size: 12px; color: var(--ink-soft); }
+.plan__breather--top { margin-bottom: 14px; }
+.plan__notice { margin: 10px 0 0; font-size: 12px; font-weight: 600; }
+.plan__notice--ok { color: var(--accent); }
+.plan__notice--error { color: var(--negative); }
+
+/* the day note's task name (marked **…** in the note — see splitNote) */
+.hello__note-text strong { font-weight: 700; color: inherit; }
+
+/* ---------- list rows (not in the static reference) ----------
+   Tasks, replies and Plan suggestions share one row style: a soft rounded
+   row (no hard divider lines) that lifts with a NEUTRAL highlight on hover —
+   never a colored text change. In glass it lifts as a frosted chip. The
+   rows bleed 10px into the card's padding so their text stays aligned. */
+:root {
+  --row-hover: rgba(21, 24, 26, 0.045);
+  --row-active: rgba(21, 24, 26, 0.07);
+  --row-lift: none;
+}
+[data-theme="dark"] {
+  --row-hover: rgba(255, 255, 255, 0.05);
+  --row-active: rgba(255, 255, 255, 0.08);
+}
+@media (prefers-color-scheme: dark) {
+  :root:not(:has(.morning[data-theme="light"])) {
+    --row-hover: rgba(255, 255, 255, 0.05);
+    --row-active: rgba(255, 255, 255, 0.08);
+  }
+}
+.morning--glass {
+  --row-hover: rgba(255, 255, 255, 0.62);
+  --row-active: rgba(255, 255, 255, 0.78);
+  --row-lift: inset 0 1px 0 rgba(255, 255, 255, 0.9), 0 1px 3px rgba(21, 24, 26, 0.07), 0 6px 14px -10px rgba(21, 24, 26, 0.25);
+}
+.morning--glass[data-theme="dark"] {
+  --row-hover: rgba(255, 255, 255, 0.06);
+  --row-active: rgba(255, 255, 255, 0.09);
+  --row-lift: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.3), 0 8px 16px -10px rgba(0, 0, 0, 0.6);
+}
+@media (prefers-color-scheme: dark) {
+  .morning--glass:not([data-theme]) {
+    --row-hover: rgba(255, 255, 255, 0.06);
+    --row-active: rgba(255, 255, 255, 0.09);
+    --row-lift: inset 0 1px 0 rgba(255, 255, 255, 0.06), 0 1px 3px rgba(0, 0, 0, 0.3), 0 8px 16px -10px rgba(0, 0, 0, 0.6);
+  }
+}
+
+.tasks, .replies, .plan__slots { display: grid; gap: 2px; }
+.task, .reply, .plan__slot {
+  border-top: 0; border-radius: var(--radius-sm);
+  padding: 10px; margin: 0 -10px;
+  transition: background .14s ease, box-shadow .14s ease;
+}
+.plan__slot { padding: 8px 10px; }
+.task:hover, .reply:hover, .plan__slot:hover, .task--selected {
+  background: var(--row-hover); box-shadow: var(--row-lift);
+}
+/* no colored text on hover / selection — the row itself carries it */
+.task__body:hover .task__name, .task--selected .task__name, .plan__task:hover { color: inherit; }
+.tasks__add:hover { color: var(--ink); }
+.plan__clock:hover { background: var(--row-active); box-shadow: var(--row-lift); }
+
 /* =============================================================================
    GLASS SURFACES — not in the static reference; the default look.
    `.morning--glass` (⚙ Surfaces → Glass) turns the reference's opaque cards
