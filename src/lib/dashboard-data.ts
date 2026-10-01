@@ -7,6 +7,7 @@ import "server-only";
 import { getDaySummary } from "./anthropic/summary";
 import { config, features, forceMock, isDemoMode } from "./config";
 import { deterministicDayNote } from "./day-note";
+import type { NoteStyle } from "./settings";
 import { getAgenda } from "./google/calendar";
 import { getReplies } from "./google/gmail";
 import { resolveLocation, type LocationOverride } from "./location";
@@ -62,6 +63,12 @@ export interface DayWindow {
   weatherStart: number;
 }
 
+/** Presentation choices that change what's computed, not just how it's drawn. */
+export interface NotePrefs {
+  noteStyle?: NoteStyle;
+  use24?: boolean;
+}
+
 export async function getDashboardData(
   locationOverride?: LocationOverride,
   window: DayWindow = {
@@ -69,7 +76,9 @@ export async function getDashboardData(
     dayEnd: config.arcTo,
     weatherStart: config.arcFrom,
   },
+  prefs: NotePrefs = {},
 ): Promise<DashboardData> {
+  const noteOpts = { style: prefs.noteStyle, dayEnd: window.dayEnd, use24: prefs.use24 };
   const arc = { from: window.dayStart, to: window.dayEnd };
   const weatherArc = { from: window.weatherStart, to: window.dayEnd };
 
@@ -127,11 +136,12 @@ export async function getDashboardData(
             weather: weather.value,
             tasks: tasks.value,
             agenda: agenda.value,
+            style: prefs.noteStyle,
           }),
-        deterministicDayNote(today.nowHour, tasks.value, agenda.value),
+        deterministicDayNote(today.nowHour, tasks.value, agenda.value, noteOpts),
       )
     : {
-        value: deterministicDayNote(today.nowHour, tasks.value, agenda.value),
+        value: deterministicDayNote(today.nowHour, tasks.value, agenda.value, noteOpts),
         live: false,
       };
 

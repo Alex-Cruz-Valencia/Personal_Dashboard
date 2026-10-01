@@ -311,3 +311,35 @@ export async function updateEvent(id: string, patch: EventPatch): Promise<void> 
   });
   if (!res.ok) throw new Error(writeErrorMessage("update", res.status));
 }
+
+export interface NewEvent {
+  summary: string;
+  description?: string;
+  start: EventTimePatch;
+  end: EventTimePatch;
+}
+
+/**
+ * Create an event on the user's primary calendar — used by the Plan card's
+ * "Block it" to put a task into an open gap. Returns the new event's
+ * composite id (same shape `getAgenda` produces).
+ */
+export async function createEvent(input: NewEvent): Promise<string> {
+  const token = await getGoogleAccessToken();
+  const res = await fetch(`${CAL_BASE}/calendars/primary/events`, {
+    method: "POST",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "content-type": "application/json",
+    },
+    body: JSON.stringify({
+      summary: input.summary,
+      description: input.description,
+      start: { dateTime: `${input.start.date}T${input.start.time}:00`, timeZone: input.start.timeZone },
+      end: { dateTime: `${input.end.date}T${input.end.time}:00`, timeZone: input.end.timeZone },
+    }),
+  });
+  if (!res.ok) throw new Error(writeErrorMessage("create", res.status));
+  const created = (await res.json()) as { id: string };
+  return compositeId("primary", created.id);
+}

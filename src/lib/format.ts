@@ -93,36 +93,6 @@ export function taskCountLabel(tasks: TaskVM[]): string {
   return `${urgent} urgent · ${tasks.length} total`;
 }
 
-/* ---------- agenda ---------- */
-
-export interface AgendaVM {
-  name: string;
-  where: string;
-  start: string;
-  duration: string;
-  cls: string;
-}
-
-export function buildAgenda(
-  agenda: AgendaEvent[],
-  nowHour: number,
-  use24: boolean,
-): AgendaVM[] {
-  return agenda.map((e) => ({
-    name: e.name,
-    where: e.where,
-    start: formatHour(e.start, use24),
-    duration: `${Math.round((e.end - e.start) * 60)} min`,
-    cls:
-      `event event--${e.kind}` +
-      (nowHour >= e.start && nowHour < e.end ? " event--now" : ""),
-  }));
-}
-
-export function agendaCountLabel(agenda: AgendaEvent[]): string {
-  return `${agenda.length} blocks`;
-}
-
 /* ---------- the day arc ---------- */
 
 export interface ArcEventVM {

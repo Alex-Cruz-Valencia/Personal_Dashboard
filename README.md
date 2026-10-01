@@ -1,7 +1,8 @@
 # Morning Dashboard
 
-A personal morning dashboard — weather, tasks, agenda and unanswered mail at a
-glance, plus a one-line "shape of the day" note. Next.js (App Router) +
+A personal morning dashboard — weather, a day timeline, tasks, a plan for the
+day's open time and unanswered mail at a glance, plus a one-line "shape of
+the day" note. Next.js (App Router) +
 TypeScript + Tailwind v4.
 
 The UI is a pixel-for-pixel reproduction of the Claude Design source
@@ -31,13 +32,13 @@ component never knows whether a value is live or mock.
 |---|---|---|
 | `HelloCard` | greeting + date + shape-of-day note | clock + Phase 5 |
 | `WeatherCard` | place, temp, condition, hourly temperature curve | Phase 2 |
-| `DayArc` | the signature timeline | agenda + tasks |
+| `DayArc` | the signature timeline | calendar |
 | `TaskList` | today's tasks | Phase 3 |
-| `CalendarAgenda` | agenda | Phase 4 |
+| `PlanCard` | countdown to the next event + today's open time, filled with tasks that fit (Block → calendar) | Phase 3 + 4 |
 | `EmailList` | needs a reply | Phase 4 |
 | `Footline` | free-time + refreshed-at | clock + agenda |
 
-Presentation knobs (`theme`, `surface`, `timeFormat`, `density`, plus `dayStart`/
+Presentation knobs (`theme`, `surface`, `noteStyle`, `timeFormat`, `density`, plus `dayStart`/
 `dayEnd`/`weatherStart` below) are set from the **⚙ panel in the footer**
 (persisted in the `dashboard_prefs` cookie) or from the URL:
 `/?theme=dark&density=focused&timeFormat=24-hour&dayStart=8&dayEnd=24`. A URL
@@ -45,7 +46,8 @@ param wins over the cookie, which wins over `DASHBOARD_ARC_FROM`/`ARC_TO`
 (this deployment's own env-configured default), which wins over a final
 hardcoded fallback. `theme` defaults to `system` — it follows the viewer's OS
 light/dark setting via `prefers-color-scheme` — and `light`/`dark` force one
-regardless of the OS. `surface` defaults to `glass` (frosted translucent
+regardless of the OS. `noteStyle` (`timely` · `gentle` · `plain`) picks the
+voice of the shape-of-the-day note. `surface` defaults to `glass` (frosted translucent
 cards over a soft ambient backdrop); `solid` gives the reference's opaque
 cards, and the OS's reduce-transparency / increase-contrast settings force
 solid automatically.
@@ -125,7 +127,16 @@ addresses/ids). One calendar failing (revoked access) doesn't blank the
 others — it's dropped and logged, and what's still reachable renders
 normally.
 
-**Editing an event.** Click a block (in the day arc or the agenda list) to
+**Plan card.** Replaces the old agenda list (the day arc already shows the
+schedule). A name-free countdown ring to the next event, then today's open
+gaps (≥20 min, from now until `dayEnd`), each with up to three Todoist tasks
+that fit — by priority, deadline and duration (30 min when unset). **Block**
+creates a calendar event at the start of the gap (now, for the current one)
+and tags it with the task id; it never touches the Todoist task. Blocked tasks
+move to **Scheduled**, where **Unblock** deletes just the event. Logic:
+[`src/lib/plan.ts`](src/lib/plan.ts).
+
+**Editing an event.** Click a block in the day arc to
 rename, reschedule (date + start/end time), edit the location, or edit the
 description — every field auto-saves — and to delete it, with a
 confirm step. This needs the `calendar.events` scope (view/edit events on
@@ -178,7 +189,8 @@ Route: `GET|POST /api/summary`. Source:
 | `PATCH /api/tasks/[id]` | edit `{ content?, priority? (1–3), due? (text / null), labels?, description?, deadline? (ISO / null), durationMinutes? (number / null), projectId? (move) }` |
 | `DELETE /api/tasks/[id]` | delete a task |
 | `GET /api/summary` | regenerate the day note from live data |
-| `POST /api/summary` | day note from an explicit `{ nowHour, weather, tasks, agenda }` body |
+| `POST /api/summary` | day note from an explicit `{ nowHour, weather, tasks, agenda, style?, dayEnd? }` body |
+| `POST /api/events` | create `{ name, date, startTime, endTime, taskId? }` on the primary calendar (Plan → Block) |
 | `GET /api/auth/google` | start Google OAuth |
 | `GET /api/auth/google/callback` | OAuth redirect target |
 | `GET /api/auth/google/logout` | clear stored Google tokens |

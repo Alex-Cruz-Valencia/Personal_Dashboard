@@ -86,6 +86,75 @@ bluish-green, still colorblind-distinct from periwinkle and apricot
 
 ---
 
+## 2026-09-30 — The agenda becomes a Plan card
+
+**Problem / trigger** — Once the day arc showed names, times and locations,
+the agenda card was the same information twice. The question: what would
+make that column genuinely useful?
+
+**Decision** — A Plan card: a countdown to the next event, then today's
+open gaps, each with Todoist tasks that fit, and one-click **Block** to put
+a task on the calendar. Refined after first use:
+- Block originally pre-packed suggestions back to back (5:20 / 5:50 /
+  6:20), so blocking the third landed an hour out. Now suggestions carry no
+  time; Block always uses the start of the gap (now, rounded up to 5 min),
+  and the gap shrinks for the next one.
+- "Up next" named the event; the arc already does that. It's now a
+  name-free countdown ring (drains over the last hour; inside an event it
+  shows time left).
+- A blocked task vanished from the card and read as "marked done". Block
+  only creates the event; blocked tasks move to a **Scheduled** list with
+  **Unblock** (deletes just the event). Todoist is never written to.
+
+**Reasoning** — It's the only card that connects tasks to time, which is
+the actual morning question ("what do I do with the next hour?"). Each
+refinement removed a mismatch between what the UI implied and what it did.
+
+**Alternatives considered** — "This week" deadlines strip, quick capture,
+habits/streaks, meeting prep, a focus timer — all still on the table; the
+Plan card was the highest-leverage start.
+
+**Tradeoffs / open questions** — Suggestions only draw from today's /
+overdue tasks (the Todoist filter); no buffer around meetings yet.
+
+---
+
+## 2026-09-30 — One row style for tasks, mail and plan suggestions
+
+**Problem / trigger** — Plan suggestions were soft rows that highlighted on
+hover; tasks and emails were divider-separated lines whose names turned
+teal on hover. Inconsistent, and the teal text read as unappealing.
+
+**Decision** — One shared row style: rounded rows, no divider lines, a
+neutral highlight on hover (a frosted white chip with a faint shadow in
+glass, a light grey tint in solid) and no colored text on hover or
+selection.
+
+**Reasoning** — The row, not the text, is the interactive object; a
+neutral lift reads as "this is clickable" without spending the accent
+color, which stays reserved for state (today, active toggles, Block).
+
+---
+
+## 2026-09-30 — Rewording the shape-of-the-day note, with a voice setting
+
+**Problem / trigger** — The fallback note's "… is the one thing worth
+finishing" felt off.
+
+**Decision** — Three voices in ⚙ → Day note: **Timely** (default — "3h 45m
+free until 10pm — focus on **Task**"; "get started on" when the task's
+duration won't fit), **Gentle** ("The rest of the day is yours. Start
+with **Task**.") and **Plain** ("No meetings left; your top priority is
+**Task**."). No quotes around task or meeting names; the task is bold.
+The AI prompt follows the chosen voice and the same formatting.
+
+**Reasoning** — Timely says something you can't get at a glance (real free
+time, from the same math as the Plan card). Bold replaces quotes: long
+task names in quotes read heavy, but bare names blur into the sentence
+because they start with verbs.
+
+---
+
 ## 2026-09-30 — Teal accent in glass mode
 
 **Problem / trigger** — The site-wide accent (date, "shape of the day"
