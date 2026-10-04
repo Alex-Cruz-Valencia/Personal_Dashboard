@@ -3,9 +3,9 @@
  * (read/write on events) + Gmail (read/modify — trash and label moves need
  * write access; see `gmail.ts`).
  *
- * This is a single-user, local-dev grade flow: tokens live in an httpOnly
- * cookie on the dashboard's own origin (see `tokens.ts`). For a shared or
- * hosted deployment, move token storage to a real datastore.
+ * This is a single-user flow: tokens are stored server-side by `tokens.ts` —
+ * in Redis (Upstash/KV) when configured, otherwise a gitignored local file.
+ * A serverless host needs the Redis backend.
  */
 
 import "server-only";

@@ -108,7 +108,7 @@ labels, deadline, planned duration, notes, and delete. A **+ Add task** row
 creates new tasks. Every change auto-saves. The personal token already has
 full account access — no extra scope needed.
 
-### Phase 4 — Google Calendar (read-only) + Gmail (read + label/trash)
+### Phase 4 — Google Calendar (read + edit events) + Gmail (read + label/trash)
 1. Google Cloud console → create an **OAuth client ID** (Web application).
 2. Enable the **Google Calendar API** and **Gmail API**.
 3. Add redirect URI `http://localhost:3000/api/auth/google/callback`.
