@@ -165,4 +165,7 @@ export interface DashboardData {
    *  configurable start (see `DashboardSettings.weatherStart`). */
   weatherArc: ArcWindow;
   sources: SourceStatus;
+  /** Google is configured but its stored connection is dead (revoked or
+   *  expired refresh token) — the cards offer a "Reconnect" link. */
+  googleReconnect: boolean;
 }

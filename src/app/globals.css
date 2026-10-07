@@ -542,6 +542,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
   border-radius: 999px; padding: 3px 8px; white-space: nowrap;
 }
 .card__head .stale-tag { margin-left: 8px; }
+.stale-tag--link { text-decoration: none; cursor: pointer; }
+.stale-tag--link:hover { text-decoration: underline; }
 
 /* ---------- display settings panel (not in the static reference) ---------- */
 .settings__trigger {

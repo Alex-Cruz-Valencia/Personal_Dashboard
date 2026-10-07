@@ -10,6 +10,7 @@ import { deterministicDayNote, WIND_DOWN_HOUR } from "./day-note";
 import type { NoteStyle } from "./settings";
 import { getAgenda } from "./google/calendar";
 import { getReplies } from "./google/gmail";
+import { GoogleAuthError } from "./google/oauth";
 import { resolveLocation, type LocationOverride } from "./location";
 import {
   MOCK_AGENDA,
@@ -23,18 +24,37 @@ import {
 } from "./mock-data";
 import { getTasks } from "./tasks/todoist";
 import { decimalHourInZone, isoDateInZone } from "./time";
-import type { DashboardData, SourceStatus, TodayInfo } from "./types";
+import type {
+  AgendaEvent,
+  DashboardData,
+  Reply,
+  SourceStatus,
+  Task,
+  TodayInfo,
+  Weather,
+} from "./types";
 import { reverseGeocode } from "./weather/geocode";
 import { getWeather } from "./weather/open-meteo";
+
+interface Settled<T> {
+  value: T;
+  live: boolean;
+  /** The failure was a dead Google connection, not an outage. */
+  authExpired?: boolean;
+}
 
 async function settle<T>(
   label: string,
   run: () => Promise<T>,
   fallback: T,
-): Promise<{ value: T; live: boolean }> {
+): Promise<Settled<T>> {
   try {
     return { value: await run(), live: true };
   } catch (err) {
+    if (err instanceof GoogleAuthError) {
+      console.warn(`[dashboard] ${label} → Google needs reconnecting:`, err.message);
+      return { value: fallback, live: false, authExpired: true };
+    }
     if (process.env.NODE_ENV !== "production") {
       console.warn(`[dashboard] ${label} → mock:`, (err as Error).message);
     }
@@ -97,6 +117,7 @@ export async function getDashboardData(
       replies: MOCK_REPLIES,
       arc: MOCK_ARC,
       weatherArc: MOCK_ARC,
+      googleReconnect: false,
       sources: {
         weather: "off",
         tasks: "off",
@@ -111,7 +132,13 @@ export async function getDashboardData(
   const today = realToday(location.timezone);
   const user = { name: config.userName ?? MOCK_USER.name };
 
-  const [weather, tasks, agenda, replies, geocoded] = await Promise.all([
+  const [weather, tasks, agenda, replies, geocoded]: [
+    Settled<Weather>,
+    Settled<Task[]>,
+    Settled<AgendaEvent[]>,
+    Settled<Reply[]>,
+    string | null,
+  ] = await Promise.all([
     features.weather
       ? settle("weather", () => getWeather(location, weatherArc), MOCK_WEATHER)
       : Promise.resolve({ value: MOCK_WEATHER, live: false }),
@@ -179,5 +206,6 @@ export async function getDashboardData(
     arc,
     weatherArc,
     sources,
+    googleReconnect: features.google && Boolean(agenda.authExpired || replies.authExpired),
   };
 }
