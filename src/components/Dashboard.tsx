@@ -60,10 +60,12 @@ export function Dashboard({ data, settings }: DashboardProps) {
               arc={data.arc}
               settings={settings}
               sources={{ calendar: data.sources.calendar, tasks: data.sources.tasks }}
+              reconnect={data.googleReconnect}
             />
             <EmailList
               replies={data.replies}
               source={data.sources.email}
+              reconnect={data.googleReconnect}
               theme={settings.theme}
             />
           </div>

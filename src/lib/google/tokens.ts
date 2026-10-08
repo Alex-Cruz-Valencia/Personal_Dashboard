@@ -22,7 +22,7 @@ import "server-only";
 import { Redis } from "@upstash/redis";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
-import { refreshAccessToken, type GoogleTokens } from "./oauth";
+import { GoogleAuthError, refreshAccessToken, type GoogleTokens } from "./oauth";
 
 const TOKEN_FILE = join(process.cwd(), ".data", "google-tokens.json");
 const REDIS_KEY = "dashboard:google-tokens";
@@ -68,13 +68,13 @@ export async function clearGoogleTokens(): Promise<void> {
  */
 export async function getGoogleAccessToken(): Promise<string> {
   const tokens = await readGoogleTokens();
-  if (!tokens) throw new Error("Google not connected");
+  if (!tokens) throw new GoogleAuthError("Google not connected");
 
   if (tokens.expiresAt - Date.now() > 60_000) {
     return tokens.accessToken;
   }
   if (!tokens.refreshToken) {
-    throw new Error("Google access token expired and no refresh token is stored");
+    throw new GoogleAuthError("Google access token expired and no refresh token is stored");
   }
   const refreshed = await refreshAccessToken(tokens.refreshToken);
   await writeGoogleTokens(refreshed);

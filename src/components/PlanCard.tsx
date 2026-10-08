@@ -18,6 +18,8 @@ interface PlanCardProps {
   arc: ArcWindow;
   settings: DashboardSettings;
   sources: { calendar: SliceSource; tasks: SliceSource };
+  /** Google's stored sign-in is dead — offer a reconnect link on the tag. */
+  reconnect?: boolean;
 }
 
 /** Show at most this many open gaps — the rest of the day can wait. */
@@ -29,7 +31,7 @@ const MAX_GAPS = 4;
  * that fit — one click blocks a task at the start of its gap on Google
  * Calendar (the Todoist task itself is never changed).
  */
-export function PlanCard({ agenda, tasks, today, arc, settings, sources }: PlanCardProps) {
+export function PlanCard({ agenda, tasks, today, arc, settings, sources, reconnect }: PlanCardProps) {
   const use24 = use24Hour(settings);
   const router = useRouter();
   const { open: openEvent } = useEventDetail();
@@ -115,7 +117,7 @@ export function PlanCard({ agenda, tasks, today, arc, settings, sources }: PlanC
         {!nothingConnected && !windingDown && !plan.dayOver ? (
           <div className="card__count">{minutesLabel(plan.freeMinutes)} free</div>
         ) : null}
-        <StaleTag source={sources.calendar} />
+        <StaleTag source={sources.calendar} reconnect={reconnect} />
       </div>
 
       <div className="card__body">

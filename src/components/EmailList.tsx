@@ -11,6 +11,8 @@ import { StaleTag } from "./StaleTag";
 interface EmailListProps {
   replies: Reply[];
   source: SliceSource;
+  /** Google's stored sign-in is dead — offer a reconnect link on the tag. */
+  reconnect?: boolean;
   theme: Theme;
 }
 
@@ -25,7 +27,7 @@ interface LabelInfo {
 // mounts, well before anyone could have clicked anything.
 let labelCache: LabelInfo[] | null = null;
 
-export function EmailList({ replies, source, theme }: EmailListProps) {
+export function EmailList({ replies, source, reconnect, theme }: EmailListProps) {
   const router = useRouter();
 
   const [labels, setLabels] = useState<LabelInfo[] | null>(labelCache);
@@ -101,7 +103,7 @@ export function EmailList({ replies, source, theme }: EmailListProps) {
       <div className="card__head">
         <h2 className="card__title">Needs a reply</h2>
         <div className="card__count">{replyCountLabel(visible)}</div>
-        <StaleTag source={source} />
+        <StaleTag source={source} reconnect={reconnect} />
       </div>
       <div className="card__body">
         {rows.length === 0 ? (

@@ -54,6 +54,20 @@ export function getAuthUrl(state: string): string {
   return url.toString();
 }
 
+/**
+ * The stored Google connection can't be used and only a fresh consent fixes
+ * it: never connected, no refresh token, or Google rejected the refresh token
+ * (`invalid_grant` — revoked, or expired after 7 days while the OAuth consent
+ * screen is in "Testing"). The dashboard turns this into a "Reconnect" link
+ * rather than silently showing sample data.
+ */
+export class GoogleAuthError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "GoogleAuthError";
+  }
+}
+
 interface TokenResponse {
   access_token: string;
   refresh_token?: string;
@@ -71,6 +85,11 @@ async function postToken(body: Record<string, string>): Promise<TokenResponse> {
   });
   const data = (await res.json()) as TokenResponse;
   if (!res.ok || data.error) {
+    if (data.error === "invalid_grant") {
+      throw new GoogleAuthError(
+        `Google refresh token rejected: ${data.error_description ?? "invalid_grant"}`,
+      );
+    }
     throw new Error(
       `Google token endpoint: ${data.error ?? res.status} ${data.error_description ?? ""}`.trim(),
     );

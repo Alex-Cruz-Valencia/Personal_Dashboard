@@ -116,6 +116,10 @@
   never call Google with a hand-built `Authorization` header. The stored
   `expiresAt` isn't proof a token works: Google invalidated one early on
   2026-09-30 and the dashboard sat on sample mail until this existed.
+- A dead Google connection (not connected / no refresh token / `invalid_grant`)
+  throws `GoogleAuthError` (`oauth.ts`); `settle` in `dashboard-data.ts`
+  surfaces it as `DashboardData.googleReconnect`, and `StaleTag`'s `reconnect`
+  prop turns the "Sample" pill into a "Reconnect Google" link.
 - Gmail scope is `gmail.modify`, not `gmail.readonly` — `EmailList`'s
   Trash/Move actions need it. `trashMessage`/`moveMessageToLabel`/
   `listGmailLabels` (`src/lib/google/gmail.ts`) back `/api/replies/[id]/

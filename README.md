@@ -172,6 +172,12 @@ this scope changed, disconnect and reconnect (`/api/auth/google/logout` →
 immediately — they don't wait on the page-wide refresh that follows to
 reconcile the count.
 
+**Expired sign-in.** If Google rejects the stored refresh token (revoked, or
+expired after 7 days while the OAuth consent screen is in *Testing* — publish
+the app to avoid that), the Plan and Needs-a-reply cards show a **Reconnect
+Google** link instead of the plain "Sample" marker; it goes to
+`/api/auth/google`.
+
 Sources: [`src/lib/google/`](src/lib/google/).
 
 ### Phase 5 — Daily summary (Anthropic API)

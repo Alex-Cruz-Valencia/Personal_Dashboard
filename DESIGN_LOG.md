@@ -20,6 +20,37 @@ Newest first. Each entry:
 
 ---
 
+## 2026-10-07 — An expired Google sign-in says so, instead of showing sample mail
+
+**Problem / trigger** — Gmail (and the calendar) went back to sample data
+again. Google can reject the stored *refresh* token itself (`invalid_grant`:
+revoked, or — while the OAuth consent screen is in "Testing" — expired after
+7 days). The 401 self-heal from 2026-09-30 only covers a bad *access* token,
+so this failure was swallowed and the cards just showed the generic "Sample"
+tag, which reads like an outage rather than "you need to sign in again".
+
+**Decision** — Dead-connection failures are now a distinct case
+(`GoogleAuthError`: not connected, no refresh token, or `invalid_grant`).
+`getDashboardData` reports it as `googleReconnect`, and on the Plan and
+Needs-a-reply cards the amber "Sample" pill becomes a **Reconnect Google**
+link to `/api/auth/google` (which already forces a fresh consent). Other
+failures keep the plain "Sample" pill.
+
+**Reasoning** — The marker should tell you what to do, not just that
+something is wrong. Reusing the existing pill keeps the card chrome
+unchanged, and one click replaces typing two URLs.
+
+**Alternatives considered** — A banner across the page (louder than one
+expired integration deserves); an automatic redirect to consent (surprising
+on a dashboard that auto-refreshes every 60s); extending `SliceSource` with
+a fourth state (touches every card for a Google-only concern).
+
+**Tradeoffs / open questions** — The root cause for a Testing-mode consent
+screen is the 7-day expiry; the real fix is publishing the OAuth app
+("In production") in Google Cloud, after which this link should rarely show.
+
+---
+
 ## 2026-09-30 — Glass surfaces, on by default with a Solid switch
 
 **Problem / trigger** — Wanted the dashboard to feel cleaner and more
