@@ -1376,3 +1376,30 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .arc__focus-label { position: relative; display: block; padding: 6px 9px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
 .taskedit__focus { font: inherit; font-size: 13px; font-weight: 600; width: 100%; margin: 4px 0 10px; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--accent); background: var(--accent-tint); color: var(--accent); cursor: pointer; }
 .taskedit__focus:hover { background: var(--accent); color: var(--surface); }
+
+/* ---------- reply queue popover (opened from the attention strip; not in the static reference) ---------- */
+.rq {
+  position: fixed; z-index: 50; width: min(440px, calc(100vw - 24px)); overflow-y: auto;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-radius: var(--radius-lg); box-shadow: 0 12px 32px -12px rgba(0,0,0,0.35); padding: 16px 18px 14px;
+  font-family: var(--font-body);
+}
+.rq__title { font-family: var(--font-display); font-size: 16px; font-weight: 600; margin-bottom: 10px; color: var(--ink); }
+.rq__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; max-height: min(60vh, 520px); overflow-y: auto; }
+.rq__row { display: grid; gap: 5px; padding: 11px 12px; border-radius: var(--radius); background: var(--surface-2); }
+.rq__top { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
+.rq__from { font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.rq__age { color: var(--ink-soft); flex: 0 0 auto; }
+.rq__subject { font-size: 13.5px; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; }
+.rq__actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.rq__btn { font: inherit; font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; text-decoration: none; }
+.rq__btn:hover { background: var(--surface-2); text-decoration: none; color: var(--ink); }
+.rq__btn--primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.rq__btn--primary:hover { background: var(--accent); color: var(--surface); filter: brightness(1.08); }
+.rq__btn--danger { border-color: var(--negative); color: var(--negative); }
+.rq__move { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.rq__chip { font: inherit; font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.rq__input { font: inherit; font-size: 12.5px; flex: 1 1 140px; min-width: 0; padding: 6px 9px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.rq__hint { font-size: 12px; color: var(--ink-soft); }
+.rq__error { margin: 10px 0 0; font-size: 12.5px; color: var(--negative); }
+.rq .reply__note { justify-self: start; }

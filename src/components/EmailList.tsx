@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { buildReplies, replyCountLabel } from "@/lib/format";
 import type { Theme } from "@/lib/settings";
 import type { Reply, SliceSource } from "@/lib/types";
+import { useHiddenReplyIds } from "@/lib/reply-state";
 import { Popover } from "./Popover";
 import { StaleTag } from "./StaleTag";
 
@@ -29,6 +30,7 @@ let labelCache: LabelInfo[] | null = null;
 
 export function EmailList({ replies, source, reconnect, theme }: EmailListProps) {
   const router = useRouter();
+  const hidden = useHiddenReplyIds();
 
   const [labels, setLabels] = useState<LabelInfo[] | null>(labelCache);
   const [cleared, setCleared] = useState<Set<string>>(new Set());
@@ -55,7 +57,7 @@ export function EmailList({ replies, source, reconnect, theme }: EmailListProps)
   // Cleared items disappear the instant an action succeeds — not when the
   // slower page-wide refresh eventually lands. The refresh still runs, to
   // reconcile the count and pick up anything that changed server-side.
-  const visible = replies.filter((r) => !r.id || !cleared.has(r.id));
+  const visible = replies.filter((r) => !r.id || (!cleared.has(r.id) && !hidden.has(r.id)));
   const rows = buildReplies(visible);
 
   const clear = (id: string, run: () => Promise<Response>) => {

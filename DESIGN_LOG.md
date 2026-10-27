@@ -928,3 +928,27 @@ deliberately). Browser notifications at the end (deferred).
 **Tradeoffs** — The 6h "heavy" line and the 30-min-per-task estimate are
 heuristics, not settings. The timer is per-browser, so a second screen won't
 see it. Week data costs six more Calendar reads per refresh (cached).
+
+## 2026-10-27 — Attention items open the emails, with actions
+
+**Problem** — Clicking "Blocking" or "Waiting" scrolled to the reply list and
+left you to find the right emails. Seeing a problem and acting on it were two
+separate steps.
+
+**Decision** — Reply items in the strip now open a popover with just those
+emails and an action on each: Reply in Gmail (opens the message), Wait a day,
+Move… (labels, or a new one) and Trash (two-step). Dealt-with emails leave the
+popover, the strip and the reply list at once; the popover closes when it is
+empty. Non-reply items (conflicts, overdue) still jump to their card.
+
+**"Wait a day"** is a local snooze: it hides the email from this dashboard for
+24 hours, remembered in this browser only. It does not change Gmail (no label,
+no archive), so the email is still in your inbox and returns on its own.
+
+**Alternatives** — Scroll to the list and highlight the matches (the first
+idea; the popover makes it unnecessary). Compose replies inside the dashboard
+(deferred until the AI drafting work, which needs Gmail draft permission).
+
+**Tradeoffs** — Snoozes are per-browser, like the focus timer, so a second
+screen won't share them. A snooze that expires while the page is open is picked
+up on the next load.

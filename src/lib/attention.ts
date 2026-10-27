@@ -24,6 +24,8 @@ export interface AttentionItem {
   detail: string;
   /** Where clicking it scrolls to. */
   target: "arc" | "tasks" | "replies";
+  /** For reply items: the messages it counts, so the strip can open them. */
+  replyIds?: string[];
 }
 
 /** "18h" → 0.75, "3d" → 3, anything unparseable → 0. */
@@ -112,6 +114,7 @@ export function buildAttention(input: {
   }
 
   // Replies: anyone blocked first, then the rest by how long they've waited.
+  const ids = (rs: Reply[]) => rs.flatMap((r) => (r.id ? [r.id] : []));
   const blocking = replies.filter((r) => r.urgency === 1);
   const rest = replies.filter((r) => r.urgency !== 1);
   const oldestOf = (rs: Reply[]) =>
@@ -125,6 +128,7 @@ export function buildAttention(input: {
       title: `${plural(blocking.length, "reply", "replies")} holding someone up`,
       detail: `${o.from}, ${o.age}`,
       target: "replies",
+      replyIds: ids(blocking),
     });
   }
   if (rest.length) {
@@ -136,6 +140,7 @@ export function buildAttention(input: {
       title: `${rest.length} ${rest.length === 1 ? "reply" : "replies"} waiting`,
       detail: `Longest: ${o.from}, ${o.age}`,
       target: "replies",
+      replyIds: ids(rest),
     });
   }
 
