@@ -867,3 +867,10 @@ return to cards. Glass is unaffected.
 **Tradeoffs** — Kind is no longer readable at a glance by color alone; the
 legend carries the mapping. Less container structure means the headline and
 rules do all the grouping work. Contrast of outlined blocks not formally measured.
+
+**Follow-up (same day)** — The first cut of the editorial pass read as a
+landing page: a 112px headline pushed the tasks, plan and replies below the
+fold. For a productivity tool the work comes first, so the greeting is now a
+normal 30–42px heading, section rules use the quiet `--line` color instead of
+ink, and spacing is tighter. Rule of thumb going forward: nothing decorative
+may push actionable content off the first screen.
