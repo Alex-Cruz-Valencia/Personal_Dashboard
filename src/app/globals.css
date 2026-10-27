@@ -16,15 +16,15 @@
    Sans) instead of a Google Fonts <link>. Same typefaces, no external request.
    ========================================================================== */
 :root {
-  --canvas:     #F3F5F2;
-  --surface:    #FFFFFF;
-  --surface-2:  #F7F9F6;
-  --line:       #E4E8E1;
-  --ink:        #15181A;
-  --ink-soft:   #6E7671;
-  --ink-faint:  #9AA29C;
+  --canvas:     #F4F1EA;
+  --surface:    #FBFAF6;
+  --surface-2:  #EEEBE2;
+  --line:       #DDD8CB;
+  --ink:        #1D1B17;
+  --ink-soft:   #5F5B52;
+  --ink-faint:  #766F64;
   --accent:     #0B6F75;
-  --accent-tint:#E2F2F3;
+  --accent-tint:#E0ECEA;
   /* CALENDAR KINDS — colorblind-safe blue / amber / slate triad.
      Deliberately NOT red-vs-green: those two read identically to a
      deuteranope, and a meeting is not a "bad" status. */
@@ -52,25 +52,25 @@
   --font-display: var(--font-bricolage), "Plus Jakarta Sans", sans-serif;
   --font-body:    var(--font-jakarta), Helvetica, Arial, sans-serif;
 
-  --radius-lg: 22px;
-  --radius:    14px;
-  --radius-sm: 9px;
-  --shadow:    0 1px 2px rgba(21,24,26,0.04), 0 8px 24px -12px rgba(21,24,26,0.10);
+  --radius-lg: 12px;
+  --radius:    8px;
+  --radius-sm: 6px;
+  --shadow:    none;
   --page-max:  1280px;
   --gutter:    28px;
   --gap:       18px;
 }
 /* ---------- dark variant: token overrides only ---------- */
 [data-theme="dark"] {
-  --canvas:     #0F1211;
-  --surface:    #181C1A;
-  --surface-2:  #1F2422;
-  --line:       #2B3230;
-  --ink:        #ECF0EE;
-  --ink-soft:   #9BA6A1;
-  --ink-faint:  #6D7873;
+  --canvas:     #14130F;
+  --surface:    #1C1A16;
+  --surface-2:  #25221D;
+  --line:       #37342C;
+  --ink:        #EEEAE0;
+  --ink-soft:   #A8A295;
+  --ink-faint:  #857F73;
   --accent:     #4DC3C4;
-  --accent-tint:#163134;
+  --accent-tint:#14302F;
   --p1:         #E4705A;
   --p1-tint:    #31201D;
   --p2:         #D9A445;
@@ -86,15 +86,15 @@
   --warning-tint:  #2E2718;
   --neutral:       #A2B0B8;
   --neutral-tint:  #212A2F;
-  --shadow:     0 1px 2px rgba(0,0,0,0.45), 0 10px 28px -14px rgba(0,0,0,0.8);
+  --shadow:     none;
   color-scheme: dark;
 }
 [data-theme="dark"] .arc__band {
-  background: linear-gradient(90deg, #1B2028 0%, #33291F 14%, #45392A 32%, #2E3C46 52%, #45372A 76%, #2C2620 90%, #1A1F22 100%);
+  background: var(--surface-2);
 }
 [data-theme="dark"] .arc__hour { background: rgba(255,255,255,0.07); }
 [data-theme="dark"] .arc__now { background: var(--ink); }
-[data-theme="dark"] .arc__now-label { background: var(--ink); color: #0F1211; }
+[data-theme="dark"] .arc__now-label { background: var(--ink); color: #14130F; }
 [data-theme="dark"] .hello__note-text { color: #CBEBEC; }
 [data-theme="dark"] .arc__event { color: #14181A; }
 
@@ -109,15 +109,15 @@
    it alone is enough. Keep the token values in sync with `[data-theme="dark"]`
    above. */
 :root:has(.morning[data-theme="dark"]) {
-  --canvas:     #0F1211;
-  --surface:    #181C1A;
-  --surface-2:  #1F2422;
-  --line:       #2B3230;
-  --ink:        #ECF0EE;
-  --ink-soft:   #9BA6A1;
-  --ink-faint:  #6D7873;
+  --canvas:     #14130F;
+  --surface:    #1C1A16;
+  --surface-2:  #25221D;
+  --line:       #37342C;
+  --ink:        #EEEAE0;
+  --ink-soft:   #A8A295;
+  --ink-faint:  #857F73;
   --accent:     #4DC3C4;
-  --accent-tint:#163134;
+  --accent-tint:#14302F;
   --p1:         #E4705A;
   --p1-tint:    #31201D;
   --p2:         #D9A445;
@@ -133,20 +133,20 @@
   --warning-tint:  #2E2718;
   --neutral:       #A2B0B8;
   --neutral-tint:  #212A2F;
-  --shadow:     0 1px 2px rgba(0,0,0,0.45), 0 10px 28px -14px rgba(0,0,0,0.8);
+  --shadow:     none;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
   :root:not(:has(.morning[data-theme="light"])) {
-    --canvas:     #0F1211;
-    --surface:    #181C1A;
-    --surface-2:  #1F2422;
-    --line:       #2B3230;
-    --ink:        #ECF0EE;
-    --ink-soft:   #9BA6A1;
-    --ink-faint:  #6D7873;
+    --canvas:     #14130F;
+    --surface:    #1C1A16;
+    --surface-2:  #25221D;
+    --line:       #37342C;
+    --ink:        #EEEAE0;
+    --ink-soft:   #A8A295;
+    --ink-faint:  #857F73;
     --accent:     #4DC3C4;
-    --accent-tint:#163134;
+    --accent-tint:#14302F;
     --p1:         #E4705A;
     --p1-tint:    #31201D;
     --p2:         #D9A445;
@@ -162,16 +162,16 @@
     --warning-tint:  #2E2718;
     --neutral:       #A2B0B8;
     --neutral-tint:  #212A2F;
-    --shadow:     0 1px 2px rgba(0,0,0,0.45), 0 10px 28px -14px rgba(0,0,0,0.8);
+    --shadow:     none;
     color-scheme: dark;
   }
   /* literal (non-variable) colors, still scoped to .morning's own internals */
   .morning:not([data-theme]) .arc__band {
-    background: linear-gradient(90deg, #1B2028 0%, #33291F 14%, #45392A 32%, #2E3C46 52%, #45372A 76%, #2C2620 90%, #1A1F22 100%);
+    background: var(--surface-2);
   }
   .morning:not([data-theme]) .arc__hour { background: rgba(255,255,255,0.07); }
   .morning:not([data-theme]) .arc__now { background: var(--ink); }
-  .morning:not([data-theme]) .arc__now-label { background: var(--ink); color: #0F1211; }
+  .morning:not([data-theme]) .arc__now-label { background: var(--ink); color: #14130F; }
   .morning:not([data-theme]) .hello__note-text { color: #CBEBEC; }
   .morning:not([data-theme]) .arc__event { color: #14181A; }
 }
@@ -256,9 +256,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .arc { position: relative; padding-top: 26px; }
 .arc__band {
   position: relative; height: 74px; border-radius: var(--radius);
-  background: linear-gradient(90deg, #E8EAE6 0%, #F6EBDA 14%, #FDF6E7 32%, #EDF5FB 52%, #FBF0DE 76%, #F3E3CD 90%, #E7E6E0 100%);
+  background: var(--surface-2);
 }
-.arc__hour { position: absolute; top: 8px; bottom: 8px; width: 1px; background: rgba(21,24,26,0.06); }
+.arc__hour { position: absolute; top: 8px; bottom: 8px; width: 1px; background: rgba(29,27,23,0.08); }
 .arc__event {
   position: absolute; top: 9px; height: 56px; border-radius: 10px;
   background: var(--cal-meeting); color: #fff; padding: 9px 11px; overflow: hidden; min-width: 7px;
@@ -1240,3 +1240,178 @@ a:hover { color: var(--ink); text-decoration: underline; }
             backdrop-filter: none !important;
   }
 }
+
+/* =============================================================================
+   RESTRAINT — legal pages + footer links (not in the static reference).
+   Token-only; see DESIGN_LOG.md "Restraint pass".
+   ========================================================================== */
+.footline__links { display: flex; gap: 14px; }
+.footline__links a { color: var(--ink-soft); }
+.footline__links a:hover { color: var(--ink); }
+:where(a, button, input, select, textarea, summary):focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.legal { max-width: 68ch; margin: 0 auto; padding: 56px var(--gutter) 80px; background: var(--canvas); color: var(--ink); min-height: 100vh; }
+.legal__back { font-size: 13px; font-weight: 600; }
+.legal h1 { font-family: var(--font-display); font-size: clamp(32px, 5vw, 44px); font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; margin: 28px 0 10px; }
+.legal h2 { font-family: var(--font-display); font-size: 20px; font-weight: 600; margin: 36px 0 8px; letter-spacing: -0.01em; }
+.legal p, .legal li { font-size: 16px; line-height: 1.6; color: var(--ink); margin: 0 0 12px; }
+.legal ul { list-style: disc; padding-left: 20px; margin: 0 0 12px; }
+.legal__draft { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--warning); background: var(--warning-tint); padding: 4px 9px; border-radius: var(--radius-sm); }
+.legal__meta { color: var(--ink-soft); font-size: 14px; }
+
+/* =============================================================================
+   CALM LAYOUT — not in the static reference. Applies to Solid only (Glass
+   keeps its own material). Flat, softly bordered cards with generous padding;
+   a compact greeting; calendar kinds shown as muted tints of one quiet hue
+   each, with text always in ink. Token-driven; delete this block to return to
+   the reference card layout.
+   ========================================================================== */
+.morning:not(.morning--glass) {
+  --cal-meeting:  #55708D;
+  --cal-focus:    var(--accent);
+  --cal-personal: #7C766A;
+  --gap: 20px;
+}
+:root:has(.morning[data-theme="dark"]) .morning:not(.morning--glass),
+.morning[data-theme="dark"]:not(.morning--glass) { --cal-meeting: #8FAAC6; --cal-personal: #A39D90; }
+@media (prefers-color-scheme: dark) {
+  .morning:not([data-theme]):not(.morning--glass) { --cal-meeting: #8FAAC6; --cal-personal: #A39D90; }
+}
+.morning:not(.morning--glass) .card { border-radius: var(--radius-lg); }
+.morning:not(.morning--glass) .hello { padding: 22px 26px; gap: 10px; }
+.morning:not(.morning--glass) .hello__greeting { font-size: clamp(28px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.05; }
+.morning:not(.morning--glass) .hello__note { margin-top: 4px; padding: 12px 14px; }
+.morning:not(.morning--glass) .card__head { padding: 20px 24px 14px; }
+.morning:not(.morning--glass) .card__body { padding: 0 24px 20px; }
+.morning:not(.morning--glass) .dayarc { padding: 20px 24px 18px; }
+.morning:not(.morning--glass) .arc__band { background: var(--surface-2); border-radius: var(--radius); }
+.morning:not(.morning--glass) .arc__event {
+  background: color-mix(in srgb, var(--cal-meeting) 18%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--cal-meeting) 55%, var(--surface));
+  color: var(--ink); border-radius: 8px;
+}
+.morning:not(.morning--glass) .arc__event--focus {
+  background: color-mix(in srgb, var(--cal-focus) 18%, var(--surface));
+  border-color: color-mix(in srgb, var(--cal-focus) 55%, var(--surface));
+}
+.morning:not(.morning--glass) .arc__event--personal {
+  background: color-mix(in srgb, var(--cal-personal) 16%, var(--surface));
+  border-color: color-mix(in srgb, var(--cal-personal) 50%, var(--surface));
+}
+.morning:not(.morning--glass) .arc__event-time { opacity: 0.75; }
+.morning:not(.morning--glass) .dayarc--expanded .arc__scroller { margin: -12px -24px 0; padding: 12px 24px 6px; }
+@media (max-width: 760px) {
+  .morning:not(.morning--glass) { --gap: 14px; }
+}
+
+/* =============================================================================
+   ATTENTION STRIP — "what did I miss?" (not in the static reference).
+   One row of things that need you; a single quiet line when there are none.
+   Kind is carried by the label text first, tone second. Token-only.
+   ========================================================================== */
+.attn { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 16px 20px 18px; }
+.attn__title { margin: 0 0 10px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+.attn__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.attn__item { all: unset; box-sizing: border-box; display: grid; gap: 3px; width: 100%; height: 100%; padding: 11px 13px; border-radius: var(--radius); background: var(--surface-2); cursor: pointer; }
+.attn__item:hover { background: var(--row-hover, var(--surface-2)); box-shadow: inset 0 0 0 1px var(--line); }
+.attn__item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.attn__label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--neutral); }
+.attn__item--conflict .attn__label, .attn__item--overdue .attn__label { color: var(--negative); }
+.attn__item--tight .attn__label { color: var(--warning); }
+.attn__text { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
+.attn__detail { font-size: 12.5px; line-height: 1.35; color: var(--ink-soft); overflow-wrap: anywhere; }
+.attn--clear { padding: 13px 20px; }
+.attn__clear { font-size: 14px; font-weight: 500; color: var(--ink-soft); }
+
+/* ---------- day arc: up-next readout, free-gap labels, conflict marks (not in the static reference) ---------- */
+.dayarc__title { white-space: nowrap; }
+.dayarc__next { display: flex; align-items: baseline; gap: 8px; flex: 1 1 0; min-width: 0; margin-left: 14px; font-size: 14px; }
+.dayarc__next-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); flex: 0 0 auto; }
+.dayarc__next-name { font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 0 1 auto; }
+.dayarc__next-when { color: var(--ink-soft); white-space: nowrap; flex: 0 0 auto; }
+.arc__gap { position: absolute; top: 9px; height: 56px; display: grid; place-items: center; container-type: inline-size; pointer-events: none; border-radius: 8px; border: 1px dashed var(--line); }
+.arc__gap-label { font-size: 11.5px; font-weight: 600; color: var(--ink-faint); white-space: nowrap; }
+@container (max-width: 90px) { .arc__gap-label { display: none; } }
+.arc__conflict { position: absolute; bottom: 2px; height: 4px; border-radius: 2px; background: var(--negative); z-index: 3; }
+@media (max-width: 760px) {
+  .dayarc__head { flex-wrap: wrap; }
+  .dayarc__next { order: 3; flex-basis: 100%; width: 100%; max-width: 100%; margin: 0; }
+}
+.morning > .dayarc, .morning > .attn { min-width: 0; }
+
+/* ---------- week strip (not in the static reference) ----------
+   Seven day columns: a two-part bar (booked time, then tasks due at ~30 min
+   each) with the numbers spelled out underneath, so nothing depends on color. */
+.week { padding: 0 0 18px; min-width: 0; }
+.week .card__head { padding-bottom: 10px; }
+.week__key { display: flex; gap: 14px; font-size: 11.5px; font-weight: 500; color: var(--ink-soft); }
+.week__key-item::before { content: ""; display: inline-block; width: 8px; height: 8px; margin-right: 6px; border-radius: 2px; background: var(--ink-soft); }
+.week__key-item--tasks::before { background: var(--accent); }
+.week__days { list-style: none; margin: 0; padding: 0 22px; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 10px; }
+.week__day { display: grid; gap: 6px; align-content: start; padding: 10px 11px 12px; border-radius: var(--radius); background: var(--surface-2); min-width: 0; }
+.week__day--today { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.week__name { font-size: 12.5px; font-weight: 700; color: var(--ink); white-space: nowrap; }
+.week__date { font-weight: 500; color: var(--ink-soft); }
+.week__bar { display: flex; height: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.week__bar i { display: block; height: 100%; }
+.week__bar-booked { background: var(--ink-soft); }
+.week__bar-tasks { background: var(--accent); }
+.week__meta { font-size: 12px; line-height: 1.3; color: var(--ink-soft); min-height: 1em; }
+.week__heavy { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--warning); }
+@media (max-width: 760px) {
+  .week__days { padding: 0 16px; gap: 6px; }
+  .week__day { padding: 8px 6px 10px; }
+  .week__name { font-size: 11px; }
+  .week__date { display: none; }
+  .week__meta { font-size: 10.5px; }
+  .week__key { display: none; }
+}
+
+/* ---------- focus timer (not in the static reference) ----------
+   Local only. Readout in the arc header, a block on the band, and a start
+   button in the task editor. Token-only. */
+.dayarc__focus { align-items: center; }
+.dayarc__focus-clock { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); }
+.arc__focus { position: absolute; top: 9px; height: 56px; z-index: 2; pointer-events: none; border-radius: 8px; border: 1.5px dashed var(--accent); background: var(--accent-tint); overflow: hidden; }
+.arc__focus-done { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.arc__focus-label { position: relative; display: block; padding: 6px 9px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.taskedit__focus { font: inherit; font-size: 13px; font-weight: 600; width: 100%; margin: 4px 0 10px; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--accent); background: var(--accent-tint); color: var(--accent); cursor: pointer; }
+.taskedit__focus:hover { background: var(--accent); color: var(--surface); }
+
+/* ---------- reply queue popover (opened from the attention strip; not in the static reference) ---------- */
+.rq {
+  position: fixed; z-index: 50; width: min(440px, calc(100vw - 24px)); overflow-y: auto;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-radius: var(--radius-lg); box-shadow: 0 12px 32px -12px rgba(0,0,0,0.35); padding: 16px 18px 14px;
+  font-family: var(--font-body);
+}
+.rq__title { font-family: var(--font-display); font-size: 16px; font-weight: 600; margin-bottom: 10px; color: var(--ink); }
+.rq__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; max-height: min(60vh, 520px); overflow-y: auto; }
+.rq__row { display: grid; gap: 5px; padding: 11px 12px; border-radius: var(--radius); background: var(--surface-2); }
+.rq__top { display: flex; justify-content: space-between; gap: 10px; font-size: 13px; }
+.rq__from { font-weight: 700; color: var(--ink); overflow-wrap: anywhere; }
+.rq__age { color: var(--ink-soft); flex: 0 0 auto; }
+.rq__subject { font-size: 13.5px; line-height: 1.35; color: var(--ink); overflow-wrap: anywhere; }
+.rq__actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 4px; }
+.rq__btn { font: inherit; font-size: 12px; font-weight: 600; padding: 6px 10px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; text-decoration: none; }
+.rq__btn:hover { background: var(--surface-2); text-decoration: none; color: var(--ink); }
+.rq__btn--primary { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.rq__btn--primary:hover { background: var(--accent); color: var(--surface); filter: brightness(1.08); }
+.rq__btn--danger { border-color: var(--negative); color: var(--negative); }
+.rq__move { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.rq__chip { font: inherit; font-size: 12px; font-weight: 600; padding: 4px 9px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.rq__input { font: inherit; font-size: 12.5px; flex: 1 1 140px; min-width: 0; padding: 6px 9px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.rq__hint { font-size: 12px; color: var(--ink-soft); }
+.rq__error { margin: 10px 0 0; font-size: 12.5px; color: var(--negative); }
+.rq .reply__note { justify-self: start; }
+.rq__draft { display: grid; gap: 8px; margin-top: 6px; }
+.rq__text { font: inherit; font-size: 13px; line-height: 1.5; width: 100%; resize: vertical; padding: 9px 10px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface); color: var(--ink); }
+.rq__text:focus-visible, .rq__input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.rq__btn:disabled { opacity: 0.55; cursor: default; }
+
+/* ---------- AI plan suggestions in the Plan card (not in the static reference) ---------- */
+.plan__labelrow { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.plan__ai { font: inherit; font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 999px; border: 1px solid var(--accent); background: var(--accent-tint); color: var(--accent); cursor: pointer; }
+.plan__ai:hover:not(:disabled) { background: var(--accent); color: var(--surface); }
+.plan__ai:disabled { opacity: 0.6; cursor: default; }
+.plan__reason { display: block; margin-top: 2px; font-style: normal; font-size: 12px; font-weight: 400; color: var(--ink-soft); }
+.plan__hint { margin: 10px 0 0; font-size: 12px; color: var(--ink-soft); }

@@ -12,6 +12,7 @@ import { useRouter } from "next/navigation";
 import { PRIORITY_LABEL } from "@/lib/format";
 import type { Theme } from "@/lib/settings";
 import type { Priority, Project, Task } from "@/lib/types";
+import { useFocus } from "./Focus";
 import { Popover } from "./Popover";
 
 interface Meta {
@@ -112,6 +113,7 @@ function TaskDetailCard({
   onClose: () => void;
 }) {
   const router = useRouter();
+  const focus = useFocus();
   const id = task.id as string;
 
   const [name, setName] = useState(task.name);
@@ -191,6 +193,19 @@ function TaskDetailCard({
           ×
         </button>
       </div>
+      {focus.session ? null : (
+        <button
+          type="button"
+          className="taskedit__focus"
+          onClick={() => {
+            const m = task.durationMinutes && task.durationMinutes > 0 ? Math.min(120, Math.max(5, task.durationMinutes)) : 25;
+            focus.start(task.name, m);
+            onClose();
+          }}
+        >
+          Focus on this ({task.durationMinutes && task.durationMinutes > 0 ? Math.min(120, Math.max(5, task.durationMinutes)) : 25} min)
+        </button>
+      )}
 
       <input
         className="taskedit__name"

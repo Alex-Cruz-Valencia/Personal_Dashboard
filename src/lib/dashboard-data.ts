@@ -22,7 +22,8 @@ import {
   MOCK_USER,
   MOCK_WEATHER,
 } from "./mock-data";
-import { getTasks } from "./tasks/todoist";
+import { getDueCounts, getTasks } from "./tasks/todoist";
+import { buildWeek, fetchWeekAgendas } from "./week";
 import { decimalHourInZone, isoDateInZone } from "./time";
 import type {
   AgendaEvent,
@@ -118,6 +119,8 @@ export async function getDashboardData(
       arc: MOCK_ARC,
       weatherArc: MOCK_ARC,
       googleReconnect: false,
+      week: null,
+      ai: false,
       sources: {
         weather: "off",
         tasks: "off",
@@ -131,6 +134,15 @@ export async function getDashboardData(
   const location = await resolveLocation(locationOverride);
   const today = realToday(location.timezone);
   const user = { name: config.userName ?? MOCK_USER.name };
+
+  // The week strip reads the next six days on its own, in parallel — a
+  // failure there only blanks the strip, never the rest of the page.
+  const laterAgendas = features.google
+    ? fetchWeekAgendas(today.iso, location.timezone).catch(() => null)
+    : Promise.resolve(null);
+  const dueCounts = features.todoist
+    ? getDueCounts(location.timezone).catch(() => null)
+    : Promise.resolve(null);
 
   const [weather, tasks, agenda, replies, geocoded]: [
     Settled<Weather>,
@@ -155,6 +167,17 @@ export async function getDashboardData(
       ? Promise.resolve(location.label)
       : reverseGeocode(location.latitude, location.longitude),
   ]);
+
+  const week =
+    features.google || features.todoist
+      ? buildWeek({
+          todayIso: today.iso,
+          todayAgenda: agenda.live ? agenda.value : null,
+          laterAgendas: await laterAgendas,
+          dueCounts: await dueCounts,
+          todayTasksDue: tasks.live ? tasks.value.filter((t) => !t.overdueDays).length : null,
+        })
+      : null;
 
   // After wind-down the note is a fixed line — no AI call (it would point
   // at work).
@@ -207,5 +230,7 @@ export async function getDashboardData(
     weatherArc,
     sources,
     googleReconnect: features.google && Boolean(agenda.authExpired || replies.authExpired),
+    week,
+    ai: features.llm && features.google,
   };
 }

@@ -101,6 +101,15 @@ function dueHourOf(
   return decimalHourForTimestamp(due.date, todayIso, timezone);
 }
 
+/** Whole calendar days a due date is behind today (0 when due today or later). */
+function overdueDaysOf(due: TodoistDue | null, todayIso: string): number {
+  if (!due) return 0;
+  const day = due.date.slice(0, 10);
+  if (day >= todayIso) return 0;
+  const ms = Date.parse(`${todayIso}T00:00:00Z`) - Date.parse(`${day}T00:00:00Z`);
+  return Math.max(1, Math.round(ms / 86_400_000));
+}
+
 function dueLabel(
   due: TodoistDue | null,
   todayIso: string,
@@ -150,6 +159,7 @@ export async function getTasks(
       meta: projectName.get(t.project_id) ?? t.labels[0] ?? "Task",
       due: dueLabel(t.due, todayIso, timezone),
       dueHour: dueHourOf(t.due, todayIso, timezone),
+      overdueDays: overdueDaysOf(t.due, todayIso) || undefined,
       projectId: t.project_id,
       description: t.description || undefined,
       labels: t.labels,
@@ -293,4 +303,28 @@ export function addTask(task: NewTask): Promise<unknown> {
   if (task.due) body.due_string = task.due;
   if (task.labels?.length) body.labels = task.labels;
   return todoistWrite("/tasks", "POST", body);
+}
+
+/**
+ * Tasks due per day over the coming week (today included), keyed by ISO date.
+ * One extra read, used only by the week strip.
+ */
+export async function getDueCounts(
+  timezone: string,
+): Promise<Record<string, number>> {
+  if (!config.todoist.token) throw new Error("Todoist not configured");
+  const page = await todoistGet<TodoistTask>(
+    `/tasks/filter?query=${encodeURIComponent("7 days")}&limit=200`,
+  );
+  const counts: Record<string, number> = {};
+  for (const t of page.results) {
+    if (!t.due) continue;
+    // Timed tasks carry a timestamp; read its date in the viewer's zone.
+    const day =
+      t.due.date.includes("T") && hasExplicitZone(t.due.date)
+        ? new Date(t.due.date).toLocaleDateString("en-CA", { timeZone: timezone })
+        : t.due.date.slice(0, 10);
+    counts[day] = (counts[day] ?? 0) + 1;
+  }
+  return counts;
 }

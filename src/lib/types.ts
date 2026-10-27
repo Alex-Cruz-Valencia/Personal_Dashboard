@@ -67,6 +67,8 @@ export interface Task {
   due: string;
   /** Decimal hour for the arc tick, or null when the task has no clock time. */
   dueHour: number | null;
+  /** Whole days past its due date (1 = yesterday); absent when not overdue. */
+  overdueDays?: number;
 
   /* ---- detail (shown in the click-to-expand editor; optional) ---- */
   /** Source project id, for the "move to project" control. */
@@ -150,6 +152,23 @@ export interface SourceStatus {
   summary: SliceSource;
 }
 
+/** One day of the week strip: how much of it is spoken for. */
+export interface WeekDay {
+  iso: string;
+  /** "Wed". */
+  name: string;
+  /** Day of month, "28". */
+  date: string;
+  isToday: boolean;
+  /** Hours of timed events, or null when that day's calendar couldn't be read. */
+  bookedHours: number | null;
+  eventCount: number | null;
+  /** Todoist tasks due that day, or null when tasks aren't connected. */
+  tasksDue: number | null;
+  /** Booked + estimated task time is past the "heavy" line. */
+  heavy: boolean;
+}
+
 /** Everything one render of the dashboard needs. */
 export interface DashboardData {
   user: UserInfo;
@@ -168,4 +187,8 @@ export interface DashboardData {
   /** Google is configured but its stored connection is dead (revoked or
    *  expired refresh token) — the cards offer a "Reconnect" link. */
   googleReconnect: boolean;
+  /** Today + the next six days; null when neither calendar nor tasks are connected. */
+  week: WeekDay[] | null;
+  /** AI features are available (model + Google both configured). */
+  ai: boolean;
 }

@@ -1,5 +1,7 @@
 import { use24Hour, type DashboardSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
+import { AttentionStrip } from "./AttentionStrip";
+import { FocusProvider } from "./Focus";
 import { DayArc } from "./DayArc";
 import { EmailList } from "./EmailList";
 import { EventDetailProvider } from "./EventDetail";
@@ -8,6 +10,7 @@ import { HelloCard } from "./HelloCard";
 import { PlanCard } from "./PlanCard";
 import { TaskDetailProvider } from "./TaskDetail";
 import { TaskList } from "./TaskList";
+import { WeekStrip } from "./WeekStrip";
 import { WeatherCard } from "./WeatherCard";
 
 interface DashboardProps {
@@ -21,6 +24,7 @@ interface DashboardProps {
  */
 export function Dashboard({ data, settings }: DashboardProps) {
   return (
+    <FocusProvider nowHour={data.today.nowHour}>
     <EventDetailProvider
       use24={use24Hour(settings)}
       theme={settings.theme}
@@ -44,11 +48,23 @@ export function Dashboard({ data, settings }: DashboardProps) {
             />
           </div>
 
+          <AttentionStrip
+            agenda={data.agenda}
+            tasks={data.tasks}
+            replies={data.replies}
+            nowHour={data.today.nowHour}
+            theme={settings.theme}
+            aiDraft={data.ai}
+          />
+
+          {data.week ? <WeekStrip days={data.week} /> : null}
+
           <DayArc
             agenda={data.agenda}
             arc={data.arc}
             today={data.today}
             settings={settings}
+            focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
           />
 
           <div className="columns">
@@ -61,6 +77,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
               settings={settings}
               sources={{ calendar: data.sources.calendar, tasks: data.sources.tasks }}
               reconnect={data.googleReconnect}
+              aiSchedule={data.ai}
             />
             <EmailList
               replies={data.replies}
@@ -74,5 +91,6 @@ export function Dashboard({ data, settings }: DashboardProps) {
         </div>
       </TaskDetailProvider>
     </EventDetailProvider>
+    </FocusProvider>
   );
 }

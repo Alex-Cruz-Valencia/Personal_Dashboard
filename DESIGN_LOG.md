@@ -20,6 +20,261 @@ Newest first. Each entry:
 
 ---
 
+## 2026-10-27 — From a display to a decision tool (the one-page story)
+
+*Read this first. It's the narrative for retros, a PM log and interviews; the
+entries below it hold the detail for each decision.*
+
+**Starting point** — A pretty, read-only morning dashboard: weather, tasks,
+calendar and mail in eight equal cards. Good to look at, but it showed
+information instead of helping decide anything.
+
+**The user insight that reframed it** — Asked "what question should this answer
+in five seconds?", the answer was "**what did I miss?**", and the screen stays
+open all day on a second monitor. That made it an *ambient decision tool*, not a
+morning summary, and it shifted the priority from aesthetics to function ("I
+don't so much care about the aesthetics as the function").
+
+**What we built, in the order of value**
+1. *Attention strip* — conflicts, tight turnarounds, overdue tasks and replies
+   in one row, each one click from action; a calm "Nothing missed" when clear.
+2. *Act where you see it* — a reply item opens the emails with Reply, Wait a
+   day, Move and Trash, instead of scrolling to a list.
+3. *Day arc that reads time* — free gaps labelled, overlaps marked, a Now/Next
+   readout.
+4. *Look ahead* — a week strip of booked time and tasks due, "Heavy" in words.
+5. *Protect time* — a local focus timer (arc block, tab title).
+6. *AI that drafts and proposes, never acts* — reply drafts saved as Gmail
+   drafts; a suggested schedule where each block needs its own click.
+
+**Decisions worth explaining in an interview**
+- *Iterating the look in public.* Four passes: restraint (flat, warm) → an
+  editorial experiment (huge headline) → pulled back ("reads like a landing
+  page; this is a productivity tool") → pulled back again ("too bare, hard to
+  look at") → calm cards. Lessons: a tool's first screen belongs to action, so
+  nothing decorative may push content below the fold; and removing containers
+  made scanning harder, not easier.
+- *Aggregate, don't flood.* Overdue tasks are one strip line, not one per task
+  (a backlog would bury everything else). Applied the metric-overload lesson from
+  dashboard-design research: few items, each tied to a decision.
+- *Human in the loop for every write.* AI never sends mail or books time; drafts
+  go to Gmail Drafts, schedule suggestions need a Block click. Wait/snooze and the
+  timer are local-only so nothing outside the dashboard changes silently.
+- *Don't trust the model's output.* A server-side validator drops any suggestion
+  that names an unknown task, overlaps, starts in the past, or doesn't fit a gap,
+  and forces the task's own length. Email text is marked untrusted in the prompt.
+- *Data minimization and key safety.* The key lives only in gitignored
+  `.env.local` and server code; routes fail closed when AI isn't configured (so
+  the public demo can't spend tokens), accept same-origin only, cap input/output
+  and rate. Scheduling sends task names and gaps only (no mail, no event titles);
+  drafting sends one email. Model choice is a privacy decision (school-hosted vs
+  cloud), left to the owner.
+- *Reuse over new permissions.* Gmail drafts work with the existing
+  `gmail.modify` scope, so no re-consent. (An earlier answer to the user claimed
+  otherwise; it was corrected once checked.)
+
+**Bugs the real model exposed (and why test against the real thing)** — It
+rejected a custom `temperature` (every AI call would have failed), and its token
+budget includes hidden reasoning, so answers were truncated mid-JSON (empty
+suggestions). Fixes: drop the parameter, raise budgets, and salvage complete
+items from a cut-off reply. Mocked tests had passed both times.
+
+**How I'd measure it (proposed; no data yet)** — Time from opening the page to
+the first action; items cleared from the strip per day; share of drafts saved
+unchanged vs edited vs discarded; share of suggested blocks accepted vs
+dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
+
+**Open questions / next** — Click a week day to load it in the arc; server-side
+snoozes and timer so a second screen shares them; make the "heavy day" threshold
+and the 30-minute task default settings; evaluate draft quality across models.
+
+## 2026-10-27 — Restraint pass: warm neutral, flat cards, solid by default
+
+**Problem** — The default look (frosted glass over radial color orbs, 22px
+corners, a drop shadow on every card, a sky gradient behind the day arc)
+competed with the content. The product is the schedule, not the chrome.
+
+**Decision** — Warm neutral canvas (`#F4F1EA`) with off-white cards (never pure
+white), hairline borders instead of shadows, corners 12/8/6px, a flat day-arc
+band, and one accent (the existing teal). Surfaces now default to "solid";
+Glass stays available under ⚙ → Surfaces. Added a global teal focus ring, and
+draft Privacy and Terms pages linked from the footer.
+
+**Alternatives** — Remove Glass entirely (rejected: it is a working opt-in
+setting). Change the typefaces (rejected: Bricolage + Jakarta already give the
+brand its own voice).
+
+**Tradeoffs** — This intentionally departs from the verbatim reference tokens
+(canvas, surface, line, ink, radii, shadow, light-mode band). Dark mode tokens
+are unchanged. Legal text is a draft and needs a real review.
+
+## 2026-10-27 — Editorial experiment: ruled sections, headline greeting, line-coded events
+
+**Problem** — After the restraint pass every section was still the same boxed
+card, and the saturated blue/amber event blocks out-shouted the greeting.
+
+**Decision** — On Solid, cards lose their box and become sections under a 1px
+ink rule with small uppercase titles. The greeting becomes a page-sized
+headline directly on the canvas, and the day note is plain text. Calendar kinds
+are told apart by line and tone, not hue: meeting = outlined, focus = accent
+fill, personal = dashed. One block at the end of `globals.css`; delete it to
+return to cards. Glass is unaffected.
+
+**Alternatives** — Keep colored blocks but mute them (safer, less distinct).
+
+**Tradeoffs** — Kind is no longer readable at a glance by color alone; the
+legend carries the mapping. Less container structure means the headline and
+rules do all the grouping work. Contrast of outlined blocks not formally measured.
+
+**Follow-up (same day)** — The first cut of the editorial pass read as a
+landing page: a 112px headline pushed the tasks, plan and replies below the
+fold. For a productivity tool the work comes first, so the greeting is now a
+normal 30–42px heading, section rules use the quiet `--line` color instead of
+ink, and spacing is tighter. Rule of thumb going forward: nothing decorative
+may push actionable content off the first screen.
+
+**Second follow-up (same day)** — Ruled, unboxed sections felt too bare to
+scan comfortably. Cards are back on Solid: flat, 1px border, 12px corners,
+24px padding, no shadow, on the warm canvas. Events use a muted tint of one
+quiet hue per kind (slate blue / accent teal / warm gray) with ink text, so the
+day arc has color without saturated slabs. The compact greeting stays.
+
+## 2026-10-27 — "What did I miss?": attention strip + a day arc that reads gaps and conflicts
+
+**Problem** — The dashboard is left open on a second screen all day, and its
+first job is to answer "what did I miss?". Eight equal cards made the viewer
+hunt for it, and the day arc (the most-used part) showed events but not the
+space between them or where they collided.
+
+**Decision** — A "Needs attention" strip directly under the header lists, in
+order: schedule conflicts, tight turnarounds (<10 min), overdue tasks (rolled
+into one line so a backlog can't flood it) and replies (blocking first). Each
+item jumps to its card. When nothing is wrong it says so in one quiet line. On
+the arc: open stretches (≥20 min) are labelled "1h free", overlaps get a red
+mark under the band, and a "Now / Next" readout sits in the header. All logic
+is pure (`src/lib/attention.ts`) and uses only data already fetched.
+
+**Alternatives** — Overdue ticks on the arc (rejected; tasks aren't calendar
+events, see the earlier removal); one strip item per overdue task (rejected:
+noisy); browser notifications (deferred: needs permission and adds noise).
+
+**Tradeoffs** — Overdue means date-based only (a timed task earlier today is
+not flagged). The strip counts replies as of the last server render, so a
+trash/move updates it on the next refresh, not instantly.
+
+## 2026-10-27 — Week strip and a local focus timer
+
+**Problem** — A dashboard left open all day shows today only, so a heavy
+Thursday is a surprise on Thursday. And the list of tasks never turns into
+protected time.
+
+**Decision** — *Week strip:* seven day columns (today + six), each a two-part
+bar (booked hours, then tasks due at ~30 min each) with the numbers in words
+underneath and "Heavy" spelled out at 6h+ of load, so nothing relies on color.
+It reads six extra calendar days and one extra Todoist query, in parallel, and
+fails to blank only itself. *Focus timer:* start from the arc toolbar ("Focus
+25") or from a task's editor ("Focus on this", using its Todoist duration, 5–120
+min). It shows in the arc header (pause / stop), as a dashed block on the band,
+and in the tab title. State lives in this browser's localStorage only; nothing
+is written to Google or Todoist.
+
+**Alternatives** — Click a day to load it into the arc (deferred: the page is
+server-rendered for today only). Writing the focus block to Calendar (rejected
+for now: an unasked write; the Plan card's Block already does that
+deliberately). Browser notifications at the end (deferred).
+
+**Tradeoffs** — The 6h "heavy" line and the 30-min-per-task estimate are
+heuristics, not settings. The timer is per-browser, so a second screen won't
+see it. Week data costs six more Calendar reads per refresh (cached).
+
+## 2026-10-27 — Attention items open the emails, with actions
+
+**Problem** — Clicking "Blocking" or "Waiting" scrolled to the reply list and
+left you to find the right emails. Seeing a problem and acting on it were two
+separate steps.
+
+**Decision** — Reply items in the strip now open a popover with just those
+emails and an action on each: Reply in Gmail (opens the message), Wait a day,
+Move… (labels, or a new one) and Trash (two-step). Dealt-with emails leave the
+popover, the strip and the reply list at once; the popover closes when it is
+empty. Non-reply items (conflicts, overdue) still jump to their card.
+
+**"Wait a day"** is a local snooze: it hides the email from this dashboard for
+24 hours, remembered in this browser only. It does not change Gmail (no label,
+no archive), so the email is still in your inbox and returns on its own.
+
+**Alternatives** — Scroll to the list and highlight the matches (the first
+idea; the popover makes it unnecessary). Compose replies inside the dashboard
+(deferred until the AI drafting work, which needs Gmail draft permission).
+
+**Tradeoffs** — Snoozes are per-browser, like the focus timer, so a second
+screen won't share them. A snooze that expires while the page is open is picked
+up on the next load.
+
+## 2026-10-27 — AI reply drafts (OpenAI-compatible model, saved as Gmail drafts)
+
+**Problem** — The reply popover could open, snooze, move or trash an email but
+not help write the answer, which is the slow part.
+
+**Decision** — A "Draft reply" action in each email row (shown only when
+`LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` are set and Google is connected).
+It takes an optional one-line steer ("say yes, suggest Thursday"), writes a
+short first-person reply, and shows it in an editable box. "Save to Gmail
+drafts" creates a threaded draft; nothing is ever sent from the dashboard. The
+model is any OpenAI-compatible chat API, so it works with Dartmouth Chat.
+
+**Safety** — The key is read only in server code and never reaches the
+browser; it lives in gitignored `.env.local` (and, if deployed, only in the
+private deployment's env, never the public demo). The routes fail closed (400)
+unless the model and Google are both configured, accept same-origin requests
+only, validate the message id, cap input (6,000 chars of email body, 12,000
+total) and output, and allow 30 drafts per hour. Errors never echo mail text
+and nothing is logged. The prompt tells the model the email is untrusted and
+not to follow instructions inside it; since the output is only a draft a human
+reads, a malicious email can't make the dashboard act.
+
+**Privacy** — Only the sender, subject and body of the one email being
+replied to leave the machine, to the model's provider. Pick a model hosted by
+the school (not a third-party cloud model) if that matters for a given inbox.
+
+**Alternatives** — Auto-reply or send (rejected: too risky). A new Gmail scope
+(not needed: `gmail.modify` already covers creating drafts, so no reconnect).
+
+**Tradeoffs** — The hourly cap is in-memory, so it resets when the server
+restarts. A draft is only as good as the model; it is written to leave
+bracketed placeholders instead of guessing facts.
+
+## 2026-10-27 — "Plan with AI": suggested schedule, confirmed one block at a time
+
+**Problem** — The Plan card's suggestions are mechanical: highest priority
+first, always at the start of a gap. It can't say why, can't spread tasks
+across the evening, and can't weigh deadlines against effort.
+
+**Decision** — A "Plan with AI" button on the Plan card sends the model only
+task names, lengths, priorities, due dates and today's open gaps (no event
+titles, no mail). It returns up to six suggestions, each with a time and a
+one-line reason, shown as a "Suggested plan". Each row has its own **Block**
+(the existing action that creates the calendar event) and a dismiss; nothing
+is placed until that click, and the Todoist task is never changed.
+
+**Safety** — The model's answer is never trusted: the server drops any
+suggestion that names an unknown task, repeats a task, starts in the past,
+doesn't fit entirely inside an open gap, or overlaps another suggestion, and
+always uses the task's own length (never one the model picks). It uses the
+same guards as drafting (both integrations configured, same-origin, hourly
+cap, fail closed). Task names are marked as data, not instructions.
+
+**Fixes found while testing against the real model** — It rejects a custom
+temperature (removed), and its token budget includes hidden reasoning, so
+budgets were raised (drafts too) and a cut-off answer now keeps the complete
+suggestions that arrived before the cut.
+
+**Alternatives** — "Block all" in one click (rejected: you asked to confirm
+each). Letting the model choose durations (rejected: it would invent them).
+
+**Tradeoffs** — Suggestions are a snapshot: after the day moves on, ones in
+the past disappear, and Clear returns to the standard open-time view.
+
 ## 2026-10-07 — An expired Google sign-in says so, instead of showing sample mail
 
 **Problem / trigger** — Gmail (and the calendar) went back to sample data

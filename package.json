@@ -6,7 +6,8 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "llm:models": "node --env-file=.env.local scripts/list-llm-models.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

@@ -49,7 +49,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   theme: "system",
   timeFormat: "12-hour",
   density: "comfortable",
-  surface: "glass",
+  surface: "solid",
   noteStyle: "timely",
   dayStart: 6,
   dayEnd: 22,
