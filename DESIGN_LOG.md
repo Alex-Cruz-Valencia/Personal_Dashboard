@@ -829,3 +829,23 @@ versus N changes in the CSS.
 **Tradeoffs / open questions** — A reminder that a design system's own
 documented contract is worth grep-ing for before assuming a visual bug is a
 missing style, rather than a broken assumption.
+
+## 2026-10-27 — Restraint pass: warm neutral, flat cards, solid by default
+
+**Problem** — The default look (frosted glass over radial color orbs, 22px
+corners, a drop shadow on every card, a sky gradient behind the day arc)
+competed with the content. The product is the schedule, not the chrome.
+
+**Decision** — Warm neutral canvas (`#F4F1EA`) with off-white cards (never pure
+white), hairline borders instead of shadows, corners 12/8/6px, a flat day-arc
+band, and one accent (the existing teal). Surfaces now default to "solid";
+Glass stays available under ⚙ → Surfaces. Added a global teal focus ring, and
+draft Privacy and Terms pages linked from the footer.
+
+**Alternatives** — Remove Glass entirely (rejected: it is a working opt-in
+setting). Change the typefaces (rejected: Bricolage + Jakarta already give the
+brand its own voice).
+
+**Tradeoffs** — This intentionally departs from the verbatim reference tokens
+(canvas, surface, line, ink, radii, shadow, light-mode band). Dark mode tokens
+are unchanged. Legal text is a draft and needs a real review.
