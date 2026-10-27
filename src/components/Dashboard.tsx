@@ -10,6 +10,7 @@ import { HelloCard } from "./HelloCard";
 import { PlanCard } from "./PlanCard";
 import { TaskDetailProvider } from "./TaskDetail";
 import { TaskList } from "./TaskList";
+import { WeekStrip } from "./WeekStrip";
 import { WeatherCard } from "./WeatherCard";
 
 interface DashboardProps {
@@ -53,6 +54,8 @@ export function Dashboard({ data, settings }: DashboardProps) {
           </div>
 
           <AttentionStrip items={attention} />
+
+          {data.week ? <WeekStrip days={data.week} /> : null}
 
           <DayArc
             agenda={data.agenda}

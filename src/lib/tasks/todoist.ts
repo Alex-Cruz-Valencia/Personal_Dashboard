@@ -304,3 +304,27 @@ export function addTask(task: NewTask): Promise<unknown> {
   if (task.labels?.length) body.labels = task.labels;
   return todoistWrite("/tasks", "POST", body);
 }
+
+/**
+ * Tasks due per day over the coming week (today included), keyed by ISO date.
+ * One extra read, used only by the week strip.
+ */
+export async function getDueCounts(
+  timezone: string,
+): Promise<Record<string, number>> {
+  if (!config.todoist.token) throw new Error("Todoist not configured");
+  const page = await todoistGet<TodoistTask>(
+    `/tasks/filter?query=${encodeURIComponent("7 days")}&limit=200`,
+  );
+  const counts: Record<string, number> = {};
+  for (const t of page.results) {
+    if (!t.due) continue;
+    // Timed tasks carry a timestamp; read its date in the viewer's zone.
+    const day =
+      t.due.date.includes("T") && hasExplicitZone(t.due.date)
+        ? new Date(t.due.date).toLocaleDateString("en-CA", { timeZone: timezone })
+        : t.due.date.slice(0, 10);
+    counts[day] = (counts[day] ?? 0) + 1;
+  }
+  return counts;
+}
