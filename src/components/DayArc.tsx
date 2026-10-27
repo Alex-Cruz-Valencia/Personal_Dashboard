@@ -10,6 +10,8 @@ import {
   expandedHourPx,
   formatHour,
 } from "@/lib/format";
+import { conflictSpans, freeSpans, upNext } from "@/lib/attention";
+import { minutesLabel } from "@/lib/plan";
 import type { DashboardSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
 import type { AgendaEvent, ArcWindow, TodayInfo } from "@/lib/types";
@@ -43,6 +45,9 @@ export function DayArc({ agenda, arc, today, settings }: DayArcProps) {
   const nowPct = arcPct(today.nowHour, arc);
   const nowLeft = nowPct.toFixed(2);
   const nowLabel = formatHour(today.nowHour, use24);
+  const gaps = freeSpans(agenda, Math.max(today.nowHour, arc.from), arc.to);
+  const conflicts = conflictSpans(agenda).filter((c) => c.end > arc.from && c.start < arc.to);
+  const next = upNext(agenda, today.nowHour);
 
   // Opening the expanded view lands on "now" (a third in from the left, so
   // what's next is in view), not on the start of the day.
@@ -71,6 +76,15 @@ export function DayArc({ agenda, arc, today, settings }: DayArcProps) {
           The day arc
           <span className="dayarc__sub">{arcRangeLabel(arc, use24)}</span>
         </h2>
+        {next ? (
+          <div className="dayarc__next" aria-live="polite">
+            <span className="dayarc__next-tag">{next.mode === "now" ? "Now" : "Next"}</span>
+            <span className="dayarc__next-name">{next.name}</span>
+            <span className="dayarc__next-when">
+              {next.mode === "now" ? `${minutesLabel(next.minutes)} left` : `in ${minutesLabel(next.minutes)}`}
+            </span>
+          </div>
+        ) : null}
         <div className="dayarc__tools">
           <div className="dayarc__legend">
             <span>
@@ -107,6 +121,16 @@ export function DayArc({ agenda, arc, today, settings }: DayArcProps) {
           <div className="arc__band">
             {hourLines.map((h, i) => (
               <div key={`h${i}`} className="arc__hour" style={{ left: `${h.left}%` }} />
+            ))}
+            {gaps.map((g, i) => (
+              <div
+                key={`g${i}`}
+                className="arc__gap"
+                style={{ left: `${arcPct(g.start, arc)}%`, width: `${arcPct(g.end, arc) - arcPct(g.start, arc)}%` }}
+                aria-hidden="true"
+              >
+                <span className="arc__gap-label">{minutesLabel(g.minutes)} free</span>
+              </div>
             ))}
             {arcEvents.map((e, i) => {
               const event = agenda[i];
@@ -157,6 +181,14 @@ export function DayArc({ agenda, arc, today, settings }: DayArcProps) {
                 </div>
               );
             })}
+            {conflicts.map((c, i) => (
+              <div
+                key={`c${i}`}
+                className="arc__conflict"
+                style={{ left: `${arcPct(c.start, arc)}%`, width: `${arcPct(c.end, arc) - arcPct(c.start, arc)}%` }}
+                title={`Conflict: ${c.names}`}
+              />
+            ))}
           </div>
 
           <div className="arc__now" style={{ left: `${nowLeft}%` }}>

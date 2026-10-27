@@ -880,3 +880,26 @@ scan comfortably. Cards are back on Solid: flat, 1px border, 12px corners,
 24px padding, no shadow, on the warm canvas. Events use a muted tint of one
 quiet hue per kind (slate blue / accent teal / warm gray) with ink text, so the
 day arc has color without saturated slabs. The compact greeting stays.
+
+## 2026-10-27 — "What did I miss?": attention strip + a day arc that reads gaps and conflicts
+
+**Problem** — The dashboard is left open on a second screen all day, and its
+first job is to answer "what did I miss?". Eight equal cards made the viewer
+hunt for it, and the day arc (the most-used part) showed events but not the
+space between them or where they collided.
+
+**Decision** — A "Needs attention" strip directly under the header lists, in
+order: schedule conflicts, tight turnarounds (<10 min), overdue tasks (rolled
+into one line so a backlog can't flood it) and replies (blocking first). Each
+item jumps to its card. When nothing is wrong it says so in one quiet line. On
+the arc: open stretches (≥20 min) are labelled "1h free", overlaps get a red
+mark under the band, and a "Now / Next" readout sits in the header. All logic
+is pure (`src/lib/attention.ts`) and uses only data already fetched.
+
+**Alternatives** — Overdue ticks on the arc (rejected; tasks aren't calendar
+events, see the earlier removal); one strip item per overdue task (rejected:
+noisy); browser notifications (deferred: needs permission and adds noise).
+
+**Tradeoffs** — Overdue means date-based only (a timed task earlier today is
+not flagged). The strip counts replies as of the last server render, so a
+trash/move updates it on the next refresh, not instantly.

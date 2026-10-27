@@ -1321,3 +1321,19 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .attn__detail { font-size: 12.5px; line-height: 1.35; color: var(--ink-soft); overflow-wrap: anywhere; }
 .attn--clear { padding: 13px 20px; }
 .attn__clear { font-size: 14px; font-weight: 500; color: var(--ink-soft); }
+
+/* ---------- day arc: up-next readout, free-gap labels, conflict marks (not in the static reference) ---------- */
+.dayarc__title { white-space: nowrap; }
+.dayarc__next { display: flex; align-items: baseline; gap: 8px; flex: 1 1 0; min-width: 0; margin-left: 14px; font-size: 14px; }
+.dayarc__next-tag { font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); flex: 0 0 auto; }
+.dayarc__next-name { font-weight: 600; color: var(--ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; flex: 0 1 auto; }
+.dayarc__next-when { color: var(--ink-soft); white-space: nowrap; flex: 0 0 auto; }
+.arc__gap { position: absolute; top: 9px; height: 56px; display: grid; place-items: center; container-type: inline-size; pointer-events: none; border-radius: 8px; border: 1px dashed var(--line); }
+.arc__gap-label { font-size: 11.5px; font-weight: 600; color: var(--ink-faint); white-space: nowrap; }
+@container (max-width: 90px) { .arc__gap-label { display: none; } }
+.arc__conflict { position: absolute; bottom: 2px; height: 4px; border-radius: 2px; background: var(--negative); z-index: 3; }
+@media (max-width: 760px) {
+  .dayarc__head { flex-wrap: wrap; }
+  .dayarc__next { order: 3; flex-basis: 100%; width: 100%; max-width: 100%; margin: 0; }
+}
+.morning > .dayarc, .morning > .attn { min-width: 0; }

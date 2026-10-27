@@ -141,3 +141,62 @@ export function buildAttention(input: {
 
   return items;
 }
+
+/** Real, timed events only (all-day banners don't block time). */
+function timed(agenda: AgendaEvent[]): AgendaEvent[] {
+  return agenda.filter((e) => e.end - e.start < ALL_DAY_HOURS);
+}
+
+/** Open stretches in [from, to] at least `minMinutes` long, for the arc's "free" labels. */
+export function freeSpans(
+  agenda: AgendaEvent[],
+  from: number,
+  to: number,
+  minMinutes = 20,
+): { start: number; end: number; minutes: number }[] {
+  const spans = timed(agenda)
+    .map((e) => [Math.max(e.start, from), Math.min(e.end, to)] as [number, number])
+    .filter(([s, e]) => e > s)
+    .sort((a, b) => a[0] - b[0]);
+  const out: { start: number; end: number; minutes: number }[] = [];
+  let cursor = from;
+  const push = (s: number, e: number) => {
+    const minutes = Math.round((e - s) * 60);
+    if (minutes >= minMinutes) out.push({ start: s, end: e, minutes });
+  };
+  for (const [s, e] of spans) {
+    if (s > cursor) push(cursor, s);
+    cursor = Math.max(cursor, e);
+  }
+  if (to > cursor) push(cursor, to);
+  return out;
+}
+
+/** The stretches where two events overlap, for the arc's conflict marks. */
+export function conflictSpans(agenda: AgendaEvent[]): { start: number; end: number; names: string }[] {
+  const ev = timed(agenda).sort((a, b) => a.start - b.start || a.end - b.end);
+  const out: { start: number; end: number; names: string }[] = [];
+  for (let i = 0; i < ev.length; i++) {
+    for (let j = i + 1; j < ev.length; j++) {
+      if (ev[j].start >= ev[i].end) break;
+      out.push({
+        start: ev[j].start,
+        end: Math.min(ev[i].end, ev[j].end),
+        names: `${ev[i].name} and ${ev[j].name}`,
+      });
+    }
+  }
+  return out;
+}
+
+/** "Now: X, 20 min left" or "Next: Y in 1h 5m"; null when the day is clear. */
+export function upNext(agenda: AgendaEvent[], nowHour: number): { mode: "now" | "next"; name: string; minutes: number } | null {
+  const ev = timed(agenda);
+  const current = ev
+    .filter((e) => e.start <= nowHour && e.end > nowHour)
+    .sort((a, b) => a.end - b.end)[0];
+  if (current) return { mode: "now", name: current.name, minutes: Math.max(1, Math.round((current.end - nowHour) * 60)) };
+  const next = ev.filter((e) => e.start > nowHour).sort((a, b) => a.start - b.start)[0];
+  if (next) return { mode: "next", name: next.name, minutes: Math.max(1, Math.round((next.start - nowHour) * 60)) };
+  return null;
+}
