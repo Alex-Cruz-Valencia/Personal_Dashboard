@@ -1257,3 +1257,47 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .legal ul { list-style: disc; padding-left: 20px; margin: 0 0 12px; }
 .legal__draft { display: inline-block; font-size: 12px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--warning); background: var(--warning-tint); padding: 4px 9px; border-radius: var(--radius-sm); }
 .legal__meta { color: var(--ink-soft); font-size: 14px; }
+
+/* =============================================================================
+   EDITORIAL EXPERIMENT — not in the static reference. Applies to Solid only
+   (Glass keeps its own material). Boxes become ruled sections, the greeting
+   becomes the page's headline, and calendar kinds are told apart by line and
+   tone instead of hue: meeting = outlined, focus = accent fill, personal =
+   dashed. All token-driven; delete this block to return to the card layout.
+   ========================================================================== */
+.morning:not(.morning--glass) {
+  --cal-meeting:  var(--ink);
+  --cal-focus:    var(--accent);
+  --cal-personal: var(--ink-soft);
+  --gap: 40px;
+}
+.morning:not(.morning--glass) .card { background: transparent; border: 0; border-top: 1px solid var(--ink); border-radius: 0; }
+.morning:not(.morning--glass) .hello,
+.morning:not(.morning--glass) .weather { border-top: 0; }
+.morning:not(.morning--glass) .topbar { align-items: end; gap: 48px; }
+.morning:not(.morning--glass) .hello { padding: 28px 0 0; gap: 18px; }
+.morning:not(.morning--glass) .hello__date { color: var(--ink-soft); letter-spacing: 0.16em; font-size: 12px; }
+.morning:not(.morning--glass) .hello__greeting { font-size: clamp(44px, 8.5vw, 112px); letter-spacing: -0.045em; line-height: 0.92; font-weight: 500; }
+.morning:not(.morning--glass) .hello__note { background: transparent; padding: 0; max-width: 56ch; border-radius: 0; gap: 14px; }
+.morning:not(.morning--glass) .hello__note-text { color: var(--ink); font-size: 17px; font-weight: 400; }
+.morning:not(.morning--glass) .weather { padding: 0 0 4px; min-width: 280px; }
+.morning:not(.morning--glass) .card__head { padding: 14px 0 12px; }
+.morning:not(.morning--glass) .card__body { padding: 0 0 18px; }
+.morning:not(.morning--glass) .card__title,
+.morning:not(.morning--glass) .dayarc__title { font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
+.morning:not(.morning--glass) .card__count { background: transparent; border: 0; padding: 0; font-size: 12px; letter-spacing: 0.04em; }
+.morning:not(.morning--glass) .dayarc { padding: 0 0 18px; }
+.morning:not(.morning--glass) .dayarc__head { padding-top: 14px; }
+.morning:not(.morning--glass) .arc__band { border-radius: 0; border-block: 1px solid var(--line); background: transparent; }
+.morning:not(.morning--glass) .arc__hour { background: var(--line); }
+.morning:not(.morning--glass) .arc__event { border-radius: 2px; border: 1.5px solid var(--ink); background: var(--surface); color: var(--ink); }
+.morning:not(.morning--glass) .arc__event--focus { background: var(--accent); border-color: var(--accent); color: var(--canvas); }
+.morning:not(.morning--glass) .arc__event--personal { border-style: dashed; border-color: var(--ink-soft); }
+.morning:not(.morning--glass) .arc__event-time { opacity: 0.75; }
+.morning:not(.morning--glass) .dayarc__swatch { border-radius: 0; }
+.morning:not(.morning--glass) .columns { gap: 48px; }
+@media (max-width: 760px) {
+  .morning:not(.morning--glass) { --gap: 28px; }
+  .morning:not(.morning--glass) .topbar { gap: 28px; }
+}
+.morning:not(.morning--glass) .dayarc--expanded .arc__scroller { margin: -12px 0 0; padding: 12px 0 6px; }

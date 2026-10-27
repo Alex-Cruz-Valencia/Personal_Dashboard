@@ -849,3 +849,21 @@ brand its own voice).
 **Tradeoffs** — This intentionally departs from the verbatim reference tokens
 (canvas, surface, line, ink, radii, shadow, light-mode band). Dark mode tokens
 are unchanged. Legal text is a draft and needs a real review.
+
+## 2026-10-27 — Editorial experiment: ruled sections, headline greeting, line-coded events
+
+**Problem** — After the restraint pass every section was still the same boxed
+card, and the saturated blue/amber event blocks out-shouted the greeting.
+
+**Decision** — On Solid, cards lose their box and become sections under a 1px
+ink rule with small uppercase titles. The greeting becomes a page-sized
+headline directly on the canvas, and the day note is plain text. Calendar kinds
+are told apart by line and tone, not hue: meeting = outlined, focus = accent
+fill, personal = dashed. One block at the end of `globals.css`; delete it to
+return to cards. Glass is unaffected.
+
+**Alternatives** — Keep colored blocks but mute them (safer, less distinct).
+
+**Tradeoffs** — Kind is no longer readable at a glance by color alone; the
+legend carries the mapping. Less container structure means the headline and
+rules do all the grouping work. Contrast of outlined blocks not formally measured.
