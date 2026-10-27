@@ -1259,45 +1259,46 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .legal__meta { color: var(--ink-soft); font-size: 14px; }
 
 /* =============================================================================
-   EDITORIAL EXPERIMENT — not in the static reference. Applies to Solid only
-   (Glass keeps its own material). Boxes become ruled sections, the greeting
-   becomes the page's headline, and calendar kinds are told apart by line and
-   tone instead of hue: meeting = outlined, focus = accent fill, personal =
-   dashed. All token-driven; delete this block to return to the card layout.
+   CALM LAYOUT — not in the static reference. Applies to Solid only (Glass
+   keeps its own material). Flat, softly bordered cards with generous padding;
+   a compact greeting; calendar kinds shown as muted tints of one quiet hue
+   each, with text always in ink. Token-driven; delete this block to return to
+   the reference card layout.
    ========================================================================== */
 .morning:not(.morning--glass) {
-  --cal-meeting:  var(--ink);
+  --cal-meeting:  #55708D;
   --cal-focus:    var(--accent);
-  --cal-personal: var(--ink-soft);
-  --gap: 26px;
+  --cal-personal: #7C766A;
+  --gap: 20px;
 }
-.morning:not(.morning--glass) .card { background: transparent; border: 0; border-top: 1px solid var(--line); border-radius: 0; }
-.morning:not(.morning--glass) .hello,
-.morning:not(.morning--glass) .weather { border-top: 0; }
-.morning:not(.morning--glass) .topbar { align-items: start; gap: 40px; }
-.morning:not(.morning--glass) .hello { padding: 6px 0 0; gap: 10px; }
-.morning:not(.morning--glass) .hello__date { color: var(--ink-soft); letter-spacing: 0.16em; font-size: 12px; }
-.morning:not(.morning--glass) .hello__greeting { font-size: clamp(30px, 3.4vw, 42px); letter-spacing: -0.03em; line-height: 1.05; font-weight: 600; }
-.morning:not(.morning--glass) .hello__note { background: transparent; padding: 0; max-width: 62ch; border-radius: 0; gap: 12px; margin-top: 2px; }
-.morning:not(.morning--glass) .hello__note-text { color: var(--ink); font-size: 15px; line-height: 1.45; font-weight: 400; }
-.morning:not(.morning--glass) .weather { padding: 6px 0 0; min-width: 280px; }
-.morning:not(.morning--glass) .card__head { padding: 14px 0 12px; }
-.morning:not(.morning--glass) .card__body { padding: 0 0 18px; }
-.morning:not(.morning--glass) .card__title,
-.morning:not(.morning--glass) .dayarc__title { font-family: var(--font-body); font-size: 12px; font-weight: 700; letter-spacing: 0.14em; text-transform: uppercase; }
-.morning:not(.morning--glass) .card__count { background: transparent; border: 0; padding: 0; font-size: 12px; letter-spacing: 0.04em; }
-.morning:not(.morning--glass) .dayarc { padding: 0 0 18px; }
-.morning:not(.morning--glass) .dayarc__head { padding-top: 14px; }
-.morning:not(.morning--glass) .arc__band { border-radius: 0; border-block: 1px solid var(--line); background: transparent; }
-.morning:not(.morning--glass) .arc__hour { background: var(--line); }
-.morning:not(.morning--glass) .arc__event { border-radius: 2px; border: 1px solid var(--ink); background: var(--surface); color: var(--ink); }
-.morning:not(.morning--glass) .arc__event--focus { background: var(--accent); border-color: var(--accent); color: var(--canvas); }
-.morning:not(.morning--glass) .arc__event--personal { border-style: dashed; border-color: var(--ink-soft); }
+:root:has(.morning[data-theme="dark"]) .morning:not(.morning--glass),
+.morning[data-theme="dark"]:not(.morning--glass) { --cal-meeting: #8FAAC6; --cal-personal: #A39D90; }
+@media (prefers-color-scheme: dark) {
+  .morning:not([data-theme]):not(.morning--glass) { --cal-meeting: #8FAAC6; --cal-personal: #A39D90; }
+}
+.morning:not(.morning--glass) .card { border-radius: var(--radius-lg); }
+.morning:not(.morning--glass) .hello { padding: 22px 26px; gap: 10px; }
+.morning:not(.morning--glass) .hello__greeting { font-size: clamp(28px, 3.2vw, 38px); letter-spacing: -0.03em; line-height: 1.05; }
+.morning:not(.morning--glass) .hello__note { margin-top: 4px; padding: 12px 14px; }
+.morning:not(.morning--glass) .card__head { padding: 20px 24px 14px; }
+.morning:not(.morning--glass) .card__body { padding: 0 24px 20px; }
+.morning:not(.morning--glass) .dayarc { padding: 20px 24px 18px; }
+.morning:not(.morning--glass) .arc__band { background: var(--surface-2); border-radius: var(--radius); }
+.morning:not(.morning--glass) .arc__event {
+  background: color-mix(in srgb, var(--cal-meeting) 18%, var(--surface));
+  border: 1px solid color-mix(in srgb, var(--cal-meeting) 55%, var(--surface));
+  color: var(--ink); border-radius: 8px;
+}
+.morning:not(.morning--glass) .arc__event--focus {
+  background: color-mix(in srgb, var(--cal-focus) 18%, var(--surface));
+  border-color: color-mix(in srgb, var(--cal-focus) 55%, var(--surface));
+}
+.morning:not(.morning--glass) .arc__event--personal {
+  background: color-mix(in srgb, var(--cal-personal) 16%, var(--surface));
+  border-color: color-mix(in srgb, var(--cal-personal) 50%, var(--surface));
+}
 .morning:not(.morning--glass) .arc__event-time { opacity: 0.75; }
-.morning:not(.morning--glass) .dayarc__swatch { border-radius: 0; }
-.morning:not(.morning--glass) .columns { gap: 36px; }
+.morning:not(.morning--glass) .dayarc--expanded .arc__scroller { margin: -12px -24px 0; padding: 12px 24px 6px; }
 @media (max-width: 760px) {
-  .morning:not(.morning--glass) { --gap: 22px; }
-  .morning:not(.morning--glass) .topbar { gap: 20px; }
+  .morning:not(.morning--glass) { --gap: 14px; }
 }
-.morning:not(.morning--glass) .dayarc--expanded .arc__scroller { margin: -12px 0 0; padding: 12px 0 6px; }

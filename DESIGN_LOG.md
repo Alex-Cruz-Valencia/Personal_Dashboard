@@ -874,3 +874,9 @@ fold. For a productivity tool the work comes first, so the greeting is now a
 normal 30–42px heading, section rules use the quiet `--line` color instead of
 ink, and spacing is tighter. Rule of thumb going forward: nothing decorative
 may push actionable content off the first screen.
+
+**Second follow-up (same day)** — Ruled, unboxed sections felt too bare to
+scan comfortably. Cards are back on Solid: flat, 1px border, 12px corners,
+24px padding, no shadow, on the warm canvas. Events use a muted tint of one
+quiet hue per kind (slate blue / accent teal / warm gray) with ink text, so the
+day arc has color without saturated slabs. The compact greeting stays.
