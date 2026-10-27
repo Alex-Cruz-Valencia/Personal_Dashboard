@@ -88,6 +88,39 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-28 — Experiment: just today's calendar and today's tasks, side by side
+
+**Problem** — After adding an attention strip, week strip, plan card, reply
+list, weather and greeting, the page answered many questions at once. The
+actual daily loop is narrower: "what is my day, and what do I need to do in it?"
+The horizontal day arc also reads differently from the calendar a person already
+knows (Google Calendar's day view), so every glance cost a little translation.
+
+**Decision (experiment branch)** — The view is two panels and nothing else: a
+**vertical day calendar** (hours down the left, events sized by duration,
+overlapping events side by side, a line at the current time, lands near now) next
+to **Today's tasks**. A Now/Next readout and the Focus timer live in the calendar
+header; clicking an event or task opens the same detail editors as before.
+"Needs a reply", "Plan", the attention strip, week strip, weather and greeting are
+**archived**: the components stay in the repo, they are just not rendered, so
+they can come back without rewriting.
+
+**Why vertical** — It matches the mental model of Google Calendar, makes event
+length and overlaps obvious (height and side-by-side width), and pairs naturally
+with a task list as two columns that scroll independently.
+
+**Alternatives** — Keep the horizontal arc beside the tasks (rejected for this
+experiment: wide-and-short doesn't share a row with a list). Keep the attention
+strip on top (not included: it depends on replies, which are archived; overdue and
+conflicts could return as a thin line).
+
+**Tradeoffs / open questions** — Reply and AI planning features are unreachable
+in this view (their routes still exist). The server still fetches mail and the six
+week-ahead calendars even though nothing shows them, which is wasted work if this
+layout sticks. Free-time labels and conflict marks from the horizontal arc are not
+ported (side-by-side lanes show overlaps instead). Does losing the weather and the
+"what did I miss" strip hurt, or is calm better? That is what this branch tests.
+
 ## 2026-10-27 — Restraint pass: warm neutral, flat cards, solid by default
 
 **Problem** — The default look (frosted glass over radial color orbs, 22px

@@ -1,17 +1,11 @@
 import { use24Hour, type DashboardSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
-import { AttentionStrip } from "./AttentionStrip";
+import { DayCalendar } from "./DayCalendar";
 import { FocusProvider } from "./Focus";
-import { DayArc } from "./DayArc";
-import { EmailList } from "./EmailList";
 import { EventDetailProvider } from "./EventDetail";
 import { Footline } from "./Footline";
-import { HelloCard } from "./HelloCard";
-import { PlanCard } from "./PlanCard";
 import { TaskDetailProvider } from "./TaskDetail";
 import { TaskList } from "./TaskList";
-import { WeekStrip } from "./WeekStrip";
-import { WeatherCard } from "./WeatherCard";
 
 interface DashboardProps {
   data: DashboardData;
@@ -37,54 +31,19 @@ export function Dashboard({ data, settings }: DashboardProps) {
           className={`morning${settings.surface === "glass" ? " morning--glass" : ""}`}
           data-theme={settings.theme === "system" ? undefined : settings.theme}
         >
-          <div className="topbar">
-            <HelloCard user={data.user} today={data.today} dayNote={data.dayNote} />
-            <WeatherCard
-              weather={data.weather}
-              arc={data.weatherArc}
+          {/* Experiment: today's calendar and today's tasks, side by side.
+              Archived from this view (components kept, just not rendered):
+              HelloCard, WeatherCard, AttentionStrip, WeekStrip, DayArc,
+              PlanCard, EmailList. */}
+          <div className="twocol">
+            <DayCalendar
               agenda={data.agenda}
-              nowHour={data.today.nowHour}
-              settings={settings}
-            />
-          </div>
-
-          <AttentionStrip
-            agenda={data.agenda}
-            tasks={data.tasks}
-            replies={data.replies}
-            nowHour={data.today.nowHour}
-            theme={settings.theme}
-            aiDraft={data.ai}
-          />
-
-          {data.week ? <WeekStrip days={data.week} /> : null}
-
-          <DayArc
-            agenda={data.agenda}
-            arc={data.arc}
-            today={data.today}
-            settings={settings}
-            focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
-          />
-
-          <div className="columns">
-            <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
-            <PlanCard
-              agenda={data.agenda}
-              tasks={data.tasks}
-              today={data.today}
               arc={data.arc}
+              today={data.today}
               settings={settings}
-              sources={{ calendar: data.sources.calendar, tasks: data.sources.tasks }}
-              reconnect={data.googleReconnect}
-              aiSchedule={data.ai}
+              focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
             />
-            <EmailList
-              replies={data.replies}
-              source={data.sources.email}
-              reconnect={data.googleReconnect}
-              theme={settings.theme}
-            />
+            <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
           </div>
 
           <Footline agenda={data.agenda} today={data.today} settings={settings} />
