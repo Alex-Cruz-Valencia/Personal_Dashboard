@@ -187,6 +187,16 @@ cheaper). Without a key, a deterministic sentence is used instead.
 Route: `GET|POST /api/summary`. Source:
 [`src/lib/anthropic/summary.ts`](src/lib/anthropic/summary.ts).
 
+### Phase 6 — AI drafting and planning (any OpenAI-compatible API)
+Optional. Set `LLM_BASE_URL` (e.g. `https://chat.dartmouth.edu/api`),
+`LLM_API_KEY` and `LLM_MODEL` in `.env.local` (run `npm run llm:models` to list
+the model ids your key can use). Needs Google connected. Adds **Draft reply**
+(saved as a Gmail draft, never sent) to the reply popover and **Plan with AI** to
+the Plan card (each suggestion needs its own Block click). The key is read only
+on the server; set it **only on the private deployment**, never the public demo.
+Routes: `POST /api/replies/[id]/draft`, `POST /api/replies/[id]/draft/save`,
+`POST /api/plan/suggest`. Source: [`src/lib/llm/`](src/lib/llm/).
+
 ## Endpoints
 
 | Route | Purpose |
@@ -224,7 +234,7 @@ separately:
 
 | | **Private** (you) | **Public demo** (anyone) |
 |---|---|---|
-| Env vars | All of them — `TODOIST_API_TOKEN`, `GOOGLE_CLIENT_ID`/`_SECRET`, `GOOGLE_REDIRECT_URI` (this deployment's own URL), `ANTHROPIC_API_KEY`, `DASHBOARD_*`, `UPSTASH_REDIS_REST_URL`/`_TOKEN` (or `KV_REST_API_URL`/`_TOKEN`) | **None of the above** — leave every integration var unset (or set `DASHBOARD_FORCE_MOCK="true"` to force it explicitly) |
+| Env vars | All of them — `TODOIST_API_TOKEN`, `GOOGLE_CLIENT_ID`/`_SECRET`, `GOOGLE_REDIRECT_URI` (this deployment's own URL), `ANTHROPIC_API_KEY`, `LLM_BASE_URL`/`LLM_API_KEY`/`LLM_MODEL`, `DASHBOARD_*`, `UPSTASH_REDIS_REST_URL`/`_TOKEN` (or `KV_REST_API_URL`/`_TOKEN`) | **None of the above** — leave every integration var unset (or set `DASHBOARD_FORCE_MOCK="true"` to force it explicitly) |
 | Behavior | Live data (see Integration phases above) | Frozen reference dataset — `isDemoMode` in `src/lib/config.ts`, `mock-data.ts` |
 | Access | **Vercel → Project → Settings → Deployment Protection** — turn on Vercel Authentication or a password. Don't skip this; it's the only thing standing between the internet and your inbox. | Public, no protection needed |
 

@@ -10,30 +10,54 @@
   separate from code so it reads as a standalone product narrative. Routine
   bug fixes with no real alternative don't need an entry.
 
-- The UI is a **verbatim reproduction** of the Claude Design source
-  "Morning Dashboard v2.dc.html". Its stylesheet is ported as-is into
-  `src/app/globals.css` and components use those exact class names. Do not
-  restyle — if the design changes, re-port from the design project
-  (`0e114d1c-17f4-4cf4-9af5-6e2d7e880dc0`).
-- Additions **not** in the static reference, kept visually minimal and
-  token-only (see the marked sections at the end of `globals.css`): the ⚙
-  `SettingsPanel` in the footer, per-card empty states (`.card__empty`), the
-  `StaleTag` "Sample" marker, the day-arc overlap cascade
-  (`.arc__event--stacked`; lanes from `layoutOverlaps()` in `format.ts`),
-  narrow-block labels (container queries on `.arc__event--tight`; side label
-  from `placeSideLabel()`), and the arc's "Expand" zoom (`.dayarc--expanded`, **on by default**;
-  px/hour = max(`expandedHourPx()`, what fits the card), bigger bubbles with
-  range + location, edge fades + mouse drag-to-pan via `useDragPan`,
-  remembered in localStorage), and **glass surfaces** (`.morning--glass`,
-  the default; `settings.surface` "glass" | "solid", ⚙ → Surfaces). Glass is
-  a layer at the very end of `globals.css` driven by `--glass-*` tokens and
-  `:root:has(.morning--glass)` (so body + portalled popovers follow); it
-  never edits the reference rules (the day arc's band + event blocks get
-  their own glass rules there too, via a per-kind `--ev-c`; glass also
-  overrides `--cal-*` with a pastel Okabe–Ito triad — periwinkle / apricot
-  / mint; Solid keeps the reference's), and falls back
-  to solid under
-  `prefers-reduced-transparency` / `prefers-contrast: more`.
+- The UI started as a reproduction of the Claude Design source
+  "Morning Dashboard v2.dc.html" (project `0e114d1c-17f4-4cf4-9af5-6e2d7e880dc0`)
+  and its class names and stylesheet structure are still the base in
+  `src/app/globals.css`. **Since 2026-10-27 it deliberately departs from the
+  reference** (see `DESIGN_LOG.md`): warm neutral tokens (canvas `#F4F1EA`, light
+  and dark), 12/8/6px radii, no card shadow, a flat day-arc band, a global teal
+  focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →
+  Surfaces). Function over polish: nothing decorative may push actionable content
+  off the first screen. Don't "restore" the reference tokens.
+- Additions **not** in the static reference, kept token-only (see the marked
+  sections at the end of `globals.css`): the ⚙ `SettingsPanel`, per-card empty
+  states (`.card__empty`), the `StaleTag` "Sample" marker, the day-arc overlap
+  cascade (`.arc__event--stacked`; `layoutOverlaps()` in `format.ts`),
+  narrow-block labels (`.arc__event--tight`; `placeSideLabel()`), the arc's
+  "Expand" zoom (`.dayarc--expanded`, on by default; `expandedHourPx()`, drag-to-pan
+  via `useDragPan`, remembered in localStorage), and the opt-in **glass surfaces**
+  (`.morning--glass`, `settings.surface`; a layer at the end of `globals.css`
+  driven by `--glass-*` tokens and `:root:has(.morning--glass)`; falls back to
+  solid under `prefers-reduced-transparency` / `prefers-contrast: more`).
+- **"What did I miss?" layer** (all pure logic is server/client-safe):
+  - `AttentionStrip` (`src/lib/attention.ts`): conflicts, tight turnarounds (<10
+    min), overdue tasks (one rolled-up line; `Task.overdueDays` is date-based, set
+    in `todoist.ts`), replies. Reply items open `ReplyQueue` (Reply in Gmail,
+    Wait a day, Move, Trash); other items scroll to their card.
+  - Reply visibility is shared client state in `src/lib/reply-state.ts`
+    (session-cleared + "Wait" snoozes in localStorage `dashboard_snoozed`, 24h);
+    `EmailList`, the strip and the queue all filter by it. Snooze never touches Gmail.
+  - Day arc: free-gap labels, red conflict marks, Now/Next readout
+    (`freeSpans`/`conflictSpans`/`upNext` in `attention.ts`).
+  - `WeekStrip` (`src/lib/week.ts`): today + 6 days, booked hours and tasks due
+    (six extra `getAgenda` calls + one Todoist query, all fail-soft; `week` is
+    null when neither source is live). "Heavy" = booked + 30 min/task ≥ 6h.
+  - Focus timer (`Focus.tsx`): local only (localStorage `dashboard_focus`), start
+    from the arc toolbar or a task's editor; shows in the arc header, as a block,
+    and in the tab title. Writes nothing to Google or Todoist.
+- **AI (any OpenAI-compatible chat API, e.g. Dartmouth Chat)** — `LLM_BASE_URL`,
+  `LLM_API_KEY`, `LLM_MODEL` in gitignored `.env.local` (private deployment env
+  only; **never** the public demo, never `NEXT_PUBLIC_`). `features.llm` +
+  `features.google` gate it (`DashboardData.ai`). Rules for any new AI route:
+  use `guardAi()` (`src/lib/llm/guard.ts`: fail closed, same-origin, hourly cap),
+  call the model only through `src/lib/llm/client.ts` (no logging, generic
+  errors, input cap), validate model output on the server, require a human click
+  before any write, send the minimum data. Don't pass `temperature` (the model
+  rejects it) and keep token budgets generous (they include hidden reasoning).
+  Features: `POST /api/replies/[id]/draft` (+ `/save` → Gmail *draft*, never
+  sends; `gmail.modify` already covers drafts) and `POST /api/plan/suggest`
+  (validated by `schedule-validate.ts`; each suggestion needs its own Block).
+  `npm run llm:models` lists model ids.
 - **Changed from the reference:** the accent is teal (`--accent`
   #0B6F75 / #4DC3C4 dark, `--accent-tint`, and the note text) in every
   mode, instead of the source's green.
