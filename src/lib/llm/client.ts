@@ -31,7 +31,6 @@ export async function chat(opts: {
       body: JSON.stringify({
         model,
         max_tokens: opts.maxTokens ?? 500,
-        temperature: 0.4,
         messages: [
           { role: "system", content: opts.system },
           { role: "user", content: opts.user },

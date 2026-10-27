@@ -985,3 +985,34 @@ the school (not a third-party cloud model) if that matters for a given inbox.
 **Tradeoffs** — The hourly cap is in-memory, so it resets when the server
 restarts. A draft is only as good as the model; it is written to leave
 bracketed placeholders instead of guessing facts.
+
+## 2026-10-27 — "Plan with AI": suggested schedule, confirmed one block at a time
+
+**Problem** — The Plan card's suggestions are mechanical: highest priority
+first, always at the start of a gap. It can't say why, can't spread tasks
+across the evening, and can't weigh deadlines against effort.
+
+**Decision** — A "Plan with AI" button on the Plan card sends the model only
+task names, lengths, priorities, due dates and today's open gaps (no event
+titles, no mail). It returns up to six suggestions, each with a time and a
+one-line reason, shown as a "Suggested plan". Each row has its own **Block**
+(the existing action that creates the calendar event) and a dismiss; nothing
+is placed until that click, and the Todoist task is never changed.
+
+**Safety** — The model's answer is never trusted: the server drops any
+suggestion that names an unknown task, repeats a task, starts in the past,
+doesn't fit entirely inside an open gap, or overlaps another suggestion, and
+always uses the task's own length (never one the model picks). It uses the
+same guards as drafting (both integrations configured, same-origin, hourly
+cap, fail closed). Task names are marked as data, not instructions.
+
+**Fixes found while testing against the real model** — It rejects a custom
+temperature (removed), and its token budget includes hidden reasoning, so
+budgets were raised (drafts too) and a cut-off answer now keeps the complete
+suggestions that arrived before the cut.
+
+**Alternatives** — "Block all" in one click (rejected: you asked to confirm
+each). Letting the model choose durations (rejected: it would invent them).
+
+**Tradeoffs** — Suggestions are a snapshot: after the day moves on, ones in
+the past disappear, and Clear returns to the standard open-time view.

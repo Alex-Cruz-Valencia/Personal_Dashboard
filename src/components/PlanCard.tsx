@@ -3,7 +3,8 @@
 import { useRouter } from "next/navigation";
 import { useMemo, useState } from "react";
 import { decimalHourToTimeInput, formatHour } from "@/lib/format";
-import { buildPlan, minutesLabel, type OpenGap, type ScheduledTask, type Suggestion } from "@/lib/plan";
+import { buildPlan, minutesLabel, plannableTasks, taskMinutes, type ScheduledTask } from "@/lib/plan";
+import type { ScheduleSuggestion } from "@/lib/llm/schedule-validate";
 import type { DashboardSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
 import type { AgendaEvent, ArcWindow, SliceSource, Task, TodayInfo } from "@/lib/types";
@@ -20,6 +21,8 @@ interface PlanCardProps {
   sources: { calendar: SliceSource; tasks: SliceSource };
   /** Google's stored sign-in is dead — offer a reconnect link on the tag. */
   reconnect?: boolean;
+  /** AI scheduling is available (model + Google configured). */
+  aiSchedule?: boolean;
 }
 
 /** Show at most this many open gaps — the rest of the day can wait. */
@@ -31,7 +34,7 @@ const MAX_GAPS = 4;
  * that fit — one click blocks a task at the start of its gap on Google
  * Calendar (the Todoist task itself is never changed).
  */
-export function PlanCard({ agenda, tasks, today, arc, settings, sources, reconnect }: PlanCardProps) {
+export function PlanCard({ agenda, tasks, today, arc, settings, sources, reconnect, aiSchedule }: PlanCardProps) {
   const use24 = use24Hour(settings);
   const router = useRouter();
   const { open: openEvent } = useEventDetail();
@@ -41,6 +44,8 @@ export function PlanCard({ agenda, tasks, today, arc, settings, sources, reconne
   const [skipped, setSkipped] = useState<ReadonlySet<string>>(new Set());
   const [pending, setPending] = useState<string | null>(null);
   const [notice, setNotice] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
+  // The AI's proposed schedule. Suggestions only: each needs its own Block click.
+  const [ai, setAi] = useState<{ phase: "idle" | "thinking" | "ready"; items: ScheduleSuggestion[]; error: string | null }>({ phase: "idle", items: [], error: null });
 
   // Wind-down (⚙ setting, 9pm default): suggestions only run up to it, and
   // after it the card stops pointing at work entirely.
@@ -55,15 +60,48 @@ export function PlanCard({ agenda, tasks, today, arc, settings, sources, reconne
   const hasTasks = sources.tasks !== "off";
   const gaps = plan.gaps.slice(0, MAX_GAPS);
 
+  const scheduledIds = new Set(plan.scheduled.map((x) => x.task.id));
+  const aiItems = ai.items.filter((i) => i.start >= today.nowHour - 1e-6 && !scheduledIds.has(i.taskId));
+  const taskById = new Map(tasks.map((t) => [t.id, t]));
+
+  const suggestWithAi = async () => {
+    setNotice(null);
+    setAi({ phase: "thinking", items: [], error: null });
+    const pool = plannableTasks(tasks, agenda, skipped);
+    try {
+      const res = await fetch("/api/plan/suggest", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          nowHour: today.nowHour,
+          gaps: plan.gaps.map((g) => ({ start: g.start, end: g.end })),
+          tasks: pool.map((t) => ({
+            id: t.id,
+            name: t.name,
+            priority: t.priority,
+            minutes: taskMinutes(t),
+            due: t.due,
+            overdueDays: t.overdueDays,
+            deadline: t.deadline,
+          })),
+        }),
+      });
+      const json = (await res.json().catch(() => ({}))) as { suggestions?: ScheduleSuggestion[]; error?: string };
+      if (!res.ok || !json.suggestions) throw new Error(json.error ?? "Couldn't get suggestions.");
+      setAi({ phase: "ready", items: json.suggestions, error: null });
+    } catch (err) {
+      setAi({ phase: "idle", items: [], error: (err as Error).message });
+    }
+  };
+
   const skip = (taskId: string) => setSkipped((s) => new Set(s).add(taskId));
 
   // Blocking always starts at the beginning of the gap — "now" for a gap
   // that's already under way. It only creates the calendar event; the
   // Todoist task is left exactly as it was.
-  const block = async (gap: OpenGap, { task, minutes }: Suggestion) => {
+  const blockAt = async (task: Task, start: number, minutes: number) => {
     const taskId = task.id!;
-    const start = gap.start;
-    const end = gap.start + minutes / 60;
+    const end = start + minutes / 60;
     setPending(taskId);
     setNotice(null);
     try {
@@ -84,6 +122,7 @@ export function PlanCard({ agenda, tasks, today, arc, settings, sources, reconne
         kind: "ok",
         text: `On your calendar ${formatHour(start, use24)}–${formatHour(end, use24)}. The task stays open in Todoist.`,
       });
+      setAi((a) => ({ ...a, items: a.items.filter((i) => i.taskId !== taskId) }));
       router.refresh();
     } catch (err) {
       setNotice({ kind: "error", text: (err as Error).message });
@@ -143,8 +182,68 @@ export function PlanCard({ agenda, tasks, today, arc, settings, sources, reconne
               <p className="plan__winddown">Done planning for today — time to wind down.</p>
             ) : (
               <>
-                <div className="plan__label">Open time</div>
-                {plan.dayOver ? (
+                <div className="plan__labelrow">
+                  <div className="plan__label">{ai.phase === "ready" ? "Suggested plan" : "Open time"}</div>
+                  {aiSchedule && canBlock && hasTasks && !plan.dayOver && gaps.length > 0 ? (
+                    ai.phase === "ready" ? (
+                      <button type="button" className="plan__ai" onClick={() => setAi({ phase: "idle", items: [], error: null })}>
+                        Clear
+                      </button>
+                    ) : (
+                      <button type="button" className="plan__ai" disabled={ai.phase === "thinking"} onClick={suggestWithAi}>
+                        {ai.phase === "thinking" ? "Thinking…" : "Plan with AI"}
+                      </button>
+                    )
+                  ) : null}
+                </div>
+                {ai.error ? <p className="plan__notice plan__notice--error" role="status">{ai.error}</p> : null}
+                {ai.phase === "ready" ? (
+                  aiItems.length === 0 ? (
+                    <p className="card__empty">No suggestions that fit. Clear this to see your open time.</p>
+                  ) : (
+                    <>
+                      <ul className="plan__slots">
+                        {aiItems.map((i) => {
+                          const task = taskById.get(i.taskId);
+                          if (!task) return null;
+                          return (
+                            <li key={i.taskId} className="plan__slot plan__slot--ai">
+                              <i className={`plan__prio plan__prio--p${task.priority}`} />
+                              <button type="button" className="plan__task" onClick={(ev) => openTask(task, ev.currentTarget)}>
+                                {task.name}
+                                <span>
+                                  {formatHour(i.start, use24)} – {formatHour(i.start + i.minutes / 60, use24)}
+                                </span>
+                                {i.reason ? <em className="plan__reason">{i.reason}</em> : null}
+                              </button>
+                              <div className="plan__actions">
+                                <button
+                                  type="button"
+                                  className="plan__block"
+                                  disabled={pending !== null}
+                                  onClick={() => blockAt(task, i.start, i.minutes)}
+                                  title="Put it on your calendar at this time"
+                                >
+                                  {pending === i.taskId ? "Adding…" : "Block"}
+                                </button>
+                                <button
+                                  type="button"
+                                  className="plan__skip"
+                                  aria-label={`Dismiss the suggestion for ${task.name}`}
+                                  title="Dismiss"
+                                  onClick={() => setAi((a) => ({ ...a, items: a.items.filter((x) => x.taskId !== i.taskId) }))}
+                                >
+                                  ×
+                                </button>
+                              </div>
+                            </li>
+                          );
+                        })}
+                      </ul>
+                      <p className="plan__hint">AI suggestions. Nothing goes on your calendar until you press Block.</p>
+                    </>
+                  )
+                ) : plan.dayOver ? (
                   <p className="card__empty">That’s the day — nothing left to plan.</p>
                 ) : gaps.length === 0 ? (
                   <p className="card__empty">
@@ -179,7 +278,7 @@ export function PlanCard({ agenda, tasks, today, arc, settings, sources, reconne
                                       type="button"
                                       className="plan__block"
                                       disabled={pending !== null}
-                                      onClick={() => block(g, sug)}
+                                      onClick={() => blockAt(sug.task, g.start, sug.minutes)}
                                       title={`Put it on your calendar, ${formatHour(g.start, use24)}–${formatHour(g.start + sug.minutes / 60, use24)}`}
                                     >
                                       {pending === sug.task.id ? "Adding…" : "Block"}

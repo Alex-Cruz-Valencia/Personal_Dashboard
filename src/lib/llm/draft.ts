@@ -34,5 +34,5 @@ export async function draftReply(input: {
     "</email>",
   ].join("\n") + steer;
 
-  return chat({ system, user, maxTokens: 450 });
+  return chat({ system, user, maxTokens: 1500 });
 }

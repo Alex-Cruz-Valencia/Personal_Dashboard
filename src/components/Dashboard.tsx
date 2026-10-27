@@ -54,7 +54,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
             replies={data.replies}
             nowHour={data.today.nowHour}
             theme={settings.theme}
-            aiDraft={data.aiDraft}
+            aiDraft={data.ai}
           />
 
           {data.week ? <WeekStrip days={data.week} /> : null}
@@ -77,6 +77,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
               settings={settings}
               sources={{ calendar: data.sources.calendar, tasks: data.sources.tasks }}
               reconnect={data.googleReconnect}
+              aiSchedule={data.ai}
             />
             <EmailList
               replies={data.replies}
