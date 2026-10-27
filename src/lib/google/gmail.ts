@@ -258,3 +258,102 @@ export async function moveMessageToLabel(id: string, labelName: string): Promise
   });
   if (!res.ok) throw new Error(`Gmail modify responded ${res.status}`);
 }
+
+/* ---------- reading one message and saving a reply draft ---------- */
+
+interface GmailPart {
+  mimeType?: string;
+  body?: { data?: string };
+  parts?: GmailPart[];
+  headers?: { name: string; value: string }[];
+}
+
+interface GmailFullMessage {
+  id: string;
+  threadId: string;
+  payload?: GmailPart;
+}
+
+const b64urlDecode = (data: string) => Buffer.from(data, "base64url").toString("utf8");
+
+/** First text/plain part, else the text/html part with tags stripped. */
+function bodyText(part: GmailPart | undefined): string {
+  if (!part) return "";
+  const find = (p: GmailPart, type: string): string | null => {
+    if (p.mimeType === type && p.body?.data) return b64urlDecode(p.body.data);
+    for (const child of p.parts ?? []) {
+      const hit = find(child, type);
+      if (hit) return hit;
+    }
+    return null;
+  };
+  const plain = find(part, "text/plain");
+  if (plain) return plain.trim();
+  const html = find(part, "text/html");
+  return html
+    ? html.replace(/<(style|script)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()
+    : "";
+}
+
+const headerOf = (part: GmailPart | undefined, name: string) =>
+  part?.headers?.find((h) => h.name.toLowerCase() === name.toLowerCase())?.value ?? "";
+
+async function getFull(id: string): Promise<GmailFullMessage> {
+  const res = await googleFetch(`${BASE}/messages/${id}?format=full`);
+  if (!res.ok) throw new Error(`Gmail message responded ${res.status}`);
+  return (await res.json()) as GmailFullMessage;
+}
+
+/** What the reply drafter needs: who it's from, the subject and the text. */
+export async function getMessageForDraft(
+  id: string,
+): Promise<{ from: string; subject: string; body: string }> {
+  const msg = await getFull(id);
+  return {
+    from: headerOf(msg.payload, "From"),
+    subject: headerOf(msg.payload, "Subject"),
+    body: bodyText(msg.payload),
+  };
+}
+
+const oneLine = (v: string) => v.replace(/[\r\n]+/g, " ").trim();
+/** RFC 2047 for headers with non-ASCII characters. */
+const mimeHeader = (v: string) =>
+  /^[\x20-\x7e]*$/.test(v) ? v : `=?UTF-8?B?${Buffer.from(v, "utf8").toString("base64")}?=`;
+
+/**
+ * Save `text` as a threaded reply DRAFT to message `id`. Nothing is sent — the
+ * draft sits in Gmail's Drafts until the user sends it. (`gmail.modify`
+ * already covers creating drafts, so no new permission is needed.)
+ */
+export async function saveReplyDraft(id: string, text: string): Promise<{ url: string }> {
+  const msg = await getFull(id);
+  const to = oneLine(headerOf(msg.payload, "Reply-To") || headerOf(msg.payload, "From"));
+  if (!to) throw new Error("The message has no sender to reply to.");
+  const subjectRaw = oneLine(headerOf(msg.payload, "Subject"));
+  const subject = /^re:/i.test(subjectRaw) ? subjectRaw : `Re: ${subjectRaw}`;
+  const messageId = oneLine(headerOf(msg.payload, "Message-ID") || headerOf(msg.payload, "Message-Id"));
+  const refs = oneLine(headerOf(msg.payload, "References"));
+
+  const lines = [
+    `To: ${to}`,
+    `Subject: ${mimeHeader(subject)}`,
+    ...(messageId ? [`In-Reply-To: ${messageId}`, `References: ${[refs, messageId].filter(Boolean).join(" ")}`] : []),
+    "MIME-Version: 1.0",
+    'Content-Type: text/plain; charset="UTF-8"',
+    "Content-Transfer-Encoding: base64",
+    "",
+    (Buffer.from(text, "utf8").toString("base64").match(/.{1,76}/g) ?? []).join("\r\n"),
+  ];
+  const raw = Buffer.from(lines.join("\r\n"), "utf8").toString("base64url");
+
+  const res = await googleFetch(`${BASE}/drafts`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ message: { raw, threadId: msg.threadId } }),
+  });
+  if (!res.ok) throw new Error(`Gmail draft responded ${res.status}`);
+  const created = (await res.json()) as { message?: { id?: string } };
+  const draftMsg = created.message?.id;
+  return { url: draftMsg ? `https://mail.google.com/mail/u/0/#drafts?compose=${draftMsg}` : "https://mail.google.com/mail/u/0/#drafts" };
+}

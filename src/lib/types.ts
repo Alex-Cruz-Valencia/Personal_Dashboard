@@ -189,4 +189,6 @@ export interface DashboardData {
   googleReconnect: boolean;
   /** Today + the next six days; null when neither calendar nor tasks are connected. */
   week: WeekDay[] | null;
+  /** AI reply drafting is available (model + Google both configured). */
+  aiDraft: boolean;
 }

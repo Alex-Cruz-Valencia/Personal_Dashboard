@@ -952,3 +952,36 @@ idea; the popover makes it unnecessary). Compose replies inside the dashboard
 **Tradeoffs** — Snoozes are per-browser, like the focus timer, so a second
 screen won't share them. A snooze that expires while the page is open is picked
 up on the next load.
+
+## 2026-10-27 — AI reply drafts (OpenAI-compatible model, saved as Gmail drafts)
+
+**Problem** — The reply popover could open, snooze, move or trash an email but
+not help write the answer, which is the slow part.
+
+**Decision** — A "Draft reply" action in each email row (shown only when
+`LLM_BASE_URL`, `LLM_API_KEY` and `LLM_MODEL` are set and Google is connected).
+It takes an optional one-line steer ("say yes, suggest Thursday"), writes a
+short first-person reply, and shows it in an editable box. "Save to Gmail
+drafts" creates a threaded draft; nothing is ever sent from the dashboard. The
+model is any OpenAI-compatible chat API, so it works with Dartmouth Chat.
+
+**Safety** — The key is read only in server code and never reaches the
+browser; it lives in gitignored `.env.local` (and, if deployed, only in the
+private deployment's env, never the public demo). The routes fail closed (400)
+unless the model and Google are both configured, accept same-origin requests
+only, validate the message id, cap input (6,000 chars of email body, 12,000
+total) and output, and allow 30 drafts per hour. Errors never echo mail text
+and nothing is logged. The prompt tells the model the email is untrusted and
+not to follow instructions inside it; since the output is only a draft a human
+reads, a malicious email can't make the dashboard act.
+
+**Privacy** — Only the sender, subject and body of the one email being
+replied to leave the machine, to the model's provider. Pick a model hosted by
+the school (not a third-party cloud model) if that matters for a given inbox.
+
+**Alternatives** — Auto-reply or send (rejected: too risky). A new Gmail scope
+(not needed: `gmail.modify` already covers creating drafts, so no reconnect).
+
+**Tradeoffs** — The hourly cap is in-memory, so it resets when the server
+restarts. A draft is only as good as the model; it is written to leave
+bracketed placeholders instead of guessing facts.

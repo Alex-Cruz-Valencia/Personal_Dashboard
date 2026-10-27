@@ -83,6 +83,13 @@ export const config = {
       "in:inbox -from:me -category:promotions -category:social newer_than:10d",
   },
 
+  /** Any OpenAI-compatible chat API (e.g. Dartmouth Chat). Server-side only. */
+  llm: {
+    baseUrl: str("LLM_BASE_URL"),
+    apiKey: str("LLM_API_KEY"),
+    model: str("LLM_MODEL"),
+  },
+
   anthropic: {
     apiKey: str("ANTHROPIC_API_KEY"),
     model: str("ANTHROPIC_MODEL") ?? "claude-opus-5",
@@ -92,6 +99,7 @@ export const config = {
 const todoist = Boolean(config.todoist.token);
 const google = Boolean(config.google.clientId && config.google.clientSecret);
 const anthropic = Boolean(config.anthropic.apiKey);
+const llm = Boolean(config.llm.baseUrl && config.llm.apiKey && config.llm.model);
 
 /** True when nothing at all is configured — pure reference-reproduction mode. */
 export const isDemoMode =
@@ -108,4 +116,5 @@ export const features = {
   todoist: !forceMock && todoist,
   google: !forceMock && google,
   anthropic: !forceMock && anthropic,
+  llm: !forceMock && llm,
 } as const;

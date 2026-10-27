@@ -120,6 +120,7 @@ export async function getDashboardData(
       weatherArc: MOCK_ARC,
       googleReconnect: false,
       week: null,
+      aiDraft: false,
       sources: {
         weather: "off",
         tasks: "off",
@@ -230,5 +231,6 @@ export async function getDashboardData(
     sources,
     googleReconnect: features.google && Boolean(agenda.authExpired || replies.authExpired),
     week,
+    aiDraft: features.llm && features.google,
   };
 }

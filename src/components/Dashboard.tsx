@@ -54,6 +54,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
             replies={data.replies}
             nowHour={data.today.nowHour}
             theme={settings.theme}
+            aiDraft={data.aiDraft}
           />
 
           {data.week ? <WeekStrip days={data.week} /> : null}

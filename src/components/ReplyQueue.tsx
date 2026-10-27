@@ -18,7 +18,9 @@ export function ReplyQueue({
   anchor,
   theme,
   onClose,
+  aiDraft,
 }: {
+  aiDraft: boolean;
   title: string;
   replies: Reply[];
   anchor: DOMRect;
@@ -31,6 +33,7 @@ export function ReplyQueue({
   const [trashing, setTrashing] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
+  const [drafting, setDrafting] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -72,6 +75,16 @@ export function ReplyQueue({
                 <a className="rq__btn rq__btn--primary" href={gmailLink(id)} target="_blank" rel="noreferrer">
                   Reply in Gmail
                 </a>
+                {aiDraft ? (
+                  <button
+                    type="button"
+                    className="rq__btn"
+                    aria-expanded={drafting === id}
+                    onClick={() => { setDrafting(drafting === id ? null : id); setMoving(null); }}
+                  >
+                    Draft reply
+                  </button>
+                ) : null}
                 <button type="button" className="rq__btn" onClick={() => snoozeReply(id)} title={`Hide for ${SNOOZE_HOURS} hours`}>
                   Wait a day
                 </button>
@@ -93,6 +106,7 @@ export function ReplyQueue({
                   </button>
                 )}
               </div>
+              {drafting === id ? <DraftPanel id={id} /> : null}
               {moving === id ? (
                 <div className="rq__move">
                   {labels === null ? <span className="rq__hint">Loading labels…</span> : null}
@@ -124,5 +138,107 @@ export function ReplyQueue({
       </ul>
       {error ? <p className="rq__error">{error}</p> : null}
     </Popover>
+  );
+}
+
+/** "Draft reply": optional one-line steer, then an editable draft to save to Gmail. Never sends. */
+function DraftPanel({ id }: { id: string }) {
+  const [note, setNote] = useState("");
+  const [text, setText] = useState("");
+  const [phase, setPhase] = useState<"idle" | "drafting" | "ready" | "saving" | "saved">("idle");
+  const [error, setError] = useState<string | null>(null);
+  const [url, setUrl] = useState<string | null>(null);
+
+  const generate = async () => {
+    setError(null);
+    setPhase("drafting");
+    try {
+      const res = await fetch(`/api/replies/${id}/draft`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ note }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { text?: string; error?: string };
+      if (!res.ok || !body.text) throw new Error(body.error || "Couldn't draft that.");
+      setText(body.text);
+      setPhase("ready");
+    } catch (e) {
+      setError((e as Error).message);
+      setPhase(text ? "ready" : "idle");
+    }
+  };
+
+  const save = async () => {
+    setError(null);
+    setPhase("saving");
+    try {
+      const res = await fetch(`/api/replies/${id}/draft/save`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !body.url) throw new Error(body.error || "Couldn't save the draft.");
+      setUrl(body.url);
+      setPhase("saved");
+    } catch (e) {
+      setError((e as Error).message);
+      setPhase("ready");
+    }
+  };
+
+  return (
+    <div className="rq__draft">
+      {phase === "idle" || phase === "drafting" ? (
+        <>
+          <input
+            className="rq__input"
+            value={note}
+            maxLength={300}
+            placeholder="What should it say? (optional)"
+            aria-label="What the reply should say"
+            disabled={phase === "drafting"}
+            onChange={(e) => setNote(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                generate();
+              }
+            }}
+          />
+          <button type="button" className="rq__btn rq__btn--primary" disabled={phase === "drafting"} onClick={generate}>
+            {phase === "drafting" ? "Drafting…" : "Write draft"}
+          </button>
+        </>
+      ) : (
+        <>
+          <textarea
+            className="rq__text"
+            value={text}
+            rows={7}
+            maxLength={8000}
+            aria-label="Draft reply"
+            onChange={(e) => setText(e.target.value)}
+            disabled={phase === "saving"}
+          />
+          <p className="rq__hint">AI draft. Read it before you send; nothing is sent from here.</p>
+          <div className="rq__actions">
+            {phase === "saved" && url ? (
+              <a className="rq__btn rq__btn--primary" href={url} target="_blank" rel="noreferrer">
+                Saved. Open in Gmail drafts
+              </a>
+            ) : (
+              <button type="button" className="rq__btn rq__btn--primary" disabled={phase === "saving" || !text.trim()} onClick={save}>
+                {phase === "saving" ? "Saving…" : "Save to Gmail drafts"}
+              </button>
+            )}
+            <button type="button" className="rq__btn" disabled={phase === "saving"} onClick={generate}>
+              Redo
+            </button>
+          </div>
+        </>
+      )}
+      {error ? <p className="rq__error">{error}</p> : null}
+    </div>
   );
 }
