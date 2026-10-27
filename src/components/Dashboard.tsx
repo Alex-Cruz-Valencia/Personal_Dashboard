@@ -2,6 +2,7 @@ import { use24Hour, type DashboardSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
 import { AttentionStrip } from "./AttentionStrip";
 import { buildAttention } from "@/lib/attention";
+import { FocusProvider } from "./Focus";
 import { DayArc } from "./DayArc";
 import { EmailList } from "./EmailList";
 import { EventDetailProvider } from "./EventDetail";
@@ -30,6 +31,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
     nowHour: data.today.nowHour,
   });
   return (
+    <FocusProvider nowHour={data.today.nowHour}>
     <EventDetailProvider
       use24={use24Hour(settings)}
       theme={settings.theme}
@@ -62,6 +64,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
             arc={data.arc}
             today={data.today}
             settings={settings}
+            focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
           />
 
           <div className="columns">
@@ -87,5 +90,6 @@ export function Dashboard({ data, settings }: DashboardProps) {
         </div>
       </TaskDetailProvider>
     </EventDetailProvider>
+    </FocusProvider>
   );
 }

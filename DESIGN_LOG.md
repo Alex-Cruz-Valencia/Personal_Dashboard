@@ -903,3 +903,28 @@ noisy); browser notifications (deferred: needs permission and adds noise).
 **Tradeoffs** — Overdue means date-based only (a timed task earlier today is
 not flagged). The strip counts replies as of the last server render, so a
 trash/move updates it on the next refresh, not instantly.
+
+## 2026-10-27 — Week strip and a local focus timer
+
+**Problem** — A dashboard left open all day shows today only, so a heavy
+Thursday is a surprise on Thursday. And the list of tasks never turns into
+protected time.
+
+**Decision** — *Week strip:* seven day columns (today + six), each a two-part
+bar (booked hours, then tasks due at ~30 min each) with the numbers in words
+underneath and "Heavy" spelled out at 6h+ of load, so nothing relies on color.
+It reads six extra calendar days and one extra Todoist query, in parallel, and
+fails to blank only itself. *Focus timer:* start from the arc toolbar ("Focus
+25") or from a task's editor ("Focus on this", using its Todoist duration, 5–120
+min). It shows in the arc header (pause / stop), as a dashed block on the band,
+and in the tab title. State lives in this browser's localStorage only; nothing
+is written to Google or Todoist.
+
+**Alternatives** — Click a day to load it into the arc (deferred: the page is
+server-rendered for today only). Writing the focus block to Calendar (rejected
+for now: an unasked write; the Plan card's Block already does that
+deliberately). Browser notifications at the end (deferred).
+
+**Tradeoffs** — The 6h "heavy" line and the 30-min-per-task estimate are
+heuristics, not settings. The timer is per-browser, so a second screen won't
+see it. Week data costs six more Calendar reads per refresh (cached).

@@ -1365,3 +1365,14 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .week__meta { font-size: 10.5px; }
   .week__key { display: none; }
 }
+
+/* ---------- focus timer (not in the static reference) ----------
+   Local only. Readout in the arc header, a block on the band, and a start
+   button in the task editor. Token-only. */
+.dayarc__focus { align-items: center; }
+.dayarc__focus-clock { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink); }
+.arc__focus { position: absolute; top: 9px; height: 56px; z-index: 2; pointer-events: none; border-radius: 8px; border: 1.5px dashed var(--accent); background: var(--accent-tint); overflow: hidden; }
+.arc__focus-done { position: absolute; inset: 0 auto 0 0; background: color-mix(in srgb, var(--accent) 22%, transparent); }
+.arc__focus-label { position: relative; display: block; padding: 6px 9px; font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--accent); }
+.taskedit__focus { font: inherit; font-size: 13px; font-weight: 600; width: 100%; margin: 4px 0 10px; padding: 9px 12px; border-radius: var(--radius-sm); border: 1px solid var(--accent); background: var(--accent-tint); color: var(--accent); cursor: pointer; }
+.taskedit__focus:hover { background: var(--accent); color: var(--surface); }

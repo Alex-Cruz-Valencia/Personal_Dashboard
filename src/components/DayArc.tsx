@@ -12,6 +12,7 @@ import {
 } from "@/lib/format";
 import { conflictSpans, freeSpans, upNext } from "@/lib/attention";
 import { minutesLabel } from "@/lib/plan";
+import { formatClock, useFocus } from "./Focus";
 import type { DashboardSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
 import type { AgendaEvent, ArcWindow, TodayInfo } from "@/lib/types";
@@ -22,9 +23,12 @@ interface DayArcProps {
   arc: ArcWindow;
   today: TodayInfo;
   settings: DashboardSettings;
+  /** The task the toolbar's Focus button starts on. */
+  focusTask?: string;
 }
 
-export function DayArc({ agenda, arc, today, settings }: DayArcProps) {
+export function DayArc({ agenda, arc, today, settings, focusTask }: DayArcProps) {
+  const focus = useFocus();
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const [expanded, setExpanded] = useExpanded();
@@ -76,7 +80,28 @@ export function DayArc({ agenda, arc, today, settings }: DayArcProps) {
           The day arc
           <span className="dayarc__sub">{arcRangeLabel(arc, use24)}</span>
         </h2>
-        {next ? (
+        {focus.session ? (
+          <div className="dayarc__next dayarc__focus" aria-live="polite">
+            <span className="dayarc__next-tag">Focus</span>
+            <span className="dayarc__next-name">{focus.session.name}</span>
+            <span className="dayarc__next-when dayarc__focus-clock">
+              {focus.done ? "Complete" : formatClock(focus.remainingMs)}
+              {!focus.done && focus.session.endsAt == null ? " paused" : ""}
+            </span>
+            {!focus.done ? (
+              <button
+                type="button"
+                className="dayarc__expand"
+                onClick={focus.session.endsAt == null ? focus.resume : focus.pause}
+              >
+                {focus.session.endsAt == null ? "Resume" : "Pause"}
+              </button>
+            ) : null}
+            <button type="button" className="dayarc__expand" onClick={focus.stop}>
+              {focus.done ? "Dismiss" : "Stop"}
+            </button>
+          </div>
+        ) : next ? (
           <div className="dayarc__next" aria-live="polite">
             <span className="dayarc__next-tag">{next.mode === "now" ? "Now" : "Next"}</span>
             <span className="dayarc__next-name">{next.name}</span>
@@ -100,6 +125,16 @@ export function DayArc({ agenda, arc, today, settings }: DayArcProps) {
               personal
             </span>
           </div>
+          {focus.session ? null : (
+            <button
+              type="button"
+              className="dayarc__expand"
+              onClick={() => focus.start(focusTask ?? "Focus", 25)}
+              title={focusTask ? `Start 25 minutes on: ${focusTask}` : "Start a 25 minute focus session"}
+            >
+              Focus 25
+            </button>
+          )}
           <button
             type="button"
             className="dayarc__expand"
@@ -181,6 +216,22 @@ export function DayArc({ agenda, arc, today, settings }: DayArcProps) {
                 </div>
               );
             })}
+            {focus.session ? (
+              <div
+                className="arc__focus"
+                style={{
+                  left: `${arcPct(focus.session.startHour, arc)}%`,
+                  width: `${arcPct(focus.session.startHour + focus.session.durationMs / 3_600_000, arc) - arcPct(focus.session.startHour, arc)}%`,
+                }}
+                aria-hidden="true"
+              >
+                <i
+                  className="arc__focus-done"
+                  style={{ width: `${Math.min(100, Math.max(0, (1 - focus.remainingMs / focus.session.durationMs) * 100))}%` }}
+                />
+                <span className="arc__focus-label">Focus</span>
+              </div>
+            ) : null}
             {conflicts.map((c, i) => (
               <div
                 key={`c${i}`}
