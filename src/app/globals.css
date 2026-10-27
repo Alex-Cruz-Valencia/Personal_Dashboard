@@ -1302,3 +1302,22 @@ a:hover { color: var(--ink); text-decoration: underline; }
 @media (max-width: 760px) {
   .morning:not(.morning--glass) { --gap: 14px; }
 }
+
+/* =============================================================================
+   ATTENTION STRIP — "what did I miss?" (not in the static reference).
+   One row of things that need you; a single quiet line when there are none.
+   Kind is carried by the label text first, tone second. Token-only.
+   ========================================================================== */
+.attn { background: var(--surface); border: 1px solid var(--line); border-radius: var(--radius-lg); box-shadow: var(--shadow); padding: 16px 20px 18px; }
+.attn__title { margin: 0 0 10px; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase; color: var(--ink-soft); }
+.attn__list { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fit, minmax(230px, 1fr)); gap: 10px; }
+.attn__item { all: unset; box-sizing: border-box; display: grid; gap: 3px; width: 100%; height: 100%; padding: 11px 13px; border-radius: var(--radius); background: var(--surface-2); cursor: pointer; }
+.attn__item:hover { background: var(--row-hover, var(--surface-2)); box-shadow: inset 0 0 0 1px var(--line); }
+.attn__item:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.attn__label { font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--neutral); }
+.attn__item--conflict .attn__label, .attn__item--overdue .attn__label { color: var(--negative); }
+.attn__item--tight .attn__label { color: var(--warning); }
+.attn__text { font-size: 14px; font-weight: 600; line-height: 1.3; color: var(--ink); overflow-wrap: anywhere; }
+.attn__detail { font-size: 12.5px; line-height: 1.35; color: var(--ink-soft); overflow-wrap: anywhere; }
+.attn--clear { padding: 13px 20px; }
+.attn__clear { font-size: 14px; font-weight: 500; color: var(--ink-soft); }

@@ -67,6 +67,8 @@ export interface Task {
   due: string;
   /** Decimal hour for the arc tick, or null when the task has no clock time. */
   dueHour: number | null;
+  /** Whole days past its due date (1 = yesterday); absent when not overdue. */
+  overdueDays?: number;
 
   /* ---- detail (shown in the click-to-expand editor; optional) ---- */
   /** Source project id, for the "move to project" control. */

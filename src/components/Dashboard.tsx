@@ -1,5 +1,7 @@
 import { use24Hour, type DashboardSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
+import { AttentionStrip } from "./AttentionStrip";
+import { buildAttention } from "@/lib/attention";
 import { DayArc } from "./DayArc";
 import { EmailList } from "./EmailList";
 import { EventDetailProvider } from "./EventDetail";
@@ -20,6 +22,12 @@ interface DashboardProps {
  * source exactly — see `globals.css` for the ported stylesheet.
  */
 export function Dashboard({ data, settings }: DashboardProps) {
+  const attention = buildAttention({
+    agenda: data.agenda,
+    tasks: data.tasks,
+    replies: data.replies,
+    nowHour: data.today.nowHour,
+  });
   return (
     <EventDetailProvider
       use24={use24Hour(settings)}
@@ -43,6 +51,8 @@ export function Dashboard({ data, settings }: DashboardProps) {
               settings={settings}
             />
           </div>
+
+          <AttentionStrip items={attention} />
 
           <DayArc
             agenda={data.agenda}

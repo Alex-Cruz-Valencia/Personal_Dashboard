@@ -101,6 +101,15 @@ function dueHourOf(
   return decimalHourForTimestamp(due.date, todayIso, timezone);
 }
 
+/** Whole calendar days a due date is behind today (0 when due today or later). */
+function overdueDaysOf(due: TodoistDue | null, todayIso: string): number {
+  if (!due) return 0;
+  const day = due.date.slice(0, 10);
+  if (day >= todayIso) return 0;
+  const ms = Date.parse(`${todayIso}T00:00:00Z`) - Date.parse(`${day}T00:00:00Z`);
+  return Math.max(1, Math.round(ms / 86_400_000));
+}
+
 function dueLabel(
   due: TodoistDue | null,
   todayIso: string,
@@ -150,6 +159,7 @@ export async function getTasks(
       meta: projectName.get(t.project_id) ?? t.labels[0] ?? "Task",
       due: dueLabel(t.due, todayIso, timezone),
       dueHour: dueHourOf(t.due, todayIso, timezone),
+      overdueDays: overdueDaysOf(t.due, todayIso) || undefined,
       projectId: t.project_id,
       description: t.description || undefined,
       labels: t.labels,
