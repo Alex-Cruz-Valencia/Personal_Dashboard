@@ -236,6 +236,10 @@ export interface NewTask {
   dueDate?: string;
   description?: string;
   labels?: string[];
+  /** Hard deadline, "YYYY-MM-DD". */
+  deadline?: string;
+  /** Planned working time in minutes. Todoist only keeps it on tasks with a due time. */
+  durationMinutes?: number;
 }
 
 async function todoistWrite(
@@ -308,6 +312,14 @@ export function addTask(task: NewTask): Promise<unknown> {
   else if (task.due) body.due_string = task.due;
   if (task.description) body.description = task.description;
   if (task.labels?.length) body.labels = task.labels;
+  if (task.deadline) body.deadline_date = task.deadline;
+  if (task.durationMinutes) {
+    const withDuration = { ...body, duration: task.durationMinutes, duration_unit: "minute" };
+    // A date-only due is refused with a duration; the task matters more than the estimate.
+    return todoistWrite("/tasks", "POST", withDuration).catch((err: Error) =>
+      /responded 400/.test(err.message) ? todoistWrite("/tasks", "POST", body) : Promise.reject(err),
+    );
+  }
   return todoistWrite("/tasks", "POST", body);
 }
 

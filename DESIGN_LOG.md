@@ -450,6 +450,27 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-28 — Creating a task uses the same form as editing one
+
+**Problem** — Existing tasks had a full Todoist-style editor (priority, due,
+project, labels, deadline, duration, notes), but a new task, from "+ Add task"
+or from an email, only got a name box (and, for email, priority + date). Making
+a task meant creating a stub, then reopening it to finish.
+
+**Decision** — One shared `NewTaskForm` with the editor's fields and look, used
+by both entry points. "+ Add task" opens it in a popover; the email's "Make
+task" embeds it, still with the optional AI fill (name, priority, date), the
+source link prefilled in Notes, and "Take this email off my list". Nothing is
+written until Add.
+
+**Alternatives considered** — Create-then-open-the-editor (two writes, a stub
+task if you bail); a one-line quick-add with Todoist shorthand (fast but
+hides the fields).
+
+**Tradeoffs** — More fields before the first task, so Enter in the name box
+still adds immediately. Todoist rejects a duration on a date-only due, so the
+server retries without it and the form hints that a due time is needed.
+
 ## 2026-10-28 — One copy of an event shared across calendars
 
 **Problem** — An invitation that lands on your calendar and on a calendar shared
