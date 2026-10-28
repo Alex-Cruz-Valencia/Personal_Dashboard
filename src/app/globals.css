@@ -1543,3 +1543,31 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .scene__drop, .scene__flake, .scene__gust, .scene__flash { display: none; }
 }
 .morning--still .clock__colon, .morning--still .clock__pip { animation: none; }
+
+/* ---- ambient motion, round 2: calendar states, refresh pulse, sky tint ---- */
+.vcal__now { transition: top 15s linear; }
+.vcal__event { transition: opacity 0.6s, filter 0.6s; }
+.vcal__event--past { opacity: 0.55; filter: saturate(0.6); }
+.vcal__event--now { animation: vcal-breathe 5s ease-in-out infinite; }
+.vcal__event--soon { animation: vcal-soon 3.2s ease-in-out infinite; }
+.vcal__event-prog { position: absolute; left: 0; bottom: 0; height: 3px; border-radius: 0 3px 0 0; background: var(--accent); opacity: 0.7; transition: width 15s linear; }
+@keyframes vcal-breathe { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); } 50% { box-shadow: 0 0 14px 1px color-mix(in srgb, var(--accent) 35%, transparent); } }
+@keyframes vcal-soon { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); } }
+
+.footline__stamp { display: inline-flex; align-items: center; gap: 6px; animation: stamp-flash 2.4s ease-out; }
+.footline__stamp i { width: 6px; height: 6px; border-radius: 999px; background: var(--accent); animation: stamp-dot 2.4s ease-out; }
+@keyframes stamp-flash { 0% { color: var(--accent); } 100% { color: inherit; } }
+@keyframes stamp-dot { 0% { transform: scale(2.2); opacity: 1; } 100% { transform: scale(1); opacity: 0.45; } }
+
+.skytint { position: fixed; inset: 0; z-index: -1; pointer-events: none; overflow: hidden; }
+.skytint__blob { position: absolute; width: 70vmax; height: 70vmax; border-radius: 999px; filter: blur(60px); opacity: 0.4; transition: background 60s linear; }
+.skytint__blob--a { top: -30vmax; left: -20vmax; background: radial-gradient(circle, rgb(var(--sky-a)), transparent 68%); animation: sky-drift-a 70s ease-in-out infinite alternate; }
+.skytint__blob--b { bottom: -34vmax; right: -24vmax; background: radial-gradient(circle, rgb(var(--sky-b)), transparent 68%); animation: sky-drift-b 90s ease-in-out infinite alternate; }
+@keyframes sky-drift-a { to { transform: translate3d(14vmax, 8vmax, 0); } }
+@keyframes sky-drift-b { to { transform: translate3d(-12vmax, -9vmax, 0); } }
+.morning[data-theme="dark"] .skytint__blob, :root:has(.morning[data-theme="dark"]) .skytint__blob { opacity: 0.32; }
+@media (prefers-reduced-motion: reduce) {
+  .vcal__event--now, .vcal__event--soon, .footline__stamp, .footline__stamp i, .skytint__blob { animation: none !important; }
+  .vcal__now, .vcal__event-prog, .skytint__blob { transition: none !important; }
+}
+.morning--still .vcal__event--now, .morning--still .vcal__event--soon, .morning--still .footline__stamp, .morning--still .footline__stamp i { animation: none; }

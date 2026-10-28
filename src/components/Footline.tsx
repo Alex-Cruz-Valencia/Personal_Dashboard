@@ -20,7 +20,11 @@ export function Footline({ agenda, today, settings }: FootlineProps) {
           <Link href="/privacy">Privacy</Link>
           <Link href="/terms">Terms</Link>
         </nav>
-        <span>{footRight(today.nowHour, use24Hour(settings))}</span>
+        {/* keyed on the text, so each refresh remounts it and replays the pulse */}
+        <span key={footRight(today.nowHour, use24Hour(settings))} className="footline__stamp">
+          <i aria-hidden />
+          {footRight(today.nowHour, use24Hour(settings))}
+        </span>
         <SettingsPanel settings={settings} />
       </div>
     </footer>

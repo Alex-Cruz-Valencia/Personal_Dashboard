@@ -134,6 +134,37 @@ sunrise and sunset, so the sun only shows while it is actually up. In demo
 mode the clock is frozen at the sample time so it stays consistent with the
 sample agenda. Unverified: how it feels after hours on a real second screen.
 
+## 2026-10-28 — Ambient motion, round two: calendar states, refresh pulse, sky tint
+
+**Problem** — After the weather scene, the rest of the screen was still
+static. The calendar showed *where* events were but not where you are in
+them; nothing proved the page was still refreshing; and the weather's mood
+stopped at its own card.
+
+**Decision** — Three small, informative motions. (1) **Calendar:** the
+now-line glides on its own between server refreshes; past events fade, the
+current one breathes with a thin progress bar, and one starting within 15
+minutes pulses slowly. (2) **Refresh pulse:** the footer's "Refreshed" stamp
+flashes once each time the 60s auto-refresh lands. (3) **Sky tint:** a slow
+colour wash behind the glass cards that follows the sun (night blue, dawn
+rose, day sky, dusk amber), eased between sunrise and sunset.
+
+**Reasoning** — Each one answers a glance-question: "where am I in the day",
+"is this live", "what time of day is it". The tint only exists with glass
+surfaces (solid cards would hide it) and ⚙ Motion on. "Now" is shared through
+one `useNowSeconds` hook (dashboard timezone, quantised: 15s for the
+calendar, 60s for the tint) so nothing re-renders every second but the clock.
+
+**Alternatives considered** — Pulsing the attention strip's urgent items
+(skipped: an alert you can't dismiss nags on an always-on screen); a canvas
+sky (constant JS cost); a progress ring per event (too busy).
+
+**Tradeoffs / open questions** — Fading past events trades a little legibility
+of history for focus on what's ahead. The tint is deliberately faint,
+especially in dark mode. Only checked at night (everything past): the
+now/soon states and day/dusk colours were verified by forcing classes, not
+by waiting for them.
+
 ## 2026-10-28 — Week strip: one request per calendar instead of a burst
 
 **Problem** — The retry above did not stop the production errors; they got

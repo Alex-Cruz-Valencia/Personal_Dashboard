@@ -2,6 +2,7 @@ import { use24Hour, type DashboardSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
 import { MOCK_TODAY } from "@/lib/mock-data";
 import { AttentionStrip } from "./AttentionStrip";
+import { SkyTint } from "./SkyTint";
 import { ClockCard } from "./ClockCard";
 import { DayCalendar } from "./DayCalendar";
 import { FocusProvider } from "./Focus";
@@ -23,6 +24,7 @@ interface DashboardProps {
  * source exactly — see `globals.css` for the ported stylesheet.
  */
 export function Dashboard({ data, settings }: DashboardProps) {
+  const frozen = data.today.iso === MOCK_TODAY.iso && data.today.nowHour === MOCK_TODAY.nowHour;
   return (
     <FocusProvider nowHour={data.today.nowHour}>
     <EventDetailProvider
@@ -41,6 +43,9 @@ export function Dashboard({ data, settings }: DashboardProps) {
               the three columns (tasks / plan / replies) are replaced by a
               vertical calendar beside today's tasks. Archived from this view
               (components kept, not rendered): DayArc, PlanCard, EmailList. */}
+          {settings.surface === "glass" && settings.motion === "on" ? (
+            <SkyTint today={data.today} sunrise={data.weather.sunrise} sunset={data.weather.sunset} frozen={frozen} />
+          ) : null}
           <div className="topbar">
             <HelloCard user={data.user} today={data.today} dayNote={data.dayNote} />
             <ClockCard
@@ -50,7 +55,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
               sunrise={data.weather.sunrise}
               sunset={data.weather.sunset}
               use24={use24Hour(settings)}
-              frozen={data.today.iso === MOCK_TODAY.iso && data.today.nowHour === MOCK_TODAY.nowHour}
+              frozen={frozen}
             />
             <WeatherCard
               weather={data.weather}
@@ -76,6 +81,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
               arc={data.arc}
               today={data.today}
               settings={settings}
+              frozen={frozen}
               focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
             />
             <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
