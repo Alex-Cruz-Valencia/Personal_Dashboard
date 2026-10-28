@@ -155,6 +155,28 @@ the temperature curve and the scene); keeping three cards (the status quo).
 clock is still a separate component slotted into the greeting card, so it can
 be moved again cheaply.
 
+## 2026-10-28 — Greeting card composition: time as the hero
+
+**Problem** — With the clock reduced to the time, the merged card still read
+as two things side by side: a left block and a small clock behind a divider.
+
+**Decision** — One composition. Top line: date and greeting on the left, a
+large time on the right, bottom-aligned so they share a baseline. Under the
+time, a hairline that fills across each minute (a seconds sweep). The day note
+sits beneath, full width. No divider, no "Right now" label. On a phone the
+time stacks under the greeting.
+
+**Reasoning** — The time is the one number you read from across a room, so it
+gets the scale; the greeting and note read up close. The sweep line is the
+only decoration and doubles as proof the clock is live.
+
+**Alternatives considered** — Time centered above the greeting (pushes the
+greeting down); a circular seconds ring around the digits (busier, harder to
+fit beside the greeting).
+
+**Tradeoffs / open questions** — The card is a bit taller. Judged by eye at
+three widths, not on a real second screen yet.
+
 ## 2026-10-28 — Clock shows only the time
 
 **Problem** — Under the time, the clock repeated things the calendar already

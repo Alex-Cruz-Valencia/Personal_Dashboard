@@ -20,7 +20,6 @@ export function ClockCard({ today, use24, frozen }: ClockCardProps) {
 
   return (
     <div className="clock" aria-label="Time">
-      <div className="clock__label">Right now</div>
       <div className="clock__time" role="timer" aria-live="off">
         <span className="clock__hm">
           {use24 ? String(hh).padStart(2, "0") : h12}
@@ -32,6 +31,9 @@ export function ClockCard({ today, use24, frozen }: ClockCardProps) {
           {use24 ? null : <span className="clock__ampm">{hh >= 12 ? "pm" : "am"}</span>}
         </span>
       </div>
+      <span className="clock__sweep" aria-hidden>
+        <i style={{ width: `${(ss / 59) * 100}%`, transition: ss === 0 ? "none" : undefined }} />
+      </span>
     </div>
   );
 }

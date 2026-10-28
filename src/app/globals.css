@@ -1476,21 +1476,22 @@ a:hover { color: var(--ink); text-decoration: underline; }
    Token-only except the sun/moon, which are fixed warm/cool light. Everything
    is decorative and stops under prefers-reduced-motion or ⚙ Motion → Still.
    ========================================================================== */
-/* greeting + clock share one card: greeting block left, live clock right */
-.hello { flex-direction: row; align-items: center; justify-content: space-between; gap: 28px; }
-.hello__main { display: flex; flex-direction: column; gap: 10px; min-width: 0; flex: 1 1 auto; }
+/* greeting + clock share one card: greeting and time on one line, the day note beneath */
+.hello { flex-direction: column; align-items: stretch; justify-content: center; gap: 16px; }
+.hello__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; }
+.hello__main { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+.hello__note { max-width: none; }
 @media (max-width: 1040px) { .topbar { grid-template-columns: 1fr; } }
 @media (max-width: 760px) {
-  .hello { flex-direction: column; align-items: stretch; gap: 18px; }
-  .clock { min-width: 0; padding-left: 0; border-left: 0; border-top: 1px solid var(--line); padding-top: 16px; }
+  .hello__head { flex-direction: column; align-items: flex-start; gap: 14px; }
+  .clock { align-items: flex-start; }
 }
 
-.clock { padding: 4px 0 4px 28px; border-left: 1px solid var(--line); display: grid; gap: 9px; align-content: center; min-width: 270px; flex: 0 0 auto; }
-.clock__label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.clock { display: grid; gap: 8px; justify-items: end; flex: 0 0 auto; }
 .clock__time { display: flex; align-items: flex-start; gap: 6px; font-variant-numeric: tabular-nums; }
-.clock__hm { font-family: var(--font-display); font-size: 60px; font-weight: 600; line-height: 0.9; letter-spacing: -0.03em; }
+.clock__hm { font-family: var(--font-display); font-size: clamp(54px, 6.4vw, 84px); font-weight: 600; line-height: 0.9; letter-spacing: -0.03em; }
 .clock__colon { display: inline-block; margin: 0 1px; animation: clock-colon 2s ease-in-out infinite; }
-.clock__side { display: grid; gap: 2px; padding-top: 2px; font-size: 12px; font-weight: 600; line-height: 1.1; color: var(--ink-faint); }
+.clock__side { display: grid; gap: 3px; padding-top: 6px; font-size: 13px; font-weight: 600; line-height: 1.1; color: var(--ink-faint); }
 .clock__sec { font-variant-numeric: tabular-nums; }
 .clock__ampm { text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
 @keyframes clock-colon { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
@@ -1561,3 +1562,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .vcal__now, .vcal__event-prog, .skytint__blob { transition: none !important; }
 }
 .morning--still .vcal__event--now, .morning--still .vcal__event--soon, .morning--still .footline__stamp, .morning--still .footline__stamp i { animation: none; }
+
+.clock__sweep { display: block; width: 100%; height: 2px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.clock__sweep i { display: block; height: 100%; background: var(--accent); opacity: 0.7; border-radius: 2px; transition: width 1s linear; }
+@media (prefers-reduced-motion: reduce) { .clock__sweep i { transition: none !important; } }

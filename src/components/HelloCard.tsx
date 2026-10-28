@@ -15,9 +15,13 @@ interface HelloCardProps {
 export function HelloCard({ user, today, dayNote, children }: HelloCardProps) {
   return (
     <header className="card hello">
-      <div className="hello__main">
+      <div className="hello__head">
+        <div className="hello__main">
       <div className="hello__date">{dateLineFor(today.iso)}</div>
       <h1 className="hello__greeting">{greetingFor(today.nowHour, user.name)}</h1>
+        </div>
+        {children}
+      </div>
       <div className="hello__note">
         <div className="hello__note-tag">Shape of the day</div>
         <p className="hello__note-text">
@@ -26,8 +30,6 @@ export function HelloCard({ user, today, dayNote, children }: HelloCardProps) {
           )}
         </p>
       </div>
-      </div>
-      {children}
     </header>
   );
 }
