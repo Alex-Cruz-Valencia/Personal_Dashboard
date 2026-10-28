@@ -1,45 +1,22 @@
 "use client";
 
-import { upNext } from "@/lib/attention";
-import { arcPct, formatHour } from "@/lib/format";
-import type { AgendaEvent, ArcWindow, TodayInfo } from "@/lib/types";
+import type { TodayInfo } from "@/lib/types";
 import { useNowSeconds } from "@/lib/use-now";
 
 interface ClockCardProps {
   today: TodayInfo;
-  arc: ArcWindow;
-  agenda: AgendaEvent[];
-  sunrise: number;
-  sunset: number;
   use24: boolean;
   /** Demo mode pins "now" to the sample day, so the clock must not run ahead of it. */
   frozen: boolean;
 }
 
-function span(hours: number): string {
-  const m = Math.max(0, Math.round(hours * 60));
-  return m >= 60 ? `${Math.floor(m / 60)}h ${m % 60}m` : `${m}m`;
-}
-
-export function ClockCard({ today, arc, agenda, sunrise, sunset, use24, frozen }: ClockCardProps) {
+/** Just the time. Where you are in the day, and what's next, live in the calendar. */
+export function ClockCard({ today, use24, frozen }: ClockCardProps) {
   const secs = useNowSeconds(today, frozen);
-
-  const now = secs / 3600;
   const hh = Math.floor(secs / 3600) % 24;
   const mm = Math.floor((secs % 3600) / 60);
   const ss = secs % 60;
   const h12 = hh % 12 === 0 ? 12 : hh % 12;
-  const ampm = hh >= 12 ? "pm" : "am";
-
-  const inDay = now >= arc.from && now < arc.to;
-  const isDay = now >= sunrise && now < sunset;
-  const next = upNext(agenda, now);
-
-  const status = inDay
-    ? `${span(arc.to - now)} left in your day`
-    : now < arc.from
-      ? `Your day starts at ${formatHour(arc.from, use24)}`
-      : "Your day is done";
 
   return (
     <div className="clock" aria-label="Time">
@@ -52,29 +29,9 @@ export function ClockCard({ today, arc, agenda, sunrise, sunset, use24, frozen }
         </span>
         <span className="clock__side">
           <span className="clock__sec">{String(ss).padStart(2, "0")}</span>
-          {use24 ? null : <span className="clock__ampm">{ampm}</span>}
+          {use24 ? null : <span className="clock__ampm">{hh >= 12 ? "pm" : "am"}</span>}
         </span>
       </div>
-
-      <div className="clock__rail" role="img" aria-label={status}>
-        <span className="clock__fill" style={{ width: `${arcPct(now, arc)}%` }} />
-        <span className="clock__pip" style={{ left: `${arcPct(now, arc)}%` }} data-phase={isDay ? "day" : "night"} />
-      </div>
-      <div className="clock__ends">
-        <span>{formatHour(arc.from, use24).replace(":00", "")}</span>
-        <span>{status}</span>
-        <span>{formatHour(arc.to, use24).replace(":00", "")}</span>
-      </div>
-
-      {next ? (
-        <div className="clock__next">
-          <span className="clock__next-tag">{next.mode === "now" ? "Now" : "Next"}</span>
-          <span className="clock__next-name">{next.name}</span>
-          <span className="clock__next-when">{next.mode === "now" ? `${span(next.minutes / 60)} left` : `in ${span(next.minutes / 60)}`}</span>
-        </div>
-      ) : (
-        <div className="clock__next clock__next--none">Nothing else on the calendar</div>
-      )}
     </div>
   );
 }

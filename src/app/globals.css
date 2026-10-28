@@ -1488,24 +1488,12 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .clock { padding: 4px 0 4px 28px; border-left: 1px solid var(--line); display: grid; gap: 9px; align-content: center; min-width: 270px; flex: 0 0 auto; }
 .clock__label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
 .clock__time { display: flex; align-items: flex-start; gap: 6px; font-variant-numeric: tabular-nums; }
-.clock__hm { font-family: var(--font-display); font-size: 50px; font-weight: 600; line-height: 0.9; letter-spacing: -0.03em; }
+.clock__hm { font-family: var(--font-display); font-size: 60px; font-weight: 600; line-height: 0.9; letter-spacing: -0.03em; }
 .clock__colon { display: inline-block; margin: 0 1px; animation: clock-colon 2s ease-in-out infinite; }
 .clock__side { display: grid; gap: 2px; padding-top: 2px; font-size: 12px; font-weight: 600; line-height: 1.1; color: var(--ink-faint); }
 .clock__sec { font-variant-numeric: tabular-nums; }
 .clock__ampm { text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
-.clock__rail { position: relative; height: 6px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); margin-top: 4px; }
-.clock__fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent-tint); box-shadow: inset 0 0 0 1px var(--accent); opacity: 0.75; transition: width 1s linear; }
-.clock__pip { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 999px; background: var(--accent); transition: left 1s linear; animation: clock-pip 2.6s ease-out infinite; }
-.clock__pip[data-phase="day"] { background: #F2B544; }
-.clock__ends { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 500; color: var(--ink-faint); }
-.clock__ends span:nth-child(2) { color: var(--ink-soft); font-weight: 600; }
-.clock__next { display: flex; align-items: baseline; gap: 8px; font-size: 13px; min-width: 0; }
-.clock__next--none { color: var(--ink-faint); }
-.clock__next-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
-.clock__next-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
-.clock__next-when { margin-left: auto; white-space: nowrap; color: var(--ink-soft); font-weight: 500; }
 @keyframes clock-colon { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
-@keyframes clock-pip { 0% { box-shadow: 0 0 0 0 rgba(242, 181, 68, 0.5); } 70%, 100% { box-shadow: 0 0 0 9px rgba(242, 181, 68, 0); } }
 
 /* weather scene: sits behind the card's content */
 .weather { position: relative; overflow: hidden; }
@@ -1541,10 +1529,10 @@ a:hover { color: var(--ink); text-decoration: underline; }
 
 /* stillness: reduced-motion users, and ⚙ Motion → Still */
 @media (prefers-reduced-motion: reduce) {
-  .scene *, .clock__colon, .clock__pip, .clock__fill { animation: none !important; transition: none !important; }
+  .scene *, .clock__colon { animation: none !important; }
   .scene__drop, .scene__flake, .scene__gust, .scene__flash { display: none; }
 }
-.morning--still .clock__colon, .morning--still .clock__pip { animation: none; }
+.morning--still .clock__colon { animation: none; }
 
 /* ---- ambient motion, round 2: calendar states, refresh pulse, sky tint ---- */
 .vcal__now { transition: top 15s linear; }

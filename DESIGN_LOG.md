@@ -155,6 +155,28 @@ the temperature curve and the scene); keeping three cards (the status quo).
 clock is still a separate component slotted into the greeting card, so it can
 be moved again cheaply.
 
+## 2026-10-28 — Clock shows only the time
+
+**Problem** — Under the time, the clock repeated things the calendar already
+says (the next meeting), asserted something not quite true ("your day starts
+at 6am" is just a display window, not the user's schedule), and drew a day
+progress bar that duplicated the calendar's now-line.
+
+**Decision** — The clock is just the time: big digits, live seconds, am/pm,
+a softly pulsing colon. "Where am I in the day" and "what's next" belong to
+the calendar, which already has the now-line, the Now/Next status and the
+current-event progress.
+
+**Reasoning** — One home per fact. A glance at the top should answer "what
+time is it" and nothing else; repeating the calendar elsewhere adds noise and,
+in the "day starts" case, a claim we can't back up.
+
+**Alternatives considered** — Keeping the rail but dropping the text (still
+duplicates the now-line); keeping Next (duplicates the calendar header).
+
+**Tradeoffs / open questions** — The right side of the card is sparser; the
+time is a little larger to hold it.
+
 ## 2026-10-28 — Ambient motion, round two: calendar states, refresh pulse, sky tint
 
 **Problem** — After the weather scene, the rest of the screen was still

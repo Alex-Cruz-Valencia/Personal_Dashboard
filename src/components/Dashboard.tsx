@@ -50,10 +50,6 @@ export function Dashboard({ data, settings }: DashboardProps) {
             <HelloCard user={data.user} today={data.today} dayNote={data.dayNote}>
               <ClockCard
                 today={data.today}
-                arc={data.arc}
-                agenda={data.agenda}
-                sunrise={data.weather.sunrise}
-                sunset={data.weather.sunset}
                 use24={use24Hour(settings)}
                 frozen={frozen}
               />
