@@ -1627,14 +1627,16 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .weekday__col { min-width: 0; }
 .weekday__h { margin: 0 0 8px; font-size: 11px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--ink-soft); }
 .weekday__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
-.weekday__ev { display: flex; align-items: baseline; gap: 8px; font-size: 13px; line-height: 1.35; min-width: 0; }
-.weekday__dot { flex: 0 0 auto; width: 8px; height: 8px; border-radius: 3px; align-self: center; background: var(--ink-faint); }
-.weekday__dot--meeting { background: var(--cal-meeting); }
-.weekday__dot--focus { background: var(--cal-focus); }
-.weekday__dot--personal { background: var(--cal-personal); }
-.weekday__time { flex: 0 0 auto; min-width: 9.5em; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
-.weekday__name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
 .weekday .week__task { background: var(--surface); }
 .weekday__empty { margin: 0; font-size: 13px; color: var(--ink-faint); }
-@media (max-width: 760px) { .weekday { margin: 12px 14px 0; } .weekday__cols { grid-template-columns: 1fr; gap: 16px; } .weekday__time { min-width: 0; } }
+@media (max-width: 760px) { .weekday { margin: 12px 14px 0; } .weekday__cols { grid-template-columns: 1fr; gap: 16px; } }
 @media (prefers-reduced-motion: reduce) { .weekday { animation: none; } }
+.weekday__cal { display: grid; gap: 6px; }
+.weekday__scroll { max-height: 380px; overflow-y: auto; border-radius: 6px; }
+.weekday__grid { position: relative; display: grid; grid-template-columns: 52px minmax(0, 1fr); }
+.weekday__gutter { position: relative; }
+.weekday__hour { position: absolute; right: 8px; transform: translateY(-50%); font-size: 11px; font-weight: 500; color: var(--ink-faint); white-space: nowrap; }
+.weekday__track { position: relative; border-left: 1px solid var(--line); }
+.weekday__block { padding: 3px 7px; }
+.weekday__block .week__event-title { font-size: 12.5px; }
+.weekday__block .week__event-time { font-size: 11.5px; }

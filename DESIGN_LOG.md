@@ -387,7 +387,8 @@ agenda beside its tasks, without the noise of the other six.
 
 **Decision** — Each day tile in the compact strip is a button. Clicking one
 highlights it and opens a panel under the strip: the day's agenda on the left
-(time range, colour-coded by kind, all-day first) and its tasks on the right
+as a vertical time grid like Google Calendar's day view — hours down the side,
+blocks sized by duration, overlaps side by side, all-day banners on top — and its tasks on the right
 (priority dot, name, due time), with a one-line summary ("6h booked · 5 events
 · 0 tasks"). Click again, or Close, to put it away. Informational, like the
 rest of the week; empty and not-connected states say so.
@@ -396,7 +397,9 @@ rest of the week; empty and not-connected states say so.
 strip raises. The panel answers it in place, from data the week already
 fetched (no new requests), and leaves the compact strip as the default.
 
-**Alternatives considered** — Opening the event popover per row (the week's
+**Alternatives considered** — A plain agenda list for the left column (the
+first version; the user asked for a calendar view, which matches the main
+calendar and reads gaps better); opening the event popover per row (the week's
 events don't carry details, and it would need another fetch); making the
 expanded grid's column headers clickable (the grid already shows every day);
 a side drawer (heavier for a glance).

@@ -234,17 +234,7 @@ function DayDetail({ day, use24, onClose }: { day: WeekDay; use24: boolean; onCl
           ) : events.length === 0 ? (
             <p className="weekday__empty">Nothing scheduled.</p>
           ) : (
-            <ul className="weekday__list">
-              {events.map((e, i) => (
-                <li key={e.id ?? `${e.name}${i}`} className="weekday__ev">
-                  <i className={`weekday__dot weekday__dot--${e.kind}`} aria-hidden="true" />
-                  <span className="weekday__time">
-                    {isAllDay(e) ? "All day" : `${formatHour(e.start, use24)} – ${formatHour(e.end, use24)}`}
-                  </span>
-                  <span className="weekday__name">{e.name}</span>
-                </li>
-              ))}
-            </ul>
+            <DayGrid events={events} use24={use24} />
           )}
         </section>
         <section className="weekday__col" aria-label="Tasks">
@@ -265,6 +255,68 @@ function DayDetail({ day, use24, onClose }: { day: WeekDay; use24: boolean; onCl
             </ul>
           )}
         </section>
+      </div>
+    </div>
+  );
+}
+
+/** Pixels per hour in the one-day grid. */
+const DAY_HOUR_PX = 44;
+
+/** The day as a vertical time grid, the way Google Calendar draws it: hours down the side, blocks sized by duration. */
+function DayGrid({ events, use24 }: { events: WeekEvent[]; use24: boolean }) {
+  const banners = events.filter(isAllDay);
+  const timed = events.filter((e) => !isAllDay(e) && e.end > e.start);
+  const from = Math.max(0, Math.min(8, timed.length ? Math.floor(Math.min(...timed.map((e) => e.start))) : 8));
+  const to = Math.min(24, Math.max(18, timed.length ? Math.ceil(Math.max(...timed.map((e) => e.end))) : 18));
+  const y = (h: number) => (Math.min(Math.max(h, from), to) - from) * DAY_HOUR_PX;
+  const height = (to - from) * DAY_HOUR_PX;
+  const lanes = layoutOverlaps(timed);
+  const marks: number[] = [];
+  for (let h = from; h <= to; h++) marks.push(h);
+
+  return (
+    <div className="weekday__cal">
+      {banners.map((e, i) => (
+        <div key={e.id ?? `${e.name}${i}`} className={`week__banner week__ev--${e.kind}`} title={e.name}>
+          {e.name}
+        </div>
+      ))}
+      <div className="weekday__scroll">
+        <div className="weekday__grid" style={{ height }}>
+          <div className="weekday__gutter" aria-hidden="true">
+            {marks.slice(1, -1).map((h) => (
+              <span key={h} className="weekday__hour" style={{ top: y(h) }}>
+                {formatHour(h, use24)}
+              </span>
+            ))}
+          </div>
+          <div className="weekday__track">
+            {marks.map((h) => (
+              <div key={h} className="week__line" style={{ top: y(h) }} />
+            ))}
+            {timed.map((e, i) => {
+              const top = y(e.start);
+              const h = Math.max(20, y(e.end) - top - 2);
+              const { lane, lanes: n } = lanes[i];
+              return (
+                <div
+                  key={e.id ?? `${e.name}${i}`}
+                  className={`week__event weekday__block week__ev--${e.kind}`}
+                  style={{ top, height: h, left: `calc(${(lane / n) * 100}% + 2px)`, width: `calc(${100 / n}% - 4px)` } as CSSProperties}
+                  title={`${e.name}, ${formatHour(e.start, use24)} to ${formatHour(e.end, use24)}`}
+                >
+                  <span className="week__event-title">{e.name}</span>
+                  {h >= 38 ? (
+                    <span className="week__event-time">
+                      {formatHour(e.start, use24)} – {formatHour(e.end, use24)}
+                    </span>
+                  ) : null}
+                </div>
+              );
+            })}
+          </div>
+        </div>
       </div>
     </div>
   );
