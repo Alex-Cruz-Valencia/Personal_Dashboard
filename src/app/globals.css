@@ -1071,7 +1071,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 }
 
 
-.morning--glass .card {
+.morning--glass :is(.card, .attn) {
   background: var(--glass-fill);
   border-color: var(--glass-edge);
   box-shadow: var(--glass-hi), var(--glass-shadow);
@@ -1225,7 +1225,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   :root:has(.morning--glass) :is(.settings, .taskedit, .eventedit, .replymove) {
     --surface-2: inherit; --line: inherit;
   }
-  .morning--glass .card,
+  .morning--glass :is(.card, .attn),
   :root:has(.morning--glass) :is(.settings, .taskedit, .eventedit, .replymove) {
     background: var(--surface) !important;
     border-color: var(--line) !important;
