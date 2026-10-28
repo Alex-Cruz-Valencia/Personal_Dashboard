@@ -155,6 +155,30 @@ the temperature curve and the scene); keeping three cards (the status quo).
 clock is still a separate component slotted into the greeting card, so it can
 be moved again cheaply.
 
+## 2026-10-28 — Greeting card, fourth composition: light, graded time on the right
+
+**Problem** — The pill (third composition) was tidy but small and boxed; the
+112px version (second) was too loud. The user asked for something in between,
+in a different style.
+
+**Decision** — Greeting and day note on the left. On the right, a stacked
+block: the date label above a 48–60px time in a lighter weight, with the
+digits fading softly from full ink to about half at the bottom, and the
+minute-sweep hairline beneath. No box, no divider. On a phone the date and
+time move to the top and the greeting follows.
+
+**Reasoning** — Slightly bigger than the pill, but quieter than the hero
+version: lighter weight and a gradient make it feel like part of the card's
+type rather than a widget. The date belongs with the time, so it moves over.
+
+**Alternatives considered** — The three earlier compositions (each one commit
+back, to compare or revert).
+
+**Tradeoffs / open questions** — The gradient lowers contrast a little at the
+bottom of the digits. Fixed one bug on the way: the blinking colon was an
+inline-block, which the gradient text clip does not paint through, so it
+vanished; it is plain inline now.
+
 ## 2026-10-28 — Greeting card, third composition: time as a compact badge
 
 **Problem** — The second composition made the time 112px, which overpowered
