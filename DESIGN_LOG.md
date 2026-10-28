@@ -95,6 +95,246 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-28 — Ambient motion: a weather scene and a live clock
+
+**Problem** — The dashboard is meant to sit on a second screen all day, but
+it was static: nothing said "this is live" at a glance, there was no clear
+time anywhere (only a "Refreshed 10:05pm" footnote), and the weather card was
+a number and a line. A screen you glance at needs something that moves a
+little and tells you the time without reading.
+
+**Decision** — Two additions, both quiet. (1) A **weather scene** behind the
+weather card: rain falls, wind streaks glide, a sun breathes with slow rays
+(moon and twinkling stars at night), snow drifts, fog banks slide, storms get
+a faint flash. Wind adds streaks on top of any sky at 15+ mph. Driven by a new
+`Weather.sky` (kind + wind) mapped from the WMO code Open-Meteo already
+returns. (2) A **clock card** beside the weather: big time with a pulsing
+colon and live seconds, a day rail (now vs. your day window) with a pip that
+moves, "X left in your day", and "Now / Next: <event> in 25m".
+
+**Reasoning** — The scene is pure CSS (no canvas, no JS loop), so it costs
+nothing after render and the browser throttles it when the tab is hidden.
+Particle positions come from index math, not `Math.random()`, so server and
+client markup match. The clock reads the dashboard's own timezone (not the
+browser's) so it can't disagree with the agenda, and it hydrates from the
+server's time first, then takes over. Everything stops under
+`prefers-reduced-motion` and under ⚙ Motion → Still, because an always-on
+screen must be easy to quiet.
+
+**Alternatives considered** — A canvas particle system (prettier, but a
+constant JS cost on a screen that stays open all day); a full-page weather
+backdrop (bigger effect, but it would sit behind every card and hurt
+legibility); putting the time inside the greeting card (no room, and it hides
+the one thing the second screen is for).
+
+**Tradeoffs / open questions** — Motion is decorative, so it is kept low in
+opacity: legibility wins over spectacle. `?sky=rain&wind=20` previews any
+scene without waiting for weather (only the animation changes). Day/night uses
+sunrise and sunset, so the sun only shows while it is actually up. In demo
+mode the clock is frozen at the sample time so it stays consistent with the
+sample agenda. Unverified: how it feels after hours on a real second screen.
+
+## 2026-10-28 — Greeting and clock merged into one card
+
+**Problem** — The clock card sat beside the greeting, so the top row was three
+boxes (greeting, clock, weather) and the greeting card ended up with a lot of
+empty space next to a small clock card.
+
+**Decision** — One card: greeting, date and day note on the left, the live
+clock (time, day rail, Now/Next) on the right behind a thin divider. Weather
+stays its own card, since it carries the scene. Below 1040px the weather drops
+under it; on a phone the clock stacks under the greeting.
+
+**Reasoning** — Same content, one fewer box: "what's today" and "what time is
+it" are the same glance. Nothing was removed.
+
+**Alternatives considered** — Moving the clock into the weather card (crowds
+the temperature curve and the scene); keeping three cards (the status quo).
+
+**Tradeoffs / open questions** — The greeting card is a little denser. The
+clock is still a separate component slotted into the greeting card, so it can
+be moved again cheaply.
+
+## 2026-10-28 — Greeting card: drop "Shape of the day", add a sun line; the time breathes
+
+**Problem** — The day note ("8h 5m before X — focus on Y") restated what the
+calendar header and now-line already say, and the seconds sweep line under the
+time was decoration the user liked less than the earlier breathing motion.
+
+**Decision** — (1) Remove the "Shape of the day" note from the card. (2) Add
+one quiet line under the greeting that the calendar *doesn't* say: where the
+sun is. By day, "2h 10m of daylight left · sunset 7:48pm"; at night, "Sun is
+down · sunrise 6:24am", with a small breathing warm or cool dot. (3) Replace
+the sweep line with a slow breathing of the time itself (opacity and a soft
+accent glow over 6s), keeping the pulsing colon.
+
+**Reasoning** — One home per fact, again: schedule belongs to the calendar,
+the time to the clock, and what's left over for the greeting card is the sky.
+It ties the card to the weather scene and the sky tint without repeating
+either.
+
+**Alternatives considered** — Task counts ("3 due today") — also on the task
+card; week number or day-of-year (trivia); a daily quote (noise); moon phase
+(nice, small, a candidate for later).
+
+**Tradeoffs / open questions** — The card is emptier and shorter. The day
+note's AI call still runs on the server and `/api/summary` still serves it; it
+is just not shown, so that token spend could be removed too. ⚙ "Day note"
+voice now does nothing visible.
+
+## 2026-10-28 — Greeting card: date back to the top left
+
+**Decision** — The date label returns to the top left, above the greeting, as
+in the reference; the light graded time stays on the right with its minute
+sweep. On a phone the order is date, greeting, note, then the time.
+
+**Reasoning** — The user wanted the reference's reading order back on the left
+while keeping the time where it was. The right side is now just the time.
+
+**Tradeoffs / open questions** — On a phone the time lands at the bottom of
+the card, which is less glanceable than at the top; revisit if the phone view
+matters.
+
+## 2026-10-28 — Greeting card, fourth composition: light, graded time on the right
+
+**Problem** — The pill (third composition) was tidy but small and boxed; the
+112px version (second) was too loud. The user asked for something in between,
+in a different style.
+
+**Decision** — Greeting and day note on the left. On the right, a stacked
+block: the date label above a 48–60px time in a lighter weight, with the
+digits fading softly from full ink to about half at the bottom, and the
+minute-sweep hairline beneath. No box, no divider. On a phone the date and
+time move to the top and the greeting follows.
+
+**Reasoning** — Slightly bigger than the pill, but quieter than the hero
+version: lighter weight and a gradient make it feel like part of the card's
+type rather than a widget. The date belongs with the time, so it moves over.
+
+**Alternatives considered** — The three earlier compositions (each one commit
+back, to compare or revert).
+
+**Tradeoffs / open questions** — The gradient lowers contrast a little at the
+bottom of the digits. Fixed one bug on the way: the blinking colon was an
+inline-block, which the gradient text clip does not paint through, so it
+vanished; it is plain inline now.
+
+## 2026-10-28 — Greeting card, third composition: time as a compact badge
+
+**Problem** — The second composition made the time 112px, which overpowered
+the greeting and turned a welcome into an instrument panel.
+
+**Decision** — The greeting leads again at its original size. The time becomes
+a small pill on the date line, top right (36px digits, tiny seconds and am/pm,
+the minute-sweep hairline along the pill's bottom edge). Day note beneath, as
+in the reference. On a phone the pill stays beside the date.
+
+**Reasoning** — Glanceable without dominating: the time is still the one
+element that moves, but the card keeps its human tone. Putting it on the date
+line pairs the two time facts (date, clock).
+
+**Alternatives considered** — The two earlier compositions (one and two
+commits back, to compare or revert); time inline after the greeting.
+
+**Tradeoffs / open questions** — Smaller digits are harder to read from across
+a room than the 112px version. If that matters on the second screen, nudge the
+badge up a size rather than reverting.
+
+## 2026-10-28 — Greeting card, second composition: time on the left
+
+**Problem** — The first composition (greeting left, time right, note below)
+worked but still felt like a header row plus a footer strip.
+
+**Decision** — Swap and scale: the time is the hero on the left, up to 112px,
+with the date above it and the seconds hairline below. The greeting and day
+note sit to its right, vertically centred. Whitespace separates them; no
+divider. On a phone it stacks: date, time, greeting, note.
+
+**Reasoning** — Reading order follows importance on a second screen: what
+time is it, then a human sentence about the day. One block of type per side
+makes the card feel composed rather than assembled.
+
+**Alternatives considered** — The previous composition (greeting-first, kept
+one commit back to compare or revert); time centred above both.
+
+**Tradeoffs / open questions** — The greeting is no longer the biggest thing
+in the card, which changes the tone from welcoming to instrumental. If that
+feels cold, revert to the previous commit.
+
+## 2026-10-28 — Greeting card composition: time as the hero
+
+**Problem** — With the clock reduced to the time, the merged card still read
+as two things side by side: a left block and a small clock behind a divider.
+
+**Decision** — One composition. Top line: date and greeting on the left, a
+large time on the right, bottom-aligned so they share a baseline. Under the
+time, a hairline that fills across each minute (a seconds sweep). The day note
+sits beneath, full width. No divider, no "Right now" label. On a phone the
+time stacks under the greeting.
+
+**Reasoning** — The time is the one number you read from across a room, so it
+gets the scale; the greeting and note read up close. The sweep line is the
+only decoration and doubles as proof the clock is live.
+
+**Alternatives considered** — Time centered above the greeting (pushes the
+greeting down); a circular seconds ring around the digits (busier, harder to
+fit beside the greeting).
+
+**Tradeoffs / open questions** — The card is a bit taller. Judged by eye at
+three widths, not on a real second screen yet.
+
+## 2026-10-28 — Clock shows only the time
+
+**Problem** — Under the time, the clock repeated things the calendar already
+says (the next meeting), asserted something not quite true ("your day starts
+at 6am" is just a display window, not the user's schedule), and drew a day
+progress bar that duplicated the calendar's now-line.
+
+**Decision** — The clock is just the time: big digits, live seconds, am/pm,
+a softly pulsing colon. "Where am I in the day" and "what's next" belong to
+the calendar, which already has the now-line, the Now/Next status and the
+current-event progress.
+
+**Reasoning** — One home per fact. A glance at the top should answer "what
+time is it" and nothing else; repeating the calendar elsewhere adds noise and,
+in the "day starts" case, a claim we can't back up.
+
+**Alternatives considered** — Keeping the rail but dropping the text (still
+duplicates the now-line); keeping Next (duplicates the calendar header).
+
+**Tradeoffs / open questions** — The right side of the card is sparser; the
+time is a little larger to hold it.
+
+## 2026-10-28 — Ambient motion, round two: calendar states, refresh pulse, sky tint
+
+**Problem** — After the weather scene, the rest of the screen was still
+static. The calendar showed *where* events were but not where you are in
+them; nothing proved the page was still refreshing; and the weather's mood
+stopped at its own card.
+
+**Decision** — Three small, informative motions. (1) **Calendar:** the
+now-line glides on its own between server refreshes; past events fade, the
+current one breathes with a thin progress bar, and one starting within 15
+minutes pulses slowly. (2) **Refresh pulse:** the footer's "Refreshed" stamp
+flashes once each time the 60s auto-refresh lands. (3) **Sky tint:** a slow
+colour wash behind the glass cards that follows the sun (night blue, dawn
+rose, day sky, dusk amber), eased between sunrise and sunset.
+
+**Reasoning** — Each one answers a glance-question: "where am I in the day",
+"is this live", "what time of day is it". The tint only exists with glass
+surfaces (solid cards would hide it) and ⚙ Motion on. "Now" is shared through
+one `useNowSeconds` hook (dashboard timezone, quantised: 15s for the
+calendar, 60s for the tint) so nothing re-renders every second but the clock.
+
+**Alternatives considered** — Pulsing the attention strip's urgent items
+(skipped: an alert you can't dismiss nags on an always-on screen); a canvas
+sky (constant JS cost); a progress ring per event (too busy).
+
+**Tradeoffs / open questions** — Fading past events trades a little legibility
+of history for focus on what's ahead. The tint is deliberately faint,
+especially in dark mode. Only checked at night (everything past): the
+now/soon states and day/dusk colours were verified by forcing classes, not
+by waiting for them.
 ## 2026-10-28 — Email to task, and an expanded week
 
 **Problem** — "What did I miss?" ends in a dead end: an email that needs doing
@@ -138,6 +378,49 @@ device still shows the email until it is moved or trashed. Verified a real task
 write (priority, due date, description) and deleted the test task; the AI fill was
 not exercised on real mail because the configured model had been withdrawn by the
 provider (see the model note in the PR).
+
+## 2026-10-28 — Click a day: its agenda and tasks, in a small panel
+
+**Problem** — The week strip shows how busy each day is, and the expanded grid
+shows all seven days at once, but there was no way to look at *one* day: its
+agenda beside its tasks, without the noise of the other six.
+
+**Decision** — Each day tile in the compact strip is a button. Clicking one
+highlights it and opens a panel under the strip: the day's agenda on the left
+as a vertical time grid like Google Calendar's day view — hours down the side,
+blocks sized by duration, overlaps side by side, all-day banners on top — and its tasks on the right
+(priority dot, name, due time), with a one-line summary ("6h booked · 5 events
+· 0 tasks"). Click again, or Close, to put it away. Informational, like the
+rest of the week; empty and not-connected states say so.
+
+**Reasoning** — "What does Thursday look like?" is the real question the
+strip raises. The panel answers it in place, from data the week already
+fetched (no new requests), and leaves the compact strip as the default.
+
+**Alternatives considered** — A plain agenda list for the left column (the
+first version; the user asked for a calendar view, which matches the main
+calendar and reads gaps better); opening the event popover per row (the week's
+events don't carry details, and it would need another fetch); making the
+expanded grid's column headers clickable (the grid already shows every day);
+a side drawer (heavier for a glance).
+
+**Tradeoffs / open questions** — Events and tasks inside the panel are not
+clickable yet. Built on a combined experiment branch: the ambient work, plus
+the email-to-task + expanded-week branch it depends on for the data.
+
+## 2026-10-28 — Needs attention now matches the glass cards
+
+**Problem** — With glass surfaces on, the Needs attention strip looked flat
+and darker than every other card.
+
+**Decision** — It is not built from the shared `.card` class (it has its own
+`.attn`), and the glass layer only styled `.card`, so it kept the opaque solid
+look. The glass rules (and the reduced-transparency fallback) now cover
+`.attn` too.
+
+**Reasoning** — A new surface type had been added without being added to the
+list of things the material applies to; the fix is to name it there, not to
+restyle the strip.
 
 ## 2026-10-28 — Week strip: one request per calendar instead of a burst
 

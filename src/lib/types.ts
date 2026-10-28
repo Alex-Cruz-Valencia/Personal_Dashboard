@@ -29,6 +29,15 @@ export interface TodayInfo {
   iso: string;
   /** Current time as a decimal hour (8.2 === 8:12am). */
   nowHour: number;
+  /** IANA zone the dashboard is showing, so the live clock matches the server's day. */
+  timezone: string;
+}
+
+/** What the sky is doing right now; drives the weather card's ambient scene. */
+export interface Sky {
+  kind: "clear" | "cloudy" | "fog" | "drizzle" | "rain" | "storm" | "snow";
+  /** Current wind, mph. */
+  windMph: number;
 }
 
 /** One hourly reading on the weather card's temperature curve. */
@@ -52,6 +61,8 @@ export interface Weather {
   sunset: number;
   /** One-line ambient footnote, e.g. "No rain expected · Wind 7 mph NW". */
   footnote: string;
+  /** Current sky, for the ambient scene behind the card. */
+  sky: Sky;
   /** Hourly temps across the day-arc window; drives the temperature curve. */
   hourly: HourlyTemp[];
 }

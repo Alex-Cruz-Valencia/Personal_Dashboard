@@ -5,6 +5,7 @@ import { arcPct, formatHour } from "@/lib/format";
 import type { DashboardSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
 import type { AgendaEvent, ArcWindow, HourlyTemp, Weather } from "@/lib/types";
+import { WeatherScene } from "./WeatherScene";
 
 interface WeatherCardProps {
   weather: Weather;
@@ -87,6 +88,9 @@ export function WeatherCard({
 
   return (
     <section className="card weather">
+      {settings.motion === "on" ? (
+        <WeatherScene sky={weather.sky} isDay={nowHour >= weather.sunrise && nowHour < weather.sunset} />
+      ) : null}
       {weather.place ? (
         <div className="weather__place">
           <i className="weather__place-dot" />

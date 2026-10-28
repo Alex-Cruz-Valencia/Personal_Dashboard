@@ -15,6 +15,8 @@ export type TimeFormat = "12-hour" | "24-hour";
 export type Density = "comfortable" | "focused";
 /** "glass" = translucent frosted cards over an ambient backdrop; "solid" = the reference's opaque cards. */
 export type Surface = "glass" | "solid";
+/** Ambient animation (weather scene, live clock motion). "off" is fully still. */
+export type Motion = "on" | "off";
 /** Voice of the "shape of the day" note — see src/lib/day-note.ts. */
 export type NoteStyle = "timely" | "gentle" | "plain";
 
@@ -23,6 +25,7 @@ export interface DashboardSettings {
   timeFormat: TimeFormat;
   density: Density;
   surface: Surface;
+  motion: Motion;
   noteStyle: NoteStyle;
   /** Visible span of the day arc, in whole local hours. 24 = midnight (end of day). */
   dayStart: number;
@@ -50,6 +53,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   timeFormat: "12-hour",
   density: "comfortable",
   surface: "solid",
+  motion: "on",
   noteStyle: "timely",
   dayStart: 6,
   dayEnd: 22,
@@ -103,6 +107,7 @@ export function parseSettings(
       base.density,
     ),
     surface: pick(searchParams.surface, ["glass", "solid"], base.surface),
+    motion: pick(searchParams.motion, ["on", "off"], base.motion),
     noteStyle: pick(searchParams.noteStyle, ["timely", "gentle", "plain"], base.noteStyle),
     dayStart: safeStart,
     dayEnd: safeEnd,
@@ -135,6 +140,9 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   }
   if (obj.surface === "glass" || obj.surface === "solid") {
     out.surface = obj.surface;
+  }
+  if (obj.motion === "on" || obj.motion === "off") {
+    out.motion = obj.motion;
   }
   if (obj.noteStyle === "timely" || obj.noteStyle === "gentle" || obj.noteStyle === "plain") {
     out.noteStyle = obj.noteStyle;

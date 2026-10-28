@@ -74,6 +74,7 @@ function realToday(timezone: string): TodayInfo {
   return {
     iso: isoDateInZone(now, timezone),
     nowHour: decimalHourInZone(now, timezone),
+    timezone,
   };
 }
 

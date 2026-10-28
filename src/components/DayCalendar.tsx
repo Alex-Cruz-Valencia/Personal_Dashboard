@@ -7,6 +7,7 @@ import { minutesLabel } from "@/lib/plan";
 import type { DashboardSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
 import type { AgendaEvent, ArcWindow, TodayInfo } from "@/lib/types";
+import { useNowSeconds } from "@/lib/use-now";
 import { useEventDetail } from "./EventDetail";
 import { formatClock, useFocus } from "./Focus";
 
@@ -21,6 +22,8 @@ interface DayCalendarProps {
   arc: ArcWindow;
   today: TodayInfo;
   settings: DashboardSettings;
+  /** Demo mode: "now" stays at the sample time. */
+  frozen?: boolean;
   /** The task the Focus button starts on. */
   focusTask?: string;
 }
@@ -30,19 +33,21 @@ interface DayCalendarProps {
  * the left, events as blocks sized by duration, overlapping events side by
  * side, a line at the current time. Click an event for its details.
  */
-export function DayCalendar({ agenda, arc, today, settings, focusTask }: DayCalendarProps) {
+export function DayCalendar({ agenda, arc, today, settings, frozen = false, focusTask }: DayCalendarProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const focus = useFocus();
   const scrollerRef = useRef<HTMLDivElement>(null);
   const landed = useRef(false);
 
+  // The now-line and event states move on their own between the 60s server refreshes.
+  const nowHour = useNowSeconds(today, frozen, 15) / 3600;
   const hours = arc.to - arc.from;
   const height = hours * HOUR_PX;
   const y = (h: number) => (Math.min(Math.max(h, arc.from), arc.to) - arc.from) * HOUR_PX;
   const lanes = layoutOverlaps(agenda);
-  const next = upNext(agenda, today.nowHour);
-  const nowVisible = today.nowHour >= arc.from && today.nowHour <= arc.to;
+  const next = upNext(agenda, nowHour);
+  const nowVisible = nowHour >= arc.from && nowHour <= arc.to;
 
   const hourMarks: number[] = [];
   for (let h = Math.ceil(arc.from); h <= Math.floor(arc.to); h++) hourMarks.push(h);
@@ -53,7 +58,7 @@ export function DayCalendar({ agenda, arc, today, settings, focusTask }: DayCale
     const el = scrollerRef.current;
     if (!el || landed.current) return;
     landed.current = true;
-    const anchor = nowVisible ? today.nowHour : (agenda[0]?.start ?? arc.from);
+    const anchor = nowVisible ? nowHour : (agenda[0]?.start ?? arc.from);
     el.scrollTop = Math.max(0, y(anchor) - el.clientHeight / 3);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
@@ -145,10 +150,12 @@ export function DayCalendar({ agenda, arc, today, settings, focusTask }: DayCale
               const top = y(e.start);
               const h = Math.max(20, y(e.end) - top - 2);
               const { lane, lanes: n } = lanes[i];
+              const state =
+                e.end <= nowHour ? "past" : e.start <= nowHour ? "now" : e.start - nowHour <= 0.25 ? "soon" : "later";
               return (
                 <div
                   key={e.id ?? `${e.name}${i}`}
-                  className={`vcal__event vcal__event--${e.kind}${isSelected(e) ? " vcal__event--selected" : ""}`}
+                  className={`vcal__event vcal__event--${e.kind} vcal__event--${state}${isSelected(e) ? " vcal__event--selected" : ""}`}
                   style={
                     {
                       top,
@@ -177,12 +184,15 @@ export function DayCalendar({ agenda, arc, today, settings, focusTask }: DayCale
                   {h >= THREE_LINE_PX && (e.location || e.where) ? (
                     <div className="vcal__event-where">{e.location || e.where}</div>
                   ) : null}
+                  {state === "now" ? (
+                    <i className="vcal__event-prog" style={{ width: `${(((nowHour - e.start) / (e.end - e.start)) * 100).toFixed(1)}%` }} />
+                  ) : null}
                 </div>
               );
             })}
 
             {nowVisible ? (
-              <div className="vcal__now" style={{ top: y(today.nowHour) }} aria-label={`Now, ${formatHour(today.nowHour, use24)}`}>
+              <div className="vcal__now" style={{ top: y(nowHour) }} aria-label={`Now, ${formatHour(nowHour, use24)}`}>
                 <i />
               </div>
             ) : null}
