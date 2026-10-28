@@ -155,6 +155,27 @@ the temperature curve and the scene); keeping three cards (the status quo).
 clock is still a separate component slotted into the greeting card, so it can
 be moved again cheaply.
 
+## 2026-10-28 — Greeting card, second composition: time on the left
+
+**Problem** — The first composition (greeting left, time right, note below)
+worked but still felt like a header row plus a footer strip.
+
+**Decision** — Swap and scale: the time is the hero on the left, up to 112px,
+with the date above it and the seconds hairline below. The greeting and day
+note sit to its right, vertically centred. Whitespace separates them; no
+divider. On a phone it stacks: date, time, greeting, note.
+
+**Reasoning** — Reading order follows importance on a second screen: what
+time is it, then a human sentence about the day. One block of type per side
+makes the card feel composed rather than assembled.
+
+**Alternatives considered** — The previous composition (greeting-first, kept
+one commit back to compare or revert); time centred above both.
+
+**Tradeoffs / open questions** — The greeting is no longer the biggest thing
+in the card, which changes the tone from welcoming to instrumental. If that
+feels cold, revert to the previous commit.
+
 ## 2026-10-28 — Greeting card composition: time as the hero
 
 **Problem** — With the clock reduced to the time, the merged card still read

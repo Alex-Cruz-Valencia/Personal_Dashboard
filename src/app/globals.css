@@ -1476,22 +1476,22 @@ a:hover { color: var(--ink); text-decoration: underline; }
    Token-only except the sun/moon, which are fixed warm/cool light. Everything
    is decorative and stops under prefers-reduced-motion or ⚙ Motion → Still.
    ========================================================================== */
-/* greeting + clock share one card: greeting and time on one line, the day note beneath */
-.hello { flex-direction: column; align-items: stretch; justify-content: center; gap: 16px; }
-.hello__head { display: flex; align-items: flex-end; justify-content: space-between; gap: 32px; }
-.hello__main { display: flex; flex-direction: column; gap: 10px; min-width: 0; }
+/* greeting + clock share one card: the time is the hero on the left (date above it),
+   greeting and day note to its right */
+.hello { flex-direction: row; align-items: center; justify-content: flex-start; gap: clamp(28px, 4vw, 56px); }
+.hello__time { display: grid; gap: 12px; flex: 0 0 auto; }
+.hello__text { display: flex; flex-direction: column; gap: 14px; min-width: 0; flex: 1 1 auto; }
 .hello__note { max-width: none; }
 @media (max-width: 1040px) { .topbar { grid-template-columns: 1fr; } }
 @media (max-width: 760px) {
-  .hello__head { flex-direction: column; align-items: flex-start; gap: 14px; }
-  .clock { align-items: flex-start; }
+  .hello { flex-direction: column; align-items: stretch; gap: 18px; }
 }
 
-.clock { display: grid; gap: 8px; justify-items: end; flex: 0 0 auto; }
+.clock { display: grid; gap: 10px; justify-items: stretch; }
 .clock__time { display: flex; align-items: flex-start; gap: 6px; font-variant-numeric: tabular-nums; }
-.clock__hm { font-family: var(--font-display); font-size: clamp(54px, 6.4vw, 84px); font-weight: 600; line-height: 0.9; letter-spacing: -0.03em; }
+.clock__hm { font-family: var(--font-display); font-size: clamp(64px, 8vw, 112px); font-weight: 600; line-height: 0.9; letter-spacing: -0.03em; }
 .clock__colon { display: inline-block; margin: 0 1px; animation: clock-colon 2s ease-in-out infinite; }
-.clock__side { display: grid; gap: 3px; padding-top: 6px; font-size: 13px; font-weight: 600; line-height: 1.1; color: var(--ink-faint); }
+.clock__side { display: grid; gap: 4px; padding-top: 8px; font-size: 14px; font-weight: 600; line-height: 1.1; color: var(--ink-faint); }
 .clock__sec { font-variant-numeric: tabular-nums; }
 .clock__ampm { text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
 @keyframes clock-colon { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
