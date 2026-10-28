@@ -335,6 +335,49 @@ of history for focus on what's ahead. The tint is deliberately faint,
 especially in dark mode. Only checked at night (everything past): the
 now/soon states and day/dusk colours were verified by forcing classes, not
 by waiting for them.
+## 2026-10-28 — Email to task, and an expanded week
+
+**Problem** — "What did I miss?" ends in a dead end: an email that needs doing
+(not replying) either sits on the pending list forever or gets re-typed into
+Todoist by hand. And the week strip says how *busy* each day is but not *with
+what*, so planning ahead still meant opening Google Calendar. (Draft reply, the
+first thing asked for, already existed: it saves to Gmail drafts and never sends.)
+
+**Decision 1: "Make task" on each email.** A panel with three editable fields
+(title, priority, due date) and an optional "Fill in from the email" button where
+the AI reads the message and proposes them. Nothing is written until "Add to
+Todoist". The task is created with Todoist's structured fields (priority, due
+date, a description linking back to the email), not its typing shortcuts like
+`p1` or `tomorrow`, so what you see in the fields is exactly what is saved.
+"Take this email off my list" is on by default and hides it for 30 days in this
+browser only.
+
+**Decision 2: expanded week.** The week strip gets an Expand button. Open, it
+becomes a calendar-style grid: each day's tasks in a row, all-day events as
+banners, then timed events as blocks on an hour grid (overlaps side by side). The
+compact strip stays the default; the same data feeds both, with no extra requests.
+
+**Reasoning** — The AI is a convenience, not a dependency: without it the panel
+still prefills a sensible title ("Reply to Dana: Q3 budget") and works. Spending
+tokens only on a click matches Draft reply. Because email text is untrusted, the
+model's reply is reduced server-side to three checked fields (title cut to 140
+characters, priority forced to 1 to 3, due date accepted only if it is a real
+date between today and a year out); instructions inside an email can't do
+anything else. Taking the email off the list is local (the email in Gmail is
+untouched), consistent with Wait a day.
+
+**Alternatives** — Letting the AI add the task directly (rejected: a wrong
+guess lands in the real task list); using Todoist's natural-language string
+(rejected: shortcuts misparse, e.g. a task about "p1 results"); archiving or
+labelling the email in Gmail when a task is made (rejected: a write to a
+different system the user didn't ask for); clickable events in the week grid
+(skipped for now: the day view already has the full detail popover).
+
+**Tradeoffs / still unproven** — "Off my list" is per browser, so a second
+device still shows the email until it is moved or trashed. Verified a real task
+write (priority, due date, description) and deleted the test task; the AI fill was
+not exercised on real mail because the configured model had been withdrawn by the
+provider (see the model note in the PR).
 
 ## 2026-10-28 — Week strip: one request per calendar instead of a burst
 

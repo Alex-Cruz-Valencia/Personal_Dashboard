@@ -22,7 +22,7 @@ import {
   MOCK_USER,
   MOCK_WEATHER,
 } from "./mock-data";
-import { getDueCounts, getTasks } from "./tasks/todoist";
+import { getTasks, getWeekTasks } from "./tasks/todoist";
 import { buildWeek, fetchWeekAgendas } from "./week";
 import { decimalHourInZone, isoDateInZone } from "./time";
 import type {
@@ -122,6 +122,7 @@ export async function getDashboardData(
       googleReconnect: false,
       week: null,
       ai: false,
+      canAddTasks: false,
       sources: {
         weather: "off",
         tasks: "off",
@@ -141,8 +142,8 @@ export async function getDashboardData(
   const laterAgendas = features.google
     ? fetchWeekAgendas(today.iso, location.timezone).catch(() => null)
     : Promise.resolve(null);
-  const dueCounts = features.todoist
-    ? getDueCounts(location.timezone).catch(() => null)
+  const weekTasks = features.todoist
+    ? getWeekTasks(location.timezone).catch(() => null)
     : Promise.resolve(null);
 
   const [weather, tasks, agenda, replies, geocoded]: [
@@ -175,8 +176,12 @@ export async function getDashboardData(
           todayIso: today.iso,
           todayAgenda: agenda.live ? agenda.value : null,
           laterAgendas: await laterAgendas,
-          dueCounts: await dueCounts,
-          todayTasksDue: tasks.live ? tasks.value.filter((t) => !t.overdueDays).length : null,
+          weekTasks: await weekTasks,
+          todayTasks: tasks.live
+            ? tasks.value
+                .filter((t) => !t.overdueDays)
+                .map((t) => ({ id: t.id, name: t.name, priority: t.priority, dueHour: t.dueHour }))
+            : null,
         })
       : null;
 
@@ -233,5 +238,6 @@ export async function getDashboardData(
     googleReconnect: features.google && Boolean(agenda.authExpired || replies.authExpired),
     week,
     ai: features.llm && features.google,
+    canAddTasks: features.todoist,
   };
 }
