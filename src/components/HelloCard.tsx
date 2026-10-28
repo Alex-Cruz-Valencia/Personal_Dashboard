@@ -15,20 +15,18 @@ interface HelloCardProps {
 export function HelloCard({ user, today, dayNote, children }: HelloCardProps) {
   return (
     <header className="card hello">
-      <div className="hello__time">
+      <div className="hello__top">
         <div className="hello__date">{dateLineFor(today.iso)}</div>
         {children}
       </div>
-      <div className="hello__text">
-        <h1 className="hello__greeting">{greetingFor(today.nowHour, user.name)}</h1>
-        <div className="hello__note">
-          <div className="hello__note-tag">Shape of the day</div>
-          <p className="hello__note-text">
-            {splitNote(dayNote).map((part, i) =>
-              part.bold ? <strong key={i}>{part.text}</strong> : part.text,
-            )}
-          </p>
-        </div>
+      <h1 className="hello__greeting">{greetingFor(today.nowHour, user.name)}</h1>
+      <div className="hello__note">
+        <div className="hello__note-tag">Shape of the day</div>
+        <p className="hello__note-text">
+          {splitNote(dayNote).map((part, i) =>
+            part.bold ? <strong key={i}>{part.text}</strong> : part.text,
+          )}
+        </p>
       </div>
     </header>
   );

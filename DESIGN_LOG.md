@@ -155,6 +155,27 @@ the temperature curve and the scene); keeping three cards (the status quo).
 clock is still a separate component slotted into the greeting card, so it can
 be moved again cheaply.
 
+## 2026-10-28 — Greeting card, third composition: time as a compact badge
+
+**Problem** — The second composition made the time 112px, which overpowered
+the greeting and turned a welcome into an instrument panel.
+
+**Decision** — The greeting leads again at its original size. The time becomes
+a small pill on the date line, top right (36px digits, tiny seconds and am/pm,
+the minute-sweep hairline along the pill's bottom edge). Day note beneath, as
+in the reference. On a phone the pill stays beside the date.
+
+**Reasoning** — Glanceable without dominating: the time is still the one
+element that moves, but the card keeps its human tone. Putting it on the date
+line pairs the two time facts (date, clock).
+
+**Alternatives considered** — The two earlier compositions (one and two
+commits back, to compare or revert); time inline after the greeting.
+
+**Tradeoffs / open questions** — Smaller digits are harder to read from across
+a room than the 112px version. If that matters on the second screen, nudge the
+badge up a size rather than reverting.
+
 ## 2026-10-28 — Greeting card, second composition: time on the left
 
 **Problem** — The first composition (greeting left, time right, note below)
