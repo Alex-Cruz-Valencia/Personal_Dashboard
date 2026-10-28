@@ -3,7 +3,7 @@
  * the existing per-day agenda reader. Times are decimal hours, like everywhere.
  */
 
-import { getAgenda } from "./google/calendar";
+import { getWeekAgendas } from "./google/calendar";
 import { DEFAULT_TASK_MINUTES } from "./plan";
 import type { AgendaEvent, WeekDay } from "./types";
 
@@ -42,14 +42,21 @@ export function isHeavy(booked: number | null, tasksDue: number | null): boolean
   return load >= HEAVY_HOURS;
 }
 
-/** Agendas for the six days after `todayIso`; a day that fails is null. */
+/**
+ * Agendas for the six days after `todayIso`, from one request per calendar. If
+ * the read fails, every day is null (the strip shows "No calendar") rather than
+ * the page failing.
+ */
 export async function fetchWeekAgendas(
   todayIso: string,
   timezone: string,
 ): Promise<(AgendaEvent[] | null)[]> {
   const days = [1, 2, 3, 4, 5, 6].map((n) => addDays(todayIso, n));
-  const results = await Promise.allSettled(days.map((d) => getAgenda(d, timezone)));
-  return results.map((r) => (r.status === "fulfilled" ? r.value : null));
+  try {
+    return await getWeekAgendas(days, timezone);
+  } catch {
+    return days.map(() => null);
+  }
 }
 
 export function buildWeek(input: {
