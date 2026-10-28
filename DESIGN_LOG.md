@@ -95,6 +95,35 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-28 — One retry for dropped Google connections, reads only
+
+**Problem** — Production logs showed 25 intermittent "fetch failed" errors to
+Google since late September (timeouts and "other side closed" resets). Each one
+makes that page load fall back to the sample-data marker even though Google was
+fine a moment later. The week strip adds six more Calendar reads per load, so the
+exposure was about to grow.
+
+**Decision** — `googleFetch` repeats a request **once** (after 300ms) when the
+connection itself fails, but **only for reads** (GET/HEAD). Writes are never
+repeated, nothing is retried if the caller aborted, and an HTTP error response
+(401 refresh aside, which already existed) is returned untouched. The logic lives
+in `src/lib/google/retry.ts`.
+
+**Why reads only** — A write whose connection dies may already have been applied
+by Google; repeating it could create a second calendar event, a second Gmail draft
+or a duplicate label. A failed write should surface as an error the person can
+retry on purpose; a failed read is invisible and free to repeat.
+
+**Alternatives** — Retry everything (rejected: duplicate-write risk). Retry on 5xx
+too, or several times with backoff (not needed for the failure seen; adds latency
+to every slow page). Add idempotency keys to writes (more work than the problem
+warrants today).
+
+**Tradeoffs** — A request that fails twice still fails, now ~300ms later. The
+Google token refresh call (in `oauth.ts`) is not covered. Whether this cuts the
+error rate is unproven: check the "fetch failed" count in the Vercel runtime
+errors over the next weeks.
+
 ## 2026-10-28 — Experiment: vertical calendar beside today's tasks (bottom area only)
 
 **Problem** — The horizontal day arc reads differently from the calendar people

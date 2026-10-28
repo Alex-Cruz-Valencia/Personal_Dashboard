@@ -23,6 +23,7 @@ import { Redis } from "@upstash/redis";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { GoogleAuthError, refreshAccessToken, type GoogleTokens } from "./oauth";
+import { retryOnDroppedConnection } from "./retry";
 
 const TOKEN_FILE = join(process.cwd(), ".data", "google-tokens.json");
 const REDIS_KEY = "dashboard:google-tokens";
@@ -90,10 +91,14 @@ export async function getGoogleAccessToken(): Promise<string> {
  */
 export async function googleFetch(input: string | URL, init: RequestInit = {}): Promise<Response> {
   const send = (token: string) =>
-    fetch(input, {
-      ...init,
-      headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` },
-    });
+    retryOnDroppedConnection(
+      () =>
+        fetch(input, {
+          ...init,
+          headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` },
+        }),
+      init,
+    );
 
   const res = await send(await getGoogleAccessToken());
   if (res.status !== 401) return res;
