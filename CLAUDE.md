@@ -153,6 +153,11 @@
   throws `GoogleAuthError` (`oauth.ts`); `settle` in `dashboard-data.ts`
   surfaces it as `DashboardData.googleReconnect`, and `StaleTag`'s `reconnect`
   prop turns the "Sample" pill into a "Reconnect Google" link.
+- **Never send email.** Drafts only. `googleFetch` calls `assertNoSend`
+  (`src/lib/google/no-send.ts`) and `scripts/check-no-send.mjs` runs before
+  every build/lint; both refuse Gmail send endpoints. `gmail.modify` allows
+  sending, so these are the real guarantee. Don't add a send path or weaken
+  them (DESIGN_LOG → "Hard guardrail").
 - Gmail scope is `gmail.modify`, not `gmail.readonly` — `EmailList`'s
   Trash/Move actions need it. `trashMessage`/`moveMessageToLabel`/
   `listGmailLabels` (`src/lib/google/gmail.ts`) back `/api/replies/[id]/
