@@ -39,10 +39,13 @@ export function WeatherScene({ sky, isDay }: { sky: Sky; isDay: boolean }) {
   return (
     <div className={`scene scene--${kind} ${isDay ? "scene--day" : "scene--night"}`} aria-hidden>
       {kind === "clear" && isDay ? (
-        <div className="scene__sun">
-          <span className="scene__rays" />
-          <span className="scene__orb" />
-        </div>
+        <>
+          <span className="scene__wash" />
+          <div className="scene__sun">
+            <span className="scene__rays" />
+            <span className="scene__orb" />
+          </div>
+        </>
       ) : null}
       {kind === "clear" && !isDay ? (
         <>
