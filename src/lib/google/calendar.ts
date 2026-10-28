@@ -128,21 +128,22 @@ function toPlainText(html: string | undefined): string | undefined {
   return text ? text.slice(0, 800) : undefined;
 }
 
-/** One calendar's events for the day. Thrown errors are the caller's problem. */
+/** One calendar's events for a time range. Thrown errors are the caller's problem. */
 async function fetchCalendarEvents(
   calendarId: string,
   timeMin: string,
   timeMax: string,
+  { maxResults = 25, revalidate = 60 }: { maxResults?: number; revalidate?: number } = {},
 ): Promise<GCalEvent[]> {
   const url = new URL(`${CAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events`);
   url.searchParams.set("timeMin", timeMin);
   url.searchParams.set("timeMax", timeMax);
   url.searchParams.set("singleEvents", "true");
   url.searchParams.set("orderBy", "startTime");
-  url.searchParams.set("maxResults", "25");
+  url.searchParams.set("maxResults", String(maxResults));
 
   const res = await googleFetch(url, {
-    next: { revalidate: 60, tags: [CALENDAR_TAG] },
+    next: { revalidate, tags: [CALENDAR_TAG] },
   });
   if (!res.ok) {
     throw new Error(`Google Calendar (${calendarId}) responded ${res.status}`);
@@ -204,6 +205,62 @@ export async function getAgenda(
     })
     .filter((e) => e.end > e.start)
     .sort((a, b) => a.start - b.start);
+}
+
+/**
+ * The week strip's data: several later days from ONE request per calendar (the
+ * whole range at once), instead of a full `getAgenda` per day. That is roughly
+ * (calendars) requests instead of (days x (1 + calendars)), which matters
+ * because Google was cutting off the burst of parallel connections the
+ * per-day version opened on every refresh.
+ *
+ * `dayIsos` are consecutive local dates. Returns one list per day, in order;
+ * an event that spans days appears in each, clipped to that day (same clamping
+ * as `getAgenda`). Only what the strip needs is filled in (times, name, kind).
+ * Week-ahead data changes slowly, so it is cached longer than today's agenda.
+ */
+export async function getWeekAgendas(
+  dayIsos: string[],
+  timezone: string,
+): Promise<AgendaEvent[][]> {
+  const byDay: AgendaEvent[][] = dayIsos.map(() => []);
+  if (dayIsos.length === 0) return byDay;
+
+  const { timeMin } = dayBoundsUtc(dayIsos[0], timezone);
+  const { timeMax } = dayBoundsUtc(dayIsos[dayIsos.length - 1], timezone);
+  const calendarIds = await discoverCalendarIds();
+
+  const results = await Promise.allSettled(
+    calendarIds.map((id) =>
+      fetchCalendarEvents(id, timeMin, timeMax, { maxResults: 250, revalidate: 300 }),
+    ),
+  );
+  if (results.length > 0 && results.every((r) => r.status === "rejected")) {
+    throw new Error("Every discovered calendar failed");
+  }
+
+  results.forEach((result, i) => {
+    if (result.status !== "fulfilled") return;
+    for (const e of result.value) {
+      if (e.status === "cancelled" || !e.start?.dateTime || !e.end?.dateTime) continue;
+      const startTs = e.start.dateTime;
+      const endTs = e.end.dateTime;
+      dayIsos.forEach((day, d) => {
+        const start = decimalHourForTimestamp(startTs, day, timezone);
+        const end = decimalHourForTimestamp(endTs, day, timezone);
+        if (end <= start) return; // not on this day (both clamp to the same edge)
+        byDay[d].push({
+          id: compositeId(calendarIds[i], e.id),
+          name: e.summary?.trim() || "(busy)",
+          where: "",
+          start,
+          end,
+          kind: classify(e),
+        });
+      });
+    }
+  });
+  return byDay.map((list) => list.sort((a, b) => a.start - b.start));
 }
 
 /* ---------- editing an event ---------- */

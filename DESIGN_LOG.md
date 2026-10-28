@@ -95,6 +95,37 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-28 — Week strip: one request per calendar instead of a burst
+
+**Problem** — The retry above did not stop the production errors; they got
+louder (25 to 79). Each page load produced a burst of about seven "other side
+closed" resets to Google within milliseconds, once a minute (the auto-refresh).
+The pattern matched the week strip, which called the full per-day agenda reader
+for six days at once: roughly 6 days x 5 calendars = 30 simultaneous event
+requests per refresh. A retry cannot fix a burst that is itself the problem.
+
+**Decision** — `getWeekAgendas` asks each calendar for the whole six-day range in
+**one request**, then splits events by day (an event spanning days is clipped to
+each, same clamping as today's agenda). 6 days across 5 calendars is now 5 event
+requests (verified by a temporary counter), and week-ahead data is cached for 5
+minutes instead of 1 because it changes slowly. If the read fails, every day
+shows "No calendar" instead of the page failing. The strip showed identical
+numbers before and after on live data.
+
+**Lesson (for the retro)** — I shipped a fan-out of parallel calls without
+measuring its cost against a service with connection limits, then shipped a fix
+(retry) for the symptom before confirming the cause. The real signal came from
+reading the log *shape* (one burst per request, ~7 failures in 20ms), not the
+error count. Check the multiplier on any new "just call it N times" pattern.
+
+**Alternatives** — A concurrency limit on the six calls (keeps 30 requests);
+fetching the week less often only (hides the cause); dropping the week strip
+(loses a feature people liked).
+
+**Tradeoffs / still unproven** — A very busy week is capped at 250 events per
+calendar. Whether this clears the errors is unproven until production runs it:
+check the "fetch failed" count in Vercel runtime errors (it was 79).
+
 ## 2026-10-28 — One retry for dropped Google connections, reads only
 
 **Problem** — Production logs showed 25 intermittent "fetch failed" errors to
