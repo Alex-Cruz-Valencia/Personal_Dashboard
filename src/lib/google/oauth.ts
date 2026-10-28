@@ -10,6 +10,7 @@
 
 import "server-only";
 import { config } from "@/lib/config";
+import { retryOnDroppedConnection } from "./retry";
 
 export const GOOGLE_SCOPES = [
   "https://www.googleapis.com/auth/calendar.readonly",
@@ -77,12 +78,17 @@ interface TokenResponse {
   error_description?: string;
 }
 
-async function postToken(body: Record<string, string>): Promise<TokenResponse> {
-  const res = await fetch(TOKEN_ENDPOINT, {
+async function postToken(
+  body: Record<string, string>,
+  /** Safe to repeat if the connection drops (refresh grant); never for the one-time code exchange. */
+  idempotent = false,
+): Promise<TokenResponse> {
+  const init = {
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(body),
-  });
+  };
+  const res = await retryOnDroppedConnection(() => fetch(TOKEN_ENDPOINT, init), { ...init, idempotent });
   const data = (await res.json()) as TokenResponse;
   if (!res.ok || data.error) {
     if (data.error === "invalid_grant") {
@@ -121,7 +127,7 @@ export async function refreshAccessToken(
     client_id: config.google.clientId ?? "",
     client_secret: config.google.clientSecret ?? "",
     grant_type: "refresh_token",
-  });
+  }, true);
   return {
     accessToken: data.access_token,
     refreshToken: data.refresh_token ?? refreshToken,

@@ -450,6 +450,29 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-28 — Retry the Google token refresh when the connection drops
+
+**Problem** — Production still logs occasional Google "fetch failed … other
+side closed" errors after the read retry shipped. That retry deliberately
+skips anything that isn't a GET, and the token refresh is a POST, so it was
+the one Google call with no second chance.
+
+**Decision** — The retry helper takes an `idempotent` flag. The refresh-token
+grant sets it, so a dropped connection there is retried once. The one-time
+authorization-code exchange does not, and neither does any write.
+
+**Reasoning** — Repeating a refresh is harmless (Google just returns another
+access token), whereas repeating a write could duplicate an event or draft and
+repeating the code exchange would fail because the code is single-use. The
+flag keeps the "never repeat a write" rule intact and makes the exception
+explicit and local.
+
+**Alternatives considered** — Retrying every POST (unsafe); leaving the
+refresh alone and accepting the occasional blank page (what we had).
+
+**Tradeoffs / open questions** — Unproven until real traffic: it fixes the
+refresh path only, so some "fetch failed" errors may remain from elsewhere.
+
 ## 2026-10-28 — Week strip: one request per calendar instead of a burst
 
 **Problem** — The retry above did not stop the production errors; they got
