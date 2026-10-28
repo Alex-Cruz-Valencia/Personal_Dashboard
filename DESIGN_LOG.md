@@ -379,6 +379,46 @@ write (priority, due date, description) and deleted the test task; the AI fill w
 not exercised on real mail because the configured model had been withdrawn by the
 provider (see the model note in the PR).
 
+## 2026-10-28 — Click a day: its agenda and tasks, in a small panel
+
+**Problem** — The week strip shows how busy each day is, and the expanded grid
+shows all seven days at once, but there was no way to look at *one* day: its
+agenda beside its tasks, without the noise of the other six.
+
+**Decision** — Each day tile in the compact strip is a button. Clicking one
+highlights it and opens a panel under the strip: the day's agenda on the left
+(time range, colour-coded by kind, all-day first) and its tasks on the right
+(priority dot, name, due time), with a one-line summary ("6h booked · 5 events
+· 0 tasks"). Click again, or Close, to put it away. Informational, like the
+rest of the week; empty and not-connected states say so.
+
+**Reasoning** — "What does Thursday look like?" is the real question the
+strip raises. The panel answers it in place, from data the week already
+fetched (no new requests), and leaves the compact strip as the default.
+
+**Alternatives considered** — Opening the event popover per row (the week's
+events don't carry details, and it would need another fetch); making the
+expanded grid's column headers clickable (the grid already shows every day);
+a side drawer (heavier for a glance).
+
+**Tradeoffs / open questions** — Events and tasks inside the panel are not
+clickable yet. Built on a combined experiment branch: the ambient work, plus
+the email-to-task + expanded-week branch it depends on for the data.
+
+## 2026-10-28 — Needs attention now matches the glass cards
+
+**Problem** — With glass surfaces on, the Needs attention strip looked flat
+and darker than every other card.
+
+**Decision** — It is not built from the shared `.card` class (it has its own
+`.attn`), and the glass layer only styled `.card`, so it kept the opaque solid
+look. The glass rules (and the reduced-transparency fallback) now cover
+`.attn` too.
+
+**Reasoning** — A new surface type had been added without being added to the
+list of things the material applies to; the fix is to name it there, not to
+restyle the strip.
+
 ## 2026-10-28 — Week strip: one request per calendar instead of a burst
 
 **Problem** — The retry above did not stop the production errors; they got

@@ -30,6 +30,8 @@ function describe(d: WeekDay): string {
  */
 export function WeekStrip({ days, use24 }: { days: WeekDay[]; use24: boolean }) {
   const [open, setOpen] = useState(false);
+  const [picked, setPicked] = useState<string | null>(null);
+  const pickedDay = days.find((d) => d.iso === picked) ?? null;
   return (
     <section className={`card week${open ? " week--open" : ""}`} aria-label="This week">
       <div className="card__head">
@@ -45,6 +47,7 @@ export function WeekStrip({ days, use24 }: { days: WeekDay[]; use24: boolean }) 
       {open ? (
         <WeekGrid days={days} use24={use24} />
       ) : (
+        <>
         <ol className="week__days">
           {days.map((d) => {
             const bookedPct = Math.min(100, ((d.bookedHours ?? 0) / BAR_HOURS) * 100);
@@ -52,9 +55,16 @@ export function WeekStrip({ days, use24 }: { days: WeekDay[]; use24: boolean }) 
             return (
               <li
                 key={d.iso}
-                className={`week__day${d.isToday ? " week__day--today" : ""}${d.heavy ? " week__day--heavy" : ""}`}
-                aria-label={describe(d)}
+                className={`week__day${d.isToday ? " week__day--today" : ""}${d.heavy ? " week__day--heavy" : ""}${picked === d.iso ? " week__day--picked" : ""}`}
               >
+                <button
+                  type="button"
+                  className="week__daybtn"
+                  aria-label={describe(d)}
+                  aria-expanded={picked === d.iso}
+                  aria-controls="week-daydetail"
+                  onClick={() => setPicked(picked === d.iso ? null : d.iso)}
+                >
                 <div className="week__name">
                   {d.isToday ? "Today" : d.name} <span className="week__date">{d.date}</span>
                 </div>
@@ -67,10 +77,13 @@ export function WeekStrip({ days, use24 }: { days: WeekDay[]; use24: boolean }) 
                   {d.tasksDue === null ? "" : `${d.tasksDue} ${d.tasksDue === 1 ? "task" : "tasks"}`}
                 </div>
                 {d.heavy ? <div className="week__heavy">Heavy</div> : null}
+                </button>
               </li>
             );
           })}
         </ol>
+        {pickedDay ? <DayDetail day={pickedDay} use24={use24} onClose={() => setPicked(null)} /> : null}
+        </>
       )}
     </section>
   );
@@ -188,6 +201,71 @@ function DayColumn({
           </div>
         );
       })}
+    </div>
+  );
+}
+
+const longDay = (d: WeekDay) =>
+  new Date(`${d.iso}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+
+/** One picked day, in full: its agenda beside its tasks. Informational, like the rest of the week. */
+function DayDetail({ day, use24, onClose }: { day: WeekDay; use24: boolean; onClose: () => void }) {
+  const events = [...(day.events ?? [])].sort((a, b) => a.start - b.start);
+  const tasks = day.tasks ?? [];
+  const summary = [
+    day.bookedHours === null ? null : hoursLabel(day.bookedHours),
+    day.events === null ? null : `${events.length} ${events.length === 1 ? "event" : "events"}`,
+    day.tasks === null ? null : `${tasks.length} ${tasks.length === 1 ? "task" : "tasks"}`,
+  ].filter(Boolean);
+  return (
+    <div className="weekday" id="week-daydetail" role="region" aria-label={`${longDay(day)} in detail`}>
+      <div className="weekday__head">
+        <h3 className="weekday__title">{day.isToday ? "Today" : longDay(day)}</h3>
+        <span className="weekday__sum">{summary.join(" · ")}</span>
+        <button type="button" className="week__expand weekday__close" onClick={onClose}>
+          Close
+        </button>
+      </div>
+      <div className="weekday__cols">
+        <section className="weekday__col" aria-label="Agenda">
+          <h4 className="weekday__h">Agenda</h4>
+          {day.events === null ? (
+            <p className="weekday__empty">Calendar isn&apos;t connected.</p>
+          ) : events.length === 0 ? (
+            <p className="weekday__empty">Nothing scheduled.</p>
+          ) : (
+            <ul className="weekday__list">
+              {events.map((e, i) => (
+                <li key={e.id ?? `${e.name}${i}`} className="weekday__ev">
+                  <i className={`weekday__dot weekday__dot--${e.kind}`} aria-hidden="true" />
+                  <span className="weekday__time">
+                    {isAllDay(e) ? "All day" : `${formatHour(e.start, use24)} – ${formatHour(e.end, use24)}`}
+                  </span>
+                  <span className="weekday__name">{e.name}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+        <section className="weekday__col" aria-label="Tasks">
+          <h4 className="weekday__h">Tasks</h4>
+          {day.tasks === null ? (
+            <p className="weekday__empty">Tasks aren&apos;t connected.</p>
+          ) : tasks.length === 0 ? (
+            <p className="weekday__empty">No tasks due.</p>
+          ) : (
+            <ul className="weekday__list">
+              {tasks.map((t, i) => (
+                <li key={t.id ?? `${t.name}${i}`} className={`week__task week__task--p${t.priority}`}>
+                  <i aria-hidden="true" />
+                  <span className="week__task-name">{t.name}</span>
+                  {t.dueHour !== null ? <span className="week__task-time">{formatHour(t.dueHour, use24)}</span> : null}
+                </li>
+              ))}
+            </ul>
+          )}
+        </section>
+      </div>
     </div>
   );
 }
