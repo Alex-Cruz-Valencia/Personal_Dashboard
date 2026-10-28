@@ -47,16 +47,17 @@ export function Dashboard({ data, settings }: DashboardProps) {
             <SkyTint today={data.today} sunrise={data.weather.sunrise} sunset={data.weather.sunset} frozen={frozen} />
           ) : null}
           <div className="topbar">
-            <HelloCard user={data.user} today={data.today} dayNote={data.dayNote} />
-            <ClockCard
-              today={data.today}
-              arc={data.arc}
-              agenda={data.agenda}
-              sunrise={data.weather.sunrise}
-              sunset={data.weather.sunset}
-              use24={use24Hour(settings)}
-              frozen={frozen}
-            />
+            <HelloCard user={data.user} today={data.today} dayNote={data.dayNote}>
+              <ClockCard
+                today={data.today}
+                arc={data.arc}
+                agenda={data.agenda}
+                sunrise={data.weather.sunrise}
+                sunset={data.weather.sunset}
+                use24={use24Hour(settings)}
+                frozen={frozen}
+              />
+            </HelloCard>
             <WeatherCard
               weather={data.weather}
               arc={data.weatherArc}

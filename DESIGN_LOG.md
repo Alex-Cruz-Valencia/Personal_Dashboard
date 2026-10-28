@@ -134,6 +134,27 @@ sunrise and sunset, so the sun only shows while it is actually up. In demo
 mode the clock is frozen at the sample time so it stays consistent with the
 sample agenda. Unverified: how it feels after hours on a real second screen.
 
+## 2026-10-28 — Greeting and clock merged into one card
+
+**Problem** — The clock card sat beside the greeting, so the top row was three
+boxes (greeting, clock, weather) and the greeting card ended up with a lot of
+empty space next to a small clock card.
+
+**Decision** — One card: greeting, date and day note on the left, the live
+clock (time, day rail, Now/Next) on the right behind a thin divider. Weather
+stays its own card, since it carries the scene. Below 1040px the weather drops
+under it; on a phone the clock stacks under the greeting.
+
+**Reasoning** — Same content, one fewer box: "what's today" and "what time is
+it" are the same glance. Nothing was removed.
+
+**Alternatives considered** — Moving the clock into the weather card (crowds
+the temperature curve and the scene); keeping three cards (the status quo).
+
+**Tradeoffs / open questions** — The greeting card is a little denser. The
+clock is still a separate component slotted into the greeting card, so it can
+be moved again cheaply.
+
 ## 2026-10-28 — Ambient motion, round two: calendar states, refresh pulse, sky tint
 
 **Problem** — After the weather scene, the rest of the screen was still

@@ -42,7 +42,7 @@ export function ClockCard({ today, arc, agenda, sunrise, sunset, use24, frozen }
       : "Your day is done";
 
   return (
-    <section className="card clock" aria-label="Time">
+    <div className="clock" aria-label="Time">
       <div className="clock__label">Right now</div>
       <div className="clock__time" role="timer" aria-live="off">
         <span className="clock__hm">
@@ -75,6 +75,6 @@ export function ClockCard({ today, arc, agenda, sunrise, sunset, use24, frozen }
       ) : (
         <div className="clock__next clock__next--none">Nothing else on the calendar</div>
       )}
-    </section>
+    </div>
   );
 }
