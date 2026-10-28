@@ -13,7 +13,7 @@ import "server-only";
 import { config } from "@/lib/config";
 import { formatHour } from "@/lib/format";
 import { decimalHourForTimestamp } from "@/lib/time";
-import type { Priority, Project, Task } from "@/lib/types";
+import type { Priority, Project, Task, WeekTask } from "@/lib/types";
 
 const API = "https://api.todoist.com/api/v1";
 
@@ -230,7 +230,11 @@ export interface NewTask {
   content: string;
   projectId?: string;
   priority?: Priority;
+  /** Natural-language due ("tomorrow 9am"). Prefer `dueDate` when you have a date. */
   due?: string;
+  /** Structured due date, "YYYY-MM-DD" — no shortcut parsing involved. */
+  dueDate?: string;
+  description?: string;
   labels?: string[];
 }
 
@@ -300,23 +304,25 @@ export function addTask(task: NewTask): Promise<unknown> {
   if (task.priority !== undefined) {
     body.priority = TO_TODOIST_PRIORITY[task.priority];
   }
-  if (task.due) body.due_string = task.due;
+  if (task.dueDate) body.due_date = task.dueDate;
+  else if (task.due) body.due_string = task.due;
+  if (task.description) body.description = task.description;
   if (task.labels?.length) body.labels = task.labels;
   return todoistWrite("/tasks", "POST", body);
 }
 
 /**
- * Tasks due per day over the coming week (today included), keyed by ISO date.
- * One extra read, used only by the week strip.
+ * Tasks due over the coming week (today included), grouped by ISO date. One
+ * extra read, used by the week strip (counts) and its expanded view (names).
  */
-export async function getDueCounts(
+export async function getWeekTasks(
   timezone: string,
-): Promise<Record<string, number>> {
+): Promise<Record<string, WeekTask[]>> {
   if (!config.todoist.token) throw new Error("Todoist not configured");
   const page = await todoistGet<TodoistTask>(
     `/tasks/filter?query=${encodeURIComponent("7 days")}&limit=200`,
   );
-  const counts: Record<string, number> = {};
+  const byDay: Record<string, WeekTask[]> = {};
   for (const t of page.results) {
     if (!t.due) continue;
     // Timed tasks carry a timestamp; read its date in the viewer's zone.
@@ -324,7 +330,15 @@ export async function getDueCounts(
       t.due.date.includes("T") && hasExplicitZone(t.due.date)
         ? new Date(t.due.date).toLocaleDateString("en-CA", { timeZone: timezone })
         : t.due.date.slice(0, 10);
-    counts[day] = (counts[day] ?? 0) + 1;
+    (byDay[day] ??= []).push({
+      id: t.id,
+      name: t.content,
+      priority: mapPriority(t.priority),
+      dueHour: dueHourOf(t.due, day, timezone),
+    });
   }
-  return counts;
+  for (const list of Object.values(byDay)) {
+    list.sort((a, b) => a.priority - b.priority || (a.dueHour ?? 99) - (b.dueHour ?? 99) || a.name.localeCompare(b.name));
+  }
+  return byDay;
 }

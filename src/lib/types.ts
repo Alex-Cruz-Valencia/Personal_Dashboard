@@ -29,6 +29,15 @@ export interface TodayInfo {
   iso: string;
   /** Current time as a decimal hour (8.2 === 8:12am). */
   nowHour: number;
+  /** IANA zone the dashboard is showing, so the live clock matches the server's day. */
+  timezone: string;
+}
+
+/** What the sky is doing right now; drives the weather card's ambient scene. */
+export interface Sky {
+  kind: "clear" | "cloudy" | "fog" | "drizzle" | "rain" | "storm" | "snow";
+  /** Current wind, mph. */
+  windMph: number;
 }
 
 /** One hourly reading on the weather card's temperature curve. */
@@ -52,6 +61,8 @@ export interface Weather {
   sunset: number;
   /** One-line ambient footnote, e.g. "No rain expected · Wind 7 mph NW". */
   footnote: string;
+  /** Current sky, for the ambient scene behind the card. */
+  sky: Sky;
   /** Hourly temps across the day-arc window; drives the temperature curve. */
   hourly: HourlyTemp[];
 }
@@ -152,6 +163,18 @@ export interface SourceStatus {
   summary: SliceSource;
 }
 
+/** An event as the week's expanded view draws it. */
+export type WeekEvent = Pick<AgendaEvent, "id" | "name" | "start" | "end" | "kind">;
+
+/** A task due on a day of the week, for the expanded view. */
+export interface WeekTask {
+  id?: string;
+  name: string;
+  priority: Priority;
+  /** Decimal hour when the task has a clock time. */
+  dueHour: number | null;
+}
+
 /** One day of the week strip: how much of it is spoken for. */
 export interface WeekDay {
   iso: string;
@@ -167,6 +190,10 @@ export interface WeekDay {
   tasksDue: number | null;
   /** Booked + estimated task time is past the "heavy" line. */
   heavy: boolean;
+  /** The day's events, for the expanded view (null when the calendar couldn't be read). */
+  events: WeekEvent[] | null;
+  /** The day's tasks, for the expanded view (null when tasks aren't connected). */
+  tasks: WeekTask[] | null;
 }
 
 /** Everything one render of the dashboard needs. */
@@ -191,4 +218,6 @@ export interface DashboardData {
   week: WeekDay[] | null;
   /** AI features are available (model + Google both configured). */
   ai: boolean;
+  /** Todoist is connected, so "Make task" on an email can write to it. */
+  canAddTasks: boolean;
 }

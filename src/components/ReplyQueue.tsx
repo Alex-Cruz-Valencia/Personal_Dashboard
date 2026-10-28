@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { gmailLink, loadLabels, moveReply, trashReply, type LabelInfo } from "@/lib/reply-actions";
 import { SNOOZE_HOURS, snoozeReply } from "@/lib/reply-state";
+import type { Priority } from "@/lib/types";
 import type { Theme } from "@/lib/settings";
 import type { Reply } from "@/lib/types";
 import { Popover } from "./Popover";
@@ -19,8 +20,13 @@ export function ReplyQueue({
   theme,
   onClose,
   aiDraft,
+  canTask,
+  todayIso,
 }: {
   aiDraft: boolean;
+  /** Todoist is connected: "Make task" is offered. */
+  canTask: boolean;
+  todayIso: string;
   title: string;
   replies: Reply[];
   anchor: DOMRect;
@@ -34,6 +40,7 @@ export function ReplyQueue({
   const [error, setError] = useState<string | null>(null);
   const [draft, setDraft] = useState("");
   const [drafting, setDrafting] = useState<string | null>(null);
+  const [tasking, setTasking] = useState<string | null>(null);
 
   useEffect(() => {
     let alive = true;
@@ -80,9 +87,19 @@ export function ReplyQueue({
                     type="button"
                     className="rq__btn"
                     aria-expanded={drafting === id}
-                    onClick={() => { setDrafting(drafting === id ? null : id); setMoving(null); }}
+                    onClick={() => { setDrafting(drafting === id ? null : id); setTasking(null); setMoving(null); }}
                   >
                     Draft reply
+                  </button>
+                ) : null}
+                {canTask ? (
+                  <button
+                    type="button"
+                    className="rq__btn"
+                    aria-expanded={tasking === id}
+                    onClick={() => { setTasking(tasking === id ? null : id); setDrafting(null); setMoving(null); }}
+                  >
+                    Make task
                   </button>
                 ) : null}
                 <button type="button" className="rq__btn" onClick={() => snoozeReply(id)} title={`Hide for ${SNOOZE_HOURS} hours`}>
@@ -107,6 +124,17 @@ export function ReplyQueue({
                 )}
               </div>
               {drafting === id ? <DraftPanel id={id} /> : null}
+              {tasking === id ? (
+                <TaskPanel
+                  reply={r}
+                  id={id}
+                  ai={aiDraft}
+                  todayIso={todayIso}
+                  onAdded={() => {
+                    router.refresh();
+                  }}
+                />
+              ) : null}
               {moving === id ? (
                 <div className="rq__move">
                   {labels === null ? <span className="rq__hint">Loading labels…</span> : null}
@@ -238,6 +266,137 @@ function DraftPanel({ id }: { id: string }) {
           </div>
         </>
       )}
+      {error ? <p className="rq__error">{error}</p> : null}
+    </div>
+  );
+}
+
+const DONE_HOURS = 24 * 30;
+
+/** The task's starting title when nothing smarter is available. */
+export function defaultTaskTitle(r: Reply): string {
+  const who = r.from.split(/[\s<]/)[0] || r.from;
+  const subject = r.subject.replace(/^((re|fwd?):\s*)+/i, "").trim();
+  return `Reply to ${who}: ${subject}`.slice(0, 140);
+}
+
+/**
+ * "Make task": a few editable fields (title, priority, due date), optionally
+ * filled in by the AI from the email, then one click to add it to Todoist.
+ * Nothing is written until that click.
+ */
+function TaskPanel({
+  reply,
+  id,
+  ai,
+  todayIso,
+  onAdded,
+}: {
+  reply: Reply;
+  id: string;
+  ai: boolean;
+  todayIso: string;
+  onAdded: () => void;
+}) {
+  const [content, setContent] = useState(() => defaultTaskTitle(reply));
+  const [priority, setPriority] = useState<Priority>(2);
+  const [dueDate, setDueDate] = useState("");
+  const [hide, setHide] = useState(true);
+  const [phase, setPhase] = useState<"edit" | "reading" | "saving" | "saved">("edit");
+  const [error, setError] = useState<string | null>(null);
+
+  const fill = async () => {
+    setError(null);
+    setPhase("reading");
+    try {
+      const res = await fetch(`/api/replies/${id}/task`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ today: todayIso }),
+      });
+      const body = (await res.json().catch(() => ({}))) as {
+        suggestion?: { content: string; priority: Priority; dueDate: string | null };
+        error?: string;
+      };
+      if (!res.ok || !body.suggestion) throw new Error(body.error || "Couldn't read a task from that.");
+      setContent(body.suggestion.content);
+      setPriority(body.suggestion.priority);
+      setDueDate(body.suggestion.dueDate ?? "");
+    } catch (e) {
+      setError((e as Error).message);
+    }
+    setPhase("edit");
+  };
+
+  const add = async () => {
+    setError(null);
+    setPhase("saving");
+    try {
+      const res = await fetch("/api/tasks", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          content,
+          priority,
+          ...(dueDate ? { dueDate } : {}),
+          description: `From ${reply.from}: ${reply.subject}\n${gmailLink(id)}`,
+        }),
+      });
+      if (!res.ok) {
+        const body = (await res.json().catch(() => ({}))) as { error?: string };
+        throw new Error(body.error || "Couldn't add the task.");
+      }
+      setPhase("saved");
+      // Off the pending list (this browser only; the email itself is untouched in Gmail).
+      if (hide) snoozeReply(id, DONE_HOURS);
+      onAdded();
+    } catch (e) {
+      setError((e as Error).message);
+      setPhase("edit");
+    }
+  };
+
+  if (phase === "saved") return <p className="rq__hint rq__saved">Added to Todoist.</p>;
+  const busy = phase !== "edit";
+  return (
+    <div className="rq__draft rq__task">
+      {ai ? (
+        <button type="button" className="rq__btn" disabled={busy} onClick={fill}>
+          {phase === "reading" ? "Reading…" : "Fill in from the email"}
+        </button>
+      ) : null}
+      <input
+        className="rq__input"
+        value={content}
+        maxLength={140}
+        aria-label="Task"
+        disabled={busy}
+        onChange={(e) => setContent(e.target.value)}
+      />
+      <div className="rq__fields">
+        <label className="rq__field">
+          Priority
+          <select className="rq__input" value={priority} disabled={busy} onChange={(e) => setPriority(Number(e.target.value) as Priority)}>
+            <option value={1}>Urgent</option>
+            <option value={2}>Normal</option>
+            <option value={3}>Someday</option>
+          </select>
+        </label>
+        <label className="rq__field">
+          Due
+          <input className="rq__input" type="date" value={dueDate} min={todayIso} disabled={busy} onChange={(e) => setDueDate(e.target.value)} />
+        </label>
+      </div>
+      <label className="rq__check">
+        <input type="checkbox" checked={hide} disabled={busy} onChange={(e) => setHide(e.target.checked)} />
+        Take this email off my list
+      </label>
+      {ai ? <p className="rq__hint">AI fills in the fields; check them before adding.</p> : null}
+      <div className="rq__actions">
+        <button type="button" className="rq__btn rq__btn--primary" disabled={busy || !content.trim()} onClick={add}>
+          {phase === "saving" ? "Adding…" : "Add to Todoist"}
+        </button>
+      </div>
       {error ? <p className="rq__error">{error}</p> : null}
     </div>
   );

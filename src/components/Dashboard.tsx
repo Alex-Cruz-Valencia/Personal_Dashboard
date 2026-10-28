@@ -1,6 +1,10 @@
 import { use24Hour, type DashboardSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
+import { MOCK_TODAY } from "@/lib/mock-data";
 import { AttentionStrip } from "./AttentionStrip";
+import { SunLine } from "./SunLine";
+import { SkyTint } from "./SkyTint";
+import { ClockCard } from "./ClockCard";
 import { DayCalendar } from "./DayCalendar";
 import { FocusProvider } from "./Focus";
 import { EventDetailProvider } from "./EventDetail";
@@ -21,10 +25,12 @@ interface DashboardProps {
  * source exactly — see `globals.css` for the ported stylesheet.
  */
 export function Dashboard({ data, settings }: DashboardProps) {
+  const frozen = data.today.iso === MOCK_TODAY.iso && data.today.nowHour === MOCK_TODAY.nowHour;
+  const use24 = use24Hour(settings);
   return (
     <FocusProvider nowHour={data.today.nowHour}>
     <EventDetailProvider
-      use24={use24Hour(settings)}
+      use24={use24}
       theme={settings.theme}
       todayIso={data.today.iso}
     >
@@ -32,15 +38,36 @@ export function Dashboard({ data, settings }: DashboardProps) {
         {/* "system" leaves the attribute off so globals.css can fall through
             to prefers-color-scheme (see the effective-theme block there). */}
         <div
-          className={`morning${settings.surface === "glass" ? " morning--glass" : ""}`}
+          className={`morning${settings.surface === "glass" ? " morning--glass" : ""}${settings.motion === "off" ? " morning--still" : ""}`}
           data-theme={settings.theme === "system" ? undefined : settings.theme}
         >
           {/* Everything above is unchanged. Experiment: below it, the day arc and
               the three columns (tasks / plan / replies) are replaced by a
               vertical calendar beside today's tasks. Archived from this view
               (components kept, not rendered): DayArc, PlanCard, EmailList. */}
+          {settings.surface === "glass" && settings.motion === "on" ? (
+            <SkyTint today={data.today} sunrise={data.weather.sunrise} sunset={data.weather.sunset} frozen={frozen} />
+          ) : null}
           <div className="topbar">
-            <HelloCard user={data.user} today={data.today} dayNote={data.dayNote} />
+            <HelloCard
+              user={data.user}
+              today={data.today}
+              sub={
+                <SunLine
+                  today={data.today}
+                  sunrise={data.weather.sunrise}
+                  sunset={data.weather.sunset}
+                  use24={use24Hour(settings)}
+                  frozen={frozen}
+                />
+              }
+            >
+              <ClockCard
+                today={data.today}
+                use24={use24Hour(settings)}
+                frozen={frozen}
+              />
+            </HelloCard>
             <WeatherCard
               weather={data.weather}
               arc={data.weatherArc}
@@ -57,6 +84,8 @@ export function Dashboard({ data, settings }: DashboardProps) {
             nowHour={data.today.nowHour}
             theme={settings.theme}
             aiDraft={data.ai}
+            canTask={data.canAddTasks}
+            todayIso={data.today.iso}
           />
 
           <div className="twocol">
@@ -65,12 +94,13 @@ export function Dashboard({ data, settings }: DashboardProps) {
               arc={data.arc}
               today={data.today}
               settings={settings}
+              frozen={frozen}
               focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
             />
             <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
           </div>
 
-          {data.week ? <WeekStrip days={data.week} /> : null}
+          {data.week ? <WeekStrip days={data.week} use24={use24} /> : null}
 
           <Footline agenda={data.agenda} today={data.today} settings={settings} />
         </div>

@@ -32,8 +32,12 @@ export function AttentionStrip({
   nowHour,
   theme,
   aiDraft,
+  canTask,
+  todayIso,
 }: {
   aiDraft: boolean;
+  canTask: boolean;
+  todayIso: string;
   agenda: AgendaEvent[];
   tasks: Task[];
   replies: Reply[];
@@ -87,6 +91,8 @@ export function AttentionStrip({
           anchor={open.anchor}
           theme={theme}
           aiDraft={aiDraft}
+          canTask={canTask}
+          todayIso={todayIso}
           onClose={() => setOpen(null)}
         />
       ) : null}
