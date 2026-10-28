@@ -26,6 +26,13 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "priority must be 1, 2 or 3" }, { status: 400 });
   }
 
+  if (body.dueDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(body.dueDate)) {
+    return NextResponse.json({ error: "dueDate must be YYYY-MM-DD" }, { status: 400 });
+  }
+  if (body.description !== undefined && (typeof body.description !== "string" || body.description.length > 2000)) {
+    return NextResponse.json({ error: "description is too long" }, { status: 400 });
+  }
+
   try {
     const task = await addTask({ ...body, content: body.content.trim() });
     revalidateTag(TODOIST_TAG, { expire: 0 });

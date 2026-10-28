@@ -21,10 +21,11 @@ interface DashboardProps {
  * source exactly — see `globals.css` for the ported stylesheet.
  */
 export function Dashboard({ data, settings }: DashboardProps) {
+  const use24 = use24Hour(settings);
   return (
     <FocusProvider nowHour={data.today.nowHour}>
     <EventDetailProvider
-      use24={use24Hour(settings)}
+      use24={use24}
       theme={settings.theme}
       todayIso={data.today.iso}
     >
@@ -57,6 +58,8 @@ export function Dashboard({ data, settings }: DashboardProps) {
             nowHour={data.today.nowHour}
             theme={settings.theme}
             aiDraft={data.ai}
+            canTask={data.canAddTasks}
+            todayIso={data.today.iso}
           />
 
           <div className="twocol">
@@ -70,7 +73,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
             <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
           </div>
 
-          {data.week ? <WeekStrip days={data.week} /> : null}
+          {data.week ? <WeekStrip days={data.week} use24={use24} /> : null}
 
           <Footline agenda={data.agenda} today={data.today} settings={settings} />
         </div>
