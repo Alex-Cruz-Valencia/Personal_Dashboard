@@ -47,6 +47,13 @@ don't so much care about the aesthetics as the function").
 6. *AI that drafts and proposes, never acts* — reply drafts saved as Gmail
    drafts; a suggested schedule where each block needs its own click.
 
+**Update 2026-10-28** — After living with it, the lower area was simplified: the
+horizontal day arc and the Plan/Replies columns were replaced by a vertical,
+Google-Calendar-style day view beside today's tasks (the week strip moved below
+them so action starts higher). Replies stay reachable through the attention strip.
+Scope was misread once ("leave only these two" meant the bottom blocks, not the
+whole page), a reminder to restate which regions change before building.
+
 **Decisions worth explaining in an interview**
 - *Iterating the look in public.* Four passes: restraint (flat, warm) → an
   editorial experiment (huge headline) → pulled back ("reads like a landing
@@ -87,6 +94,50 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 **Open questions / next** — Click a week day to load it in the arc; server-side
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
+
+## 2026-10-28 — Experiment: vertical calendar beside today's tasks (bottom area only)
+
+**Problem** — The horizontal day arc reads differently from the calendar people
+already know (Google Calendar's day view), so every glance costs a little
+translation. And the bottom area split attention three ways (tasks, plan,
+replies) when the daily loop is narrower: "what is my day, and what do I need to
+do in it?"
+
+**Decision (experiment branch)** — Everything at the top stays exactly as it was:
+greeting and day note, weather, the attention strip (with its email actions) and
+the week strip. Only the lower area changes: the day arc and the three columns are
+replaced by a **vertical day calendar** (hours down the left, events sized by
+duration, overlapping events side by side, a line at the current time, opens near
+now) next to **Today's tasks**, each scrolling on its own. The Now/Next readout and
+the Focus timer moved into the calendar header. Clicking an event or task opens
+the same detail editors as before. "Needs a reply" (the list) and "Plan" are
+**archived**: the components stay in the repo, just not rendered.
+
+**Follow-up: calendar higher on the page** — With the week strip above it, the
+calendar started 686px down (barely visible on a 900px screen). The week strip
+now sits **below** the calendar and tasks (they start at 465px, about 435px of
+them visible on first load). Rationale: the week is look-ahead context, the
+calendar and tasks are what you act on, and the first screen belongs to action.
+
+**A misreading worth recording** — The first version removed everything except the
+two panels, reading "leave only these two" as the whole page. The intent was only
+the bottom blocks. Lesson: when a layout request is ambiguous about scope, restate
+which regions are changing before building.
+
+**Why vertical** — It matches the Google Calendar mental model, makes length and
+overlap obvious (height and side-by-side width), and pairs naturally with a task
+list as two independent columns.
+
+**Alternatives** — Keep the horizontal arc beside the tasks (wide-and-short
+doesn't share a row with a list). Keep Plan for AI scheduling (archived for now;
+its code and route remain).
+
+**Tradeoffs / open questions** — With the reply list archived, replies are
+reachable only through the attention strip's popover (it still offers Reply, Draft,
+Wait, Move, Trash). "Plan with AI" is unreachable. Free-time labels and conflict
+marks from the horizontal arc are not ported (side-by-side lanes show overlaps; the
+strip still reports conflicts). The calendar sits below four rows of summary, so on
+a short screen it starts below the fold: does it need to move up?
 
 ## 2026-10-27 — Restraint pass: warm neutral, flat cards, solid by default
 
