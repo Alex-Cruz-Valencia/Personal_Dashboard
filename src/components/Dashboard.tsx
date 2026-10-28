@@ -1,11 +1,15 @@
 import { use24Hour, type DashboardSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
+import { AttentionStrip } from "./AttentionStrip";
 import { DayCalendar } from "./DayCalendar";
 import { FocusProvider } from "./Focus";
 import { EventDetailProvider } from "./EventDetail";
 import { Footline } from "./Footline";
+import { HelloCard } from "./HelloCard";
 import { TaskDetailProvider } from "./TaskDetail";
 import { TaskList } from "./TaskList";
+import { WeatherCard } from "./WeatherCard";
+import { WeekStrip } from "./WeekStrip";
 
 interface DashboardProps {
   data: DashboardData;
@@ -31,10 +35,32 @@ export function Dashboard({ data, settings }: DashboardProps) {
           className={`morning${settings.surface === "glass" ? " morning--glass" : ""}`}
           data-theme={settings.theme === "system" ? undefined : settings.theme}
         >
-          {/* Experiment: today's calendar and today's tasks, side by side.
-              Archived from this view (components kept, just not rendered):
-              HelloCard, WeatherCard, AttentionStrip, WeekStrip, DayArc,
-              PlanCard, EmailList. */}
+          {/* Everything above is unchanged. Experiment: below it, the day arc and
+              the three columns (tasks / plan / replies) are replaced by a
+              vertical calendar beside today's tasks. Archived from this view
+              (components kept, not rendered): DayArc, PlanCard, EmailList. */}
+          <div className="topbar">
+            <HelloCard user={data.user} today={data.today} dayNote={data.dayNote} />
+            <WeatherCard
+              weather={data.weather}
+              arc={data.weatherArc}
+              agenda={data.agenda}
+              nowHour={data.today.nowHour}
+              settings={settings}
+            />
+          </div>
+
+          <AttentionStrip
+            agenda={data.agenda}
+            tasks={data.tasks}
+            replies={data.replies}
+            nowHour={data.today.nowHour}
+            theme={settings.theme}
+            aiDraft={data.ai}
+          />
+
+          {data.week ? <WeekStrip days={data.week} /> : null}
+
           <div className="twocol">
             <DayCalendar
               agenda={data.agenda}

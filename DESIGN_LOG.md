@@ -88,38 +88,43 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
-## 2026-10-28 — Experiment: just today's calendar and today's tasks, side by side
+## 2026-10-28 — Experiment: vertical calendar beside today's tasks (bottom area only)
 
-**Problem** — After adding an attention strip, week strip, plan card, reply
-list, weather and greeting, the page answered many questions at once. The
-actual daily loop is narrower: "what is my day, and what do I need to do in it?"
-The horizontal day arc also reads differently from the calendar a person already
-knows (Google Calendar's day view), so every glance cost a little translation.
+**Problem** — The horizontal day arc reads differently from the calendar people
+already know (Google Calendar's day view), so every glance costs a little
+translation. And the bottom area split attention three ways (tasks, plan,
+replies) when the daily loop is narrower: "what is my day, and what do I need to
+do in it?"
 
-**Decision (experiment branch)** — The view is two panels and nothing else: a
-**vertical day calendar** (hours down the left, events sized by duration,
-overlapping events side by side, a line at the current time, lands near now) next
-to **Today's tasks**. A Now/Next readout and the Focus timer live in the calendar
-header; clicking an event or task opens the same detail editors as before.
-"Needs a reply", "Plan", the attention strip, week strip, weather and greeting are
-**archived**: the components stay in the repo, they are just not rendered, so
-they can come back without rewriting.
+**Decision (experiment branch)** — Everything at the top stays exactly as it was:
+greeting and day note, weather, the attention strip (with its email actions) and
+the week strip. Only the lower area changes: the day arc and the three columns are
+replaced by a **vertical day calendar** (hours down the left, events sized by
+duration, overlapping events side by side, a line at the current time, opens near
+now) next to **Today's tasks**, each scrolling on its own. The Now/Next readout and
+the Focus timer moved into the calendar header. Clicking an event or task opens
+the same detail editors as before. "Needs a reply" (the list) and "Plan" are
+**archived**: the components stay in the repo, just not rendered.
 
-**Why vertical** — It matches the mental model of Google Calendar, makes event
-length and overlaps obvious (height and side-by-side width), and pairs naturally
-with a task list as two columns that scroll independently.
+**A misreading worth recording** — The first version removed everything except the
+two panels, reading "leave only these two" as the whole page. The intent was only
+the bottom blocks. Lesson: when a layout request is ambiguous about scope, restate
+which regions are changing before building.
 
-**Alternatives** — Keep the horizontal arc beside the tasks (rejected for this
-experiment: wide-and-short doesn't share a row with a list). Keep the attention
-strip on top (not included: it depends on replies, which are archived; overdue and
-conflicts could return as a thin line).
+**Why vertical** — It matches the Google Calendar mental model, makes length and
+overlap obvious (height and side-by-side width), and pairs naturally with a task
+list as two independent columns.
 
-**Tradeoffs / open questions** — Reply and AI planning features are unreachable
-in this view (their routes still exist). The server still fetches mail and the six
-week-ahead calendars even though nothing shows them, which is wasted work if this
-layout sticks. Free-time labels and conflict marks from the horizontal arc are not
-ported (side-by-side lanes show overlaps instead). Does losing the weather and the
-"what did I miss" strip hurt, or is calm better? That is what this branch tests.
+**Alternatives** — Keep the horizontal arc beside the tasks (wide-and-short
+doesn't share a row with a list). Keep Plan for AI scheduling (archived for now;
+its code and route remain).
+
+**Tradeoffs / open questions** — With the reply list archived, replies are
+reachable only through the attention strip's popover (it still offers Reply, Draft,
+Wait, Move, Trash). "Plan with AI" is unreachable. Free-time labels and conflict
+marks from the horizontal arc are not ported (side-by-side lanes show overlaps; the
+strip still reports conflicts). The calendar sits below four rows of summary, so on
+a short screen it starts below the fold: does it need to move up?
 
 ## 2026-10-27 — Restraint pass: warm neutral, flat cards, solid by default
 

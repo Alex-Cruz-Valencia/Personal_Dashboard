@@ -8,7 +8,7 @@ import type { AgendaEvent, Reply, Task } from "@/lib/types";
 import { ReplyQueue } from "./ReplyQueue";
 
 const TARGETS: Record<AttentionItem["target"], string> = {
-  arc: ".dayarc",
+  arc: ".dayarc, .vcal",
   tasks: ".column--tasks",
   replies: ".column--replies",
 };
