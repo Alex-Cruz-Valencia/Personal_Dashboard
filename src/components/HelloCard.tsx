@@ -16,6 +16,7 @@ export function HelloCard({ user, today, dayNote, children }: HelloCardProps) {
   return (
     <header className="card hello">
       <div className="hello__text">
+        <div className="hello__date">{dateLineFor(today.iso)}</div>
         <h1 className="hello__greeting">{greetingFor(today.nowHour, user.name)}</h1>
         <div className="hello__note">
           <div className="hello__note-tag">Shape of the day</div>
@@ -26,10 +27,7 @@ export function HelloCard({ user, today, dayNote, children }: HelloCardProps) {
           </p>
         </div>
       </div>
-      <div className="hello__time">
-        <div className="hello__date">{dateLineFor(today.iso)}</div>
-        {children}
-      </div>
+      <div className="hello__time">{children}</div>
     </header>
   );
 }

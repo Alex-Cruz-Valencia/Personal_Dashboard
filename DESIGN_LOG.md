@@ -155,6 +155,19 @@ the temperature curve and the scene); keeping three cards (the status quo).
 clock is still a separate component slotted into the greeting card, so it can
 be moved again cheaply.
 
+## 2026-10-28 — Greeting card: date back to the top left
+
+**Decision** — The date label returns to the top left, above the greeting, as
+in the reference; the light graded time stays on the right with its minute
+sweep. On a phone the order is date, greeting, note, then the time.
+
+**Reasoning** — The user wanted the reference's reading order back on the left
+while keeping the time where it was. The right side is now just the time.
+
+**Tradeoffs / open questions** — On a phone the time lands at the bottom of
+the card, which is less glanceable than at the top; revisit if the phone view
+matters.
+
 ## 2026-10-28 — Greeting card, fourth composition: light, graded time on the right
 
 **Problem** — The pill (third composition) was tidy but small and boxed; the
