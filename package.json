@@ -4,9 +4,10 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "prebuild": "node scripts/check-no-send.mjs",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint",
+    "lint": "eslint && node scripts/check-no-send.mjs",
     "llm:models": "node --env-file=.env.local scripts/list-llm-models.mjs"
   },
   "dependencies": {

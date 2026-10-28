@@ -22,6 +22,7 @@ import "server-only";
 import { Redis } from "@upstash/redis";
 import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
+import { assertNoSend } from "./no-send";
 import { GoogleAuthError, refreshAccessToken, type GoogleTokens } from "./oauth";
 import { retryOnDroppedConnection } from "./retry";
 
@@ -90,6 +91,7 @@ export async function getGoogleAccessToken(): Promise<string> {
  * (sample mail, no calendar) until its recorded expiry passed.
  */
 export async function googleFetch(input: string | URL, init: RequestInit = {}): Promise<Response> {
+  assertNoSend(input); // mail is only ever drafted here, never sent
   const send = (token: string) =>
     retryOnDroppedConnection(
       () =>

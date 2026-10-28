@@ -422,6 +422,34 @@ look. The glass rules (and the reduced-transparency fallback) now cover
 list of things the material applies to; the fix is to name it there, not to
 restyle the strip.
 
+## 2026-10-28 — Hard guardrail: the app never sends email
+
+**Problem** — AI can draft replies, so there must be no way for the app to
+send one. The rule ("drafts only") was true of the code but nothing enforced
+it, and Google's `gmail.modify` scope (needed for Trash and Move) technically
+allows sending, so the OAuth scope can't be the guarantee.
+
+**Decision** — Two code-level locks. (1) Runtime: every Google call goes
+through `googleFetch`, which now refuses any Gmail send endpoint
+(`messages/send`, `drafts/send`) before the request leaves. (2) Build time:
+`scripts/check-no-send.mjs` scans the source for send endpoints and
+send-capable scopes, and runs before every `next build` and with `npm run
+lint`, so a deploy fails if such code is ever added.
+
+**Reasoning** — The person said they never want mail sent from here, only
+drafted. A promise in a comment isn't a guardrail; a thrown error and a failed
+build are. Two layers because one catches a future bug at runtime and the other
+catches the change before it ships.
+
+**Alternatives considered** — Dropping to a narrower scope (no scope allows
+Trash/Move but not send, and `gmail.compose` is itself send-capable); relying
+on code review (no review on a solo project); UI-only protection (hides the
+button, not the capability).
+
+**Tradeoffs / open questions** — The guard is only as strong as "all Google
+calls use `googleFetch`" (already a project rule). Someone could still edit the
+guard away; it is a seatbelt, not a lock against the owner.
+
 ## 2026-10-28 — Week strip: one request per calendar instead of a burst
 
 **Problem** — The retry above did not stop the production errors; they got
