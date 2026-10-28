@@ -47,6 +47,13 @@ don't so much care about the aesthetics as the function").
 6. *AI that drafts and proposes, never acts* — reply drafts saved as Gmail
    drafts; a suggested schedule where each block needs its own click.
 
+**Update 2026-10-28** — After living with it, the lower area was simplified: the
+horizontal day arc and the Plan/Replies columns were replaced by a vertical,
+Google-Calendar-style day view beside today's tasks (the week strip moved below
+them so action starts higher). Replies stay reachable through the attention strip.
+Scope was misread once ("leave only these two" meant the bottom blocks, not the
+whole page), a reminder to restate which regions change before building.
+
 **Decisions worth explaining in an interview**
 - *Iterating the look in public.* Four passes: restraint (flat, warm) → an
   editorial experiment (huge headline) → pulled back ("reads like a landing

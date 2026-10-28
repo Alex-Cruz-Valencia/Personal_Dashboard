@@ -58,6 +58,15 @@
   sends; `gmail.modify` already covers drafts) and `POST /api/plan/suggest`
   (validated by `schedule-validate.ts`; each suggestion needs its own Block).
   `npm run llm:models` lists model ids.
+- **Current page layout (2026-10-28):** header + weather, `AttentionStrip`, then
+  `DayCalendar` (vertical, Google-Calendar-style day view: `HOUR_PX`, side-by-side
+  overlap lanes from `layoutOverlaps()`, a now line, lands near now; owns the
+  Now/Next readout and Focus timer controls) beside `TaskList` in `.twocol`, then
+  `WeekStrip`. **Archived (kept in the repo, not rendered):** `DayArc` (the
+  horizontal arc and its `.dayarc*` CSS), `PlanCard` (so "Plan with AI" has no UI;
+  `/api/plan/suggest` still exists), and `EmailList` (replies are reachable only via
+  the attention strip's `ReplyQueue` popover). The server still fetches mail and the
+  week-ahead data. To bring one back, render it in `Dashboard.tsx`.
 - **Changed from the reference:** the accent is teal (`--accent`
   #0B6F75 / #4DC3C4 dark, `--accent-tint`, and the note text) in every
   mode, instead of the source's green.
