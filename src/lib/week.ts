@@ -5,7 +5,7 @@
 
 import { getWeekAgendas } from "./google/calendar";
 import { DEFAULT_TASK_MINUTES } from "./plan";
-import type { AgendaEvent, WeekDay } from "./types";
+import type { AgendaEvent, WeekDay, WeekTask } from "./types";
 
 /** Booked hours + estimated task time at or past this reads as a heavy day. */
 export const HEAVY_HOURS = 6;
@@ -63,15 +63,17 @@ export function buildWeek(input: {
   todayIso: string;
   todayAgenda: AgendaEvent[] | null;
   laterAgendas: (AgendaEvent[] | null)[] | null;
-  dueCounts: Record<string, number> | null;
+  /** Tasks due on each later day, keyed by ISO date. */
+  weekTasks: Record<string, WeekTask[]> | null;
   /** Tasks due today that aren't overdue (from the already-fetched list). */
-  todayTasksDue: number | null;
+  todayTasks: WeekTask[] | null;
 }): WeekDay[] {
-  const { todayIso, todayAgenda, laterAgendas, dueCounts, todayTasksDue } = input;
+  const { todayIso, todayAgenda, laterAgendas, weekTasks, todayTasks } = input;
   return [0, 1, 2, 3, 4, 5, 6].map((n) => {
     const iso = addDays(todayIso, n);
     const events = n === 0 ? todayAgenda : (laterAgendas?.[n - 1] ?? null);
-    const tasksDue = n === 0 ? todayTasksDue : dueCounts ? (dueCounts[iso] ?? 0) : null;
+    const tasks = n === 0 ? todayTasks : weekTasks ? (weekTasks[iso] ?? []) : null;
+    const tasksDue = tasks ? tasks.length : null;
     const booked = events ? bookedHours(events) : null;
     const at = new Date(`${iso}T12:00:00Z`);
     return {
@@ -83,6 +85,10 @@ export function buildWeek(input: {
       eventCount: events ? events.filter((e) => e.end - e.start < ALL_DAY_HOURS).length : null,
       tasksDue,
       heavy: isHeavy(booked, tasksDue),
+      events: events
+        ? events.map((e) => ({ id: e.id, name: e.name, start: e.start, end: e.end, kind: e.kind }))
+        : null,
+      tasks,
     };
   });
 }
