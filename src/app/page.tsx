@@ -5,6 +5,7 @@ import { LocationSync } from "@/components/LocationSync";
 import { config } from "@/lib/config";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { parseLocationOverride } from "@/lib/location";
+import { parseSkyPreview } from "@/lib/weather/codes";
 import { PREFS_COOKIE, parseSettings, readStoredSettings } from "@/lib/settings";
 
 // Always render per-request: "now", weather and mail all move through the day.
@@ -29,9 +30,10 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     use24: settings.timeFormat === "24-hour",
     windDown: settings.windDown,
   });
+  const sky = parseSkyPreview(sp);
   return (
     <>
-      <Dashboard data={data} settings={settings} />
+      <Dashboard data={sky ? { ...data, weather: { ...data.weather, sky } } : data} settings={settings} />
       <LocationSync />
       <AutoRefresh />
     </>

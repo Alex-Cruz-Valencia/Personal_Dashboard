@@ -95,6 +95,45 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-28 — Ambient motion: a weather scene and a live clock
+
+**Problem** — The dashboard is meant to sit on a second screen all day, but
+it was static: nothing said "this is live" at a glance, there was no clear
+time anywhere (only a "Refreshed 10:05pm" footnote), and the weather card was
+a number and a line. A screen you glance at needs something that moves a
+little and tells you the time without reading.
+
+**Decision** — Two additions, both quiet. (1) A **weather scene** behind the
+weather card: rain falls, wind streaks glide, a sun breathes with slow rays
+(moon and twinkling stars at night), snow drifts, fog banks slide, storms get
+a faint flash. Wind adds streaks on top of any sky at 15+ mph. Driven by a new
+`Weather.sky` (kind + wind) mapped from the WMO code Open-Meteo already
+returns. (2) A **clock card** beside the weather: big time with a pulsing
+colon and live seconds, a day rail (now vs. your day window) with a pip that
+moves, "X left in your day", and "Now / Next: <event> in 25m".
+
+**Reasoning** — The scene is pure CSS (no canvas, no JS loop), so it costs
+nothing after render and the browser throttles it when the tab is hidden.
+Particle positions come from index math, not `Math.random()`, so server and
+client markup match. The clock reads the dashboard's own timezone (not the
+browser's) so it can't disagree with the agenda, and it hydrates from the
+server's time first, then takes over. Everything stops under
+`prefers-reduced-motion` and under ⚙ Motion → Still, because an always-on
+screen must be easy to quiet.
+
+**Alternatives considered** — A canvas particle system (prettier, but a
+constant JS cost on a screen that stays open all day); a full-page weather
+backdrop (bigger effect, but it would sit behind every card and hurt
+legibility); putting the time inside the greeting card (no room, and it hides
+the one thing the second screen is for).
+
+**Tradeoffs / open questions** — Motion is decorative, so it is kept low in
+opacity: legibility wins over spectacle. `?sky=rain&wind=20` previews any
+scene without waiting for weather (only the animation changes). Day/night uses
+sunrise and sunset, so the sun only shows while it is actually up. In demo
+mode the clock is frozen at the sample time so it stays consistent with the
+sample agenda. Unverified: how it feels after hours on a real second screen.
+
 ## 2026-10-28 — Week strip: one request per calendar instead of a burst
 
 **Problem** — The retry above did not stop the production errors; they got

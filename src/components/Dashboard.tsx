@@ -1,6 +1,8 @@
 import { use24Hour, type DashboardSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
+import { MOCK_TODAY } from "@/lib/mock-data";
 import { AttentionStrip } from "./AttentionStrip";
+import { ClockCard } from "./ClockCard";
 import { DayCalendar } from "./DayCalendar";
 import { FocusProvider } from "./Focus";
 import { EventDetailProvider } from "./EventDetail";
@@ -32,7 +34,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
         {/* "system" leaves the attribute off so globals.css can fall through
             to prefers-color-scheme (see the effective-theme block there). */}
         <div
-          className={`morning${settings.surface === "glass" ? " morning--glass" : ""}`}
+          className={`morning${settings.surface === "glass" ? " morning--glass" : ""}${settings.motion === "off" ? " morning--still" : ""}`}
           data-theme={settings.theme === "system" ? undefined : settings.theme}
         >
           {/* Everything above is unchanged. Experiment: below it, the day arc and
@@ -41,6 +43,15 @@ export function Dashboard({ data, settings }: DashboardProps) {
               (components kept, not rendered): DayArc, PlanCard, EmailList. */}
           <div className="topbar">
             <HelloCard user={data.user} today={data.today} dayNote={data.dayNote} />
+            <ClockCard
+              today={data.today}
+              arc={data.arc}
+              agenda={data.agenda}
+              sunrise={data.weather.sunrise}
+              sunset={data.weather.sunset}
+              use24={use24Hour(settings)}
+              frozen={data.today.iso === MOCK_TODAY.iso && data.today.nowHour === MOCK_TODAY.nowHour}
+            />
             <WeatherCard
               weather={data.weather}
               arc={data.weatherArc}

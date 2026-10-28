@@ -21,7 +21,7 @@ import type {
 export const MOCK_USER: UserInfo = { name: "Ellis" };
 
 /** Pinned so a zero-config install matches the reference pixel-for-pixel. */
-export const MOCK_TODAY: TodayInfo = { iso: "2026-08-29", nowHour: 8.2 };
+export const MOCK_TODAY: TodayInfo = { iso: "2026-08-29", nowHour: 8.2, timezone: "America/Los_Angeles" };
 
 export const MOCK_WEATHER: Weather = {
   place: "San Francisco, CA",
@@ -30,6 +30,7 @@ export const MOCK_WEATHER: Weather = {
   sunrise: 6.4,
   sunset: 19.8,
   footnote: "No rain expected · Wind 7 mph NW",
+  sky: { kind: "fog", windMph: 7 },
   hourly: [
     { h: 6, t: 55, note: "Dense fog" },
     { h: 7, t: 56, note: "Dense fog" },

@@ -1470,3 +1470,76 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .vcal__status .vcal__btn { margin-left: 0; }
   .twocol > .column--tasks .card__body { overflow: visible; }
 }
+
+/* ==========================================================================
+   AMBIENT MOTION — weather scene + live clock (not in the static reference).
+   Token-only except the sun/moon, which are fixed warm/cool light. Everything
+   is decorative and stops under prefers-reduced-motion or ⚙ Motion → Still.
+   ========================================================================== */
+.topbar { grid-template-columns: 1fr auto auto; }
+@media (max-width: 1040px) {
+  .topbar { grid-template-columns: 1fr 1fr; }
+  .topbar .hello { grid-column: 1 / -1; }
+}
+@media (max-width: 760px) { .topbar { grid-template-columns: 1fr; } .clock { min-width: 0; } }
+
+.clock { padding: 20px 24px; display: grid; gap: 9px; align-content: center; min-width: 250px; }
+.clock__label { font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.clock__time { display: flex; align-items: flex-start; gap: 6px; font-variant-numeric: tabular-nums; }
+.clock__hm { font-family: var(--font-display); font-size: 50px; font-weight: 600; line-height: 0.9; letter-spacing: -0.03em; }
+.clock__colon { display: inline-block; margin: 0 1px; animation: clock-colon 2s ease-in-out infinite; }
+.clock__side { display: grid; gap: 2px; padding-top: 2px; font-size: 12px; font-weight: 600; line-height: 1.1; color: var(--ink-faint); }
+.clock__sec { font-variant-numeric: tabular-nums; }
+.clock__ampm { text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
+.clock__rail { position: relative; height: 6px; border-radius: 999px; background: var(--surface-2); border: 1px solid var(--line); margin-top: 4px; }
+.clock__fill { position: absolute; inset: 0 auto 0 0; border-radius: 999px; background: var(--accent-tint); box-shadow: inset 0 0 0 1px var(--accent); opacity: 0.75; transition: width 1s linear; }
+.clock__pip { position: absolute; top: 50%; width: 12px; height: 12px; margin: -6px 0 0 -6px; border-radius: 999px; background: var(--accent); transition: left 1s linear; animation: clock-pip 2.6s ease-out infinite; }
+.clock__pip[data-phase="day"] { background: #F2B544; }
+.clock__ends { display: flex; justify-content: space-between; gap: 8px; font-size: 11px; font-weight: 500; color: var(--ink-faint); }
+.clock__ends span:nth-child(2) { color: var(--ink-soft); font-weight: 600; }
+.clock__next { display: flex; align-items: baseline; gap: 8px; font-size: 13px; min-width: 0; }
+.clock__next--none { color: var(--ink-faint); }
+.clock__next-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); }
+.clock__next-name { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.clock__next-when { margin-left: auto; white-space: nowrap; color: var(--ink-soft); font-weight: 500; }
+@keyframes clock-colon { 0%, 100% { opacity: 1; } 50% { opacity: 0.25; } }
+@keyframes clock-pip { 0% { box-shadow: 0 0 0 0 rgba(242, 181, 68, 0.5); } 70%, 100% { box-shadow: 0 0 0 9px rgba(242, 181, 68, 0); } }
+
+/* weather scene: sits behind the card's content */
+.weather { position: relative; overflow: hidden; }
+.weather > :not(.scene) { position: relative; z-index: 1; }
+.scene { position: absolute; inset: 0; z-index: 0; pointer-events: none; overflow: hidden; container-type: size; --scene-ink: color-mix(in srgb, var(--accent) 45%, var(--ink-faint)); }
+.scene__drop { position: absolute; top: -24px; left: var(--x); width: 1.5px; height: 14px; border-radius: 2px; background: linear-gradient(to bottom, transparent, var(--scene-ink)); opacity: 0.45; animation: scene-rain calc(0.9s * var(--t)) linear var(--d) infinite; }
+.scene--drizzle .scene__drop { height: 9px; opacity: 0.3; animation-duration: calc(1.5s * var(--t)); }
+.scene--storm .scene__drop { height: 18px; opacity: 0.45; animation-duration: calc(0.6s * var(--t)); }
+.scene--storm .scene__drop, .scene--rain .scene__drop { transform: rotate(10deg); }
+@keyframes scene-rain { to { transform: translate3d(-22px, calc(100cqh + 40px), 0); } }
+.scene__flake { position: absolute; top: -8px; left: var(--x); width: 4px; height: 4px; border-radius: 999px; background: var(--ink-faint); opacity: 0.45; animation: scene-snow calc(7s * var(--t)) linear var(--d) infinite; }
+@keyframes scene-snow { 0% { transform: translate3d(0, 0, 0); } 50% { transform: translate3d(10px, 50cqh, 0); } 100% { transform: translate3d(-6px, calc(100cqh + 20px), 0); } }
+.scene__flash { position: absolute; inset: 0; background: var(--ink-faint); opacity: 0; animation: scene-flash 9s ease-out infinite; }
+@keyframes scene-flash { 0%, 92%, 100% { opacity: 0; } 93% { opacity: 0.16; } 94.5% { opacity: 0.02; } 96% { opacity: 0.1; } }
+.scene__gust { position: absolute; left: -30%; top: calc(8% + var(--s) * 78%); width: calc(34% + var(--s) * 28%); height: 1.5px; border-radius: 2px; background: linear-gradient(to right, transparent, var(--scene-ink), transparent); opacity: 0.4; animation: scene-gust calc(5s * var(--t)) ease-in-out var(--d) infinite; }
+@keyframes scene-gust { from { transform: translate3d(0, 0, 0); } to { transform: translate3d(calc(100cqw + 40cqw), -6px, 0); } }
+.scene__cloud { position: absolute; width: 46%; height: 34%; border-radius: 999px; background: var(--ink-faint); opacity: 0.1; filter: blur(14px); animation: scene-drift 46s ease-in-out infinite alternate; }
+.scene__cloud--a { top: -8%; left: -6%; }
+.scene__cloud--b { top: 6%; right: -12%; width: 52%; animation-duration: 62s; animation-direction: alternate-reverse; }
+.scene__cloud--c { bottom: -14%; left: 18%; opacity: 0.08; animation-duration: 78s; }
+@keyframes scene-drift { to { transform: translate3d(22%, 0, 0); } }
+.scene__mist { position: absolute; left: -20%; width: 140%; height: 38%; background: linear-gradient(to right, transparent, var(--ink-faint), transparent); opacity: 0.09; filter: blur(12px); animation: scene-mist 30s ease-in-out infinite alternate; }
+.scene__mist--a { top: 12%; } .scene__mist--b { top: 52%; animation-duration: 42s; animation-direction: alternate-reverse; }
+@keyframes scene-mist { to { transform: translate3d(14%, 0, 0); } }
+.scene__sun { position: absolute; top: -34px; right: -34px; width: 150px; height: 150px; }
+.scene__orb { position: absolute; inset: 38px; border-radius: 999px; background: radial-gradient(circle, rgba(255, 214, 120, 0.85), rgba(255, 190, 80, 0.25) 60%, transparent 72%); animation: scene-breathe 7s ease-in-out infinite; }
+.scene__rays { position: absolute; inset: 0; border-radius: 999px; background: repeating-conic-gradient(from 0deg, rgba(255, 200, 90, 0.2) 0 5deg, transparent 5deg 20deg); -webkit-mask: radial-gradient(circle, transparent 28%, #000 40%, transparent 72%); mask: radial-gradient(circle, transparent 28%, #000 40%, transparent 72%); animation: scene-spin 90s linear infinite; }
+@keyframes scene-breathe { 0%, 100% { transform: scale(0.94); opacity: 0.8; } 50% { transform: scale(1.08); opacity: 1; } }
+@keyframes scene-spin { to { transform: rotate(360deg); } }
+.scene__moon { position: absolute; top: 14px; right: 22px; width: 26px; height: 26px; border-radius: 999px; box-shadow: inset -7px -3px 0 0 rgba(200, 214, 255, 0.55); filter: drop-shadow(0 0 10px rgba(180, 200, 255, 0.35)); animation: scene-breathe 9s ease-in-out infinite; }
+.scene__star { position: absolute; left: var(--x); top: calc(var(--s) * 70%); width: 2px; height: 2px; border-radius: 999px; background: var(--ink-soft); animation: scene-twinkle calc(3s * var(--t)) ease-in-out var(--d) infinite; }
+@keyframes scene-twinkle { 0%, 100% { opacity: 0.1; } 50% { opacity: 0.7; } }
+
+/* stillness: reduced-motion users, and ⚙ Motion → Still */
+@media (prefers-reduced-motion: reduce) {
+  .scene *, .clock__colon, .clock__pip, .clock__fill { animation: none !important; transition: none !important; }
+  .scene__drop, .scene__flake, .scene__gust, .scene__flash { display: none; }
+}
+.morning--still .clock__colon, .morning--still .clock__pip { animation: none; }

@@ -8,7 +8,7 @@
 import "server-only";
 import { formatHour } from "@/lib/format";
 import type { HourlyTemp, Weather } from "@/lib/types";
-import { degreesToCompass, weatherCodeToText } from "./codes";
+import { degreesToCompass, weatherCodeToSky, weatherCodeToText } from "./codes";
 
 export interface WeatherLocation {
   latitude: number;
@@ -149,6 +149,7 @@ export async function getWeather(
     sunrise,
     sunset,
     footnote: `${rainPhrase} · Wind ${wind} mph ${dir}`,
+    sky: { kind: weatherCodeToSky(data.current.weather_code), windMph: wind },
     hourly: buildHourly(data, arc.from, arc.to, sunrise, sunset),
   };
 }

@@ -9,6 +9,7 @@ import {
   type DashboardSettings,
   type Density,
   type NoteStyle,
+  type Motion,
   type Surface,
   type Theme,
   type TimeFormat,
@@ -87,6 +88,15 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
               ["solid", "Solid"],
             ]}
             onPick={(surface) => update({ surface })}
+          />
+          <Segmented<Motion>
+            label="Motion"
+            value={settings.motion}
+            options={[
+              ["on", "Ambient"],
+              ["off", "Still"],
+            ]}
+            onPick={(motion) => update({ motion })}
           />
           <Segmented<NoteStyle>
             label="Day note"
