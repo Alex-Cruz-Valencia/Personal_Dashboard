@@ -1491,6 +1491,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .clock { display: grid; gap: 8px; justify-items: stretch; }
 .clock__time { display: flex; align-items: flex-start; gap: 6px; font-variant-numeric: tabular-nums; }
 .clock__hm { font-family: var(--font-display); font-size: clamp(48px, 5.2vw, 60px); font-weight: 500; line-height: 0.95; letter-spacing: -0.035em; background: linear-gradient(180deg, var(--ink) 30%, color-mix(in srgb, var(--ink) 52%, transparent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
+.clock__hm { animation: clock-breathe 6s ease-in-out infinite; }
 .clock__colon { display: inline; margin: 0 1px; animation: clock-colon 2s ease-in-out infinite; }
 .clock__side { display: grid; gap: 3px; padding-top: 6px; font-size: 12px; font-weight: 600; line-height: 1.1; color: var(--ink-faint); }
 .clock__sec { font-variant-numeric: tabular-nums; }
@@ -1564,6 +1565,10 @@ a:hover { color: var(--ink); text-decoration: underline; }
 }
 .morning--still .vcal__event--now, .morning--still .vcal__event--soon, .morning--still .footline__stamp, .morning--still .footline__stamp i { animation: none; }
 
-.clock__sweep { display: block; width: 100%; height: 2px; border-radius: 2px; background: var(--line); overflow: hidden; }
-.clock__sweep i { display: block; height: 100%; background: var(--accent); opacity: 0.7; border-radius: 2px; transition: width 1s linear; }
-@media (prefers-reduced-motion: reduce) { .clock__sweep i { transition: none !important; } }
+
+@keyframes clock-breathe { 0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 0 transparent); } 50% { opacity: 1; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 38%, transparent)); } }
+.hello__sun { display: flex; align-items: center; gap: 8px; margin-top: 2px; font-size: 13.5px; font-weight: 500; color: var(--ink-soft); }
+.hello__sun i { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; background: #F2B544; box-shadow: 0 0 10px 1px rgba(242, 181, 68, 0.5); animation: scene-breathe 7s ease-in-out infinite; }
+.hello__sun i[data-phase="night"] { background: #B9C6F2; box-shadow: 0 0 10px 1px rgba(185, 198, 242, 0.45); }
+@media (prefers-reduced-motion: reduce) { .clock__hm, .hello__sun i { animation: none !important; } }
+.morning--still .clock__hm, .morning--still .hello__sun i { animation: none; }

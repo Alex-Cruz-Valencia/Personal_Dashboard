@@ -155,6 +155,33 @@ the temperature curve and the scene); keeping three cards (the status quo).
 clock is still a separate component slotted into the greeting card, so it can
 be moved again cheaply.
 
+## 2026-10-28 — Greeting card: drop "Shape of the day", add a sun line; the time breathes
+
+**Problem** — The day note ("8h 5m before X — focus on Y") restated what the
+calendar header and now-line already say, and the seconds sweep line under the
+time was decoration the user liked less than the earlier breathing motion.
+
+**Decision** — (1) Remove the "Shape of the day" note from the card. (2) Add
+one quiet line under the greeting that the calendar *doesn't* say: where the
+sun is. By day, "2h 10m of daylight left · sunset 7:48pm"; at night, "Sun is
+down · sunrise 6:24am", with a small breathing warm or cool dot. (3) Replace
+the sweep line with a slow breathing of the time itself (opacity and a soft
+accent glow over 6s), keeping the pulsing colon.
+
+**Reasoning** — One home per fact, again: schedule belongs to the calendar,
+the time to the clock, and what's left over for the greeting card is the sky.
+It ties the card to the weather scene and the sky tint without repeating
+either.
+
+**Alternatives considered** — Task counts ("3 due today") — also on the task
+card; week number or day-of-year (trivia); a daily quote (noise); moon phase
+(nice, small, a candidate for later).
+
+**Tradeoffs / open questions** — The card is emptier and shorter. The day
+note's AI call still runs on the server and `/api/summary` still serves it; it
+is just not shown, so that token spend could be removed too. ⚙ "Day note"
+voice now does nothing visible.
+
 ## 2026-10-28 — Greeting card: date back to the top left
 
 **Decision** — The date label returns to the top left, above the greeting, as
