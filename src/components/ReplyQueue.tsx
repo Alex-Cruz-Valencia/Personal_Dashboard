@@ -7,6 +7,7 @@ import { SNOOZE_HOURS, snoozeReply } from "@/lib/reply-state";
 import type { Priority } from "@/lib/types";
 import type { Theme } from "@/lib/settings";
 import type { Reply } from "@/lib/types";
+import { NewTaskForm, type TaskDraft } from "./NewTaskForm";
 import { Popover } from "./Popover";
 
 /**
@@ -298,106 +299,49 @@ function TaskPanel({
   todayIso: string;
   onAdded: () => void;
 }) {
-  const [content, setContent] = useState(() => defaultTaskTitle(reply));
-  const [priority, setPriority] = useState<Priority>(2);
-  const [dueDate, setDueDate] = useState("");
   const [hide, setHide] = useState(true);
-  const [phase, setPhase] = useState<"edit" | "reading" | "saving" | "saved">("edit");
-  const [error, setError] = useState<string | null>(null);
+  const [saved, setSaved] = useState(false);
 
-  const fill = async () => {
-    setError(null);
-    setPhase("reading");
-    try {
-      const res = await fetch(`/api/replies/${id}/task`, {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ today: todayIso }),
-      });
-      const body = (await res.json().catch(() => ({}))) as {
-        suggestion?: { content: string; priority: Priority; dueDate: string | null };
-        error?: string;
-      };
-      if (!res.ok || !body.suggestion) throw new Error(body.error || "Couldn't read a task from that.");
-      setContent(body.suggestion.content);
-      setPriority(body.suggestion.priority);
-      setDueDate(body.suggestion.dueDate ?? "");
-    } catch (e) {
-      setError((e as Error).message);
-    }
-    setPhase("edit");
+  const fill = async (): Promise<Partial<TaskDraft>> => {
+    const res = await fetch(`/api/replies/${id}/task`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ today: todayIso }),
+    });
+    const body = (await res.json().catch(() => ({}))) as {
+      suggestion?: { content: string; priority: Priority; dueDate: string | null };
+      error?: string;
+    };
+    if (!res.ok || !body.suggestion) throw new Error(body.error || "Couldn't read a task from that.");
+    return { content: body.suggestion.content, priority: body.suggestion.priority, due: body.suggestion.dueDate ?? "" };
   };
 
-  const add = async () => {
-    setError(null);
-    setPhase("saving");
-    try {
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({
-          content,
-          priority,
-          ...(dueDate ? { dueDate } : {}),
-          description: `From ${reply.from}: ${reply.subject}\n${gmailLink(id)}`,
-        }),
-      });
-      if (!res.ok) {
-        const body = (await res.json().catch(() => ({}))) as { error?: string };
-        throw new Error(body.error || "Couldn't add the task.");
-      }
-      setPhase("saved");
-      // Off the pending list (this browser only; the email itself is untouched in Gmail).
-      if (hide) snoozeReply(id, DONE_HOURS);
-      onAdded();
-    } catch (e) {
-      setError((e as Error).message);
-      setPhase("edit");
-    }
-  };
-
-  if (phase === "saved") return <p className="rq__hint rq__saved">Added to Todoist.</p>;
-  const busy = phase !== "edit";
+  if (saved) return <p className="rq__hint rq__saved">Added to Todoist.</p>;
   return (
     <div className="rq__draft rq__task">
-      {ai ? (
-        <button type="button" className="rq__btn" disabled={busy} onClick={fill}>
-          {phase === "reading" ? "Reading…" : "Fill in from the email"}
-        </button>
-      ) : null}
-      <input
-        className="rq__input"
-        value={content}
-        maxLength={140}
-        aria-label="Task"
-        disabled={busy}
-        onChange={(e) => setContent(e.target.value)}
+      <NewTaskForm
+        initial={{
+          content: defaultTaskTitle(reply),
+          description: `From ${reply.from}: ${reply.subject}\n${gmailLink(id)}`,
+        }}
+        submitLabel="Add to Todoist"
+        onFill={ai ? fill : undefined}
+        extra={
+          <>
+            <label className="rq__check">
+              <input type="checkbox" checked={hide} onChange={(e) => setHide(e.target.checked)} />
+              Take this email off my list
+            </label>
+            {ai ? <p className="rq__hint">AI fills in the fields; check them before adding.</p> : null}
+          </>
+        }
+        onAdded={() => {
+          setSaved(true);
+          // Off the pending list (this browser only; the email itself is untouched in Gmail).
+          if (hide) snoozeReply(id, DONE_HOURS);
+          onAdded();
+        }}
       />
-      <div className="rq__fields">
-        <label className="rq__field">
-          Priority
-          <select className="rq__input" value={priority} disabled={busy} onChange={(e) => setPriority(Number(e.target.value) as Priority)}>
-            <option value={1}>Urgent</option>
-            <option value={2}>Normal</option>
-            <option value={3}>Someday</option>
-          </select>
-        </label>
-        <label className="rq__field">
-          Due
-          <input className="rq__input" type="date" value={dueDate} min={todayIso} disabled={busy} onChange={(e) => setDueDate(e.target.value)} />
-        </label>
-      </div>
-      <label className="rq__check">
-        <input type="checkbox" checked={hide} disabled={busy} onChange={(e) => setHide(e.target.checked)} />
-        Take this email off my list
-      </label>
-      {ai ? <p className="rq__hint">AI fills in the fields; check them before adding.</p> : null}
-      <div className="rq__actions">
-        <button type="button" className="rq__btn rq__btn--primary" disabled={busy || !content.trim()} onClick={add}>
-          {phase === "saving" ? "Adding…" : "Add to Todoist"}
-        </button>
-      </div>
-      {error ? <p className="rq__error">{error}</p> : null}
     </div>
   );
 }

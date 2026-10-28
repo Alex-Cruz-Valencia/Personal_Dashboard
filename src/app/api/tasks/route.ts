@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
 import { addTask, TODOIST_TAG, type NewTask } from "@/lib/tasks/todoist";
 
-/** Create a task. Body: { content, projectId?, priority? (1–3), due?, labels? }. */
+/** Create a task. Body: { content, projectId?, priority? (1–3), due?, dueDate?, labels?, deadline?, durationMinutes?, description? }. */
 export async function POST(request: Request) {
   if (!features.todoist) {
     return NextResponse.json(
@@ -31,6 +31,29 @@ export async function POST(request: Request) {
   }
   if (body.description !== undefined && (typeof body.description !== "string" || body.description.length > 2000)) {
     return NextResponse.json({ error: "description is too long" }, { status: 400 });
+  }
+
+  const isIso = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  if (body.deadline !== undefined && !isIso(body.deadline)) {
+    return NextResponse.json({ error: "deadline must be YYYY-MM-DD" }, { status: 400 });
+  }
+  if (
+    body.durationMinutes !== undefined &&
+    !(Number.isInteger(body.durationMinutes) && body.durationMinutes > 0 && body.durationMinutes <= 1440)
+  ) {
+    return NextResponse.json({ error: "durationMinutes must be 1–1440" }, { status: 400 });
+  }
+  if (body.due !== undefined && (typeof body.due !== "string" || body.due.length > 100)) {
+    return NextResponse.json({ error: "due is too long" }, { status: 400 });
+  }
+  if (
+    body.labels !== undefined &&
+    !(Array.isArray(body.labels) && body.labels.length <= 20 && body.labels.every((l) => typeof l === "string" && l.length <= 60))
+  ) {
+    return NextResponse.json({ error: "labels must be a short list of names" }, { status: 400 });
+  }
+  if (body.projectId !== undefined && typeof body.projectId !== "string") {
+    return NextResponse.json({ error: "projectId must be a string" }, { status: 400 });
   }
 
   try {

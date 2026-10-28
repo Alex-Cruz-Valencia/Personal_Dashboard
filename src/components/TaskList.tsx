@@ -1,10 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildTasks, taskCountLabel } from "@/lib/format";
-import type { DashboardSettings } from "@/lib/settings";
+import type { DashboardSettings, Theme } from "@/lib/settings";
 import type { SliceSource, Task } from "@/lib/types";
+import { NewTaskForm } from "./NewTaskForm";
+import { Popover } from "./Popover";
 import { StaleTag } from "./StaleTag";
 import { useTaskDetail } from "./TaskDetail";
 
@@ -123,66 +125,43 @@ export function TaskList({ tasks, settings, source }: TaskListProps) {
           })}
         </ul>
         {error ? <p className="tasks__error">{error}</p> : null}
-        <AddTask onAdded={() => router.refresh()} />
+        <AddTask theme={settings.theme} onAdded={() => router.refresh()} />
       </div>
     </section>
   );
 }
 
-function AddTask({ onAdded }: { onAdded: () => void }) {
-  const [openInput, setOpenInput] = useState(false);
-  const [value, setValue] = useState("");
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-  const submit = async () => {
-    const content = value.trim();
-    if (!content) return;
-    setBusy(true);
-    setError(null);
-    try {
-      const res = await fetch("/api/tasks", {
-        method: "POST",
-        headers: { "content-type": "application/json" },
-        body: JSON.stringify({ content }),
-      });
-      if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Failed");
-      setValue("");
-      onAdded();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  };
-
-  if (!openInput) {
-    return (
-      <button type="button" className="tasks__add" onClick={() => setOpenInput(true)}>
-        + Add task
-      </button>
-    );
-  }
+function AddTask({ theme, onAdded }: { theme: Theme; onAdded: () => void }) {
+  const btn = useRef<HTMLButtonElement>(null);
+  const [anchor, setAnchor] = useState<DOMRect | null>(null);
 
   return (
-    <div className="tasks__add-row">
-      <input
-        autoFocus
-        className="tasks__add-input"
-        value={value}
-        placeholder="Task name — “Email Dana, tomorrow 9am p1”"
-        disabled={busy}
-        onChange={(e) => setValue(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === "Enter") submit();
-          if (e.key === "Escape") {
-            setValue("");
-            setOpenInput(false);
-          }
-        }}
-        onBlur={() => !value.trim() && setOpenInput(false)}
-      />
-      {error ? <p className="tasks__error">{error}</p> : null}
-    </div>
+    <>
+      <button
+        ref={btn}
+        type="button"
+        className="tasks__add"
+        onClick={() => btn.current && setAnchor(btn.current.getBoundingClientRect())}
+      >
+        + Add task
+      </button>
+      {anchor ? (
+        <Popover anchor={anchor} theme={theme} onClose={() => setAnchor(null)} ariaLabel="New task" className="taskedit">
+          <div className="taskedit__head">
+            <span className="taskedit__eyebrow">New task</span>
+            <button type="button" className="taskedit__close" onClick={() => setAnchor(null)} aria-label="Close">
+              ×
+            </button>
+          </div>
+          <NewTaskForm
+            onCancel={() => setAnchor(null)}
+            onAdded={() => {
+              setAnchor(null);
+              onAdded();
+            }}
+          />
+        </Popover>
+      ) : null}
+    </>
   );
 }
