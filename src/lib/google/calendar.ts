@@ -21,6 +21,8 @@ interface GCalDateTime {
 
 interface GCalEvent {
   id: string;
+  /** Shared by every copy of the same invitation across calendars. */
+  iCalUID?: string;
   summary?: string;
   location?: string;
   description?: string;
@@ -43,6 +45,7 @@ interface GCalListResponse {
 interface GCalListEntry {
   id: string;
   deleted?: boolean;
+  accessRole?: string;
 }
 
 interface GCalCalendarListResponse {
@@ -57,6 +60,9 @@ interface GCalCalendarListResponse {
  * and the "(busy)" fallback already handle that).
  */
 async function discoverCalendarIds(): Promise<string[]> {
+  // Writable calendars first: when the same event shows up on two calendars,
+  // `dedupeEvents` keeps the first copy, and that should be one you can edit.
+  const ROLE_RANK: Record<string, number> = { owner: 0, writer: 1, reader: 2, freeBusyReader: 3 };
   const url = new URL(`${CAL_BASE}/users/me/calendarList`);
   url.searchParams.set("minAccessRole", "freeBusyReader");
 
@@ -69,7 +75,25 @@ async function discoverCalendarIds(): Promise<string[]> {
   const excluded = new Set(config.google.calendarExcludeIds.map((id) => id.toLowerCase()));
   return (data.items ?? [])
     .filter((c) => !c.deleted && !excluded.has(c.id.toLowerCase()))
+    .sort((a, b) => (ROLE_RANK[a.accessRole ?? ""] ?? 4) - (ROLE_RANK[b.accessRole ?? ""] ?? 4))
     .map((c) => c.id);
+}
+
+/**
+ * The same invitation on two connected calendars (yours + one shared with
+ * you) comes back once per calendar, with the same `iCalUID`. Keep the first
+ * copy of each (uid, start) — start is part of the key because a recurring
+ * series shares one uid across its instances. Events without a uid are kept.
+ */
+function dedupeEvents<T extends { event: GCalEvent }>(events: T[]): T[] {
+  const seen = new Set<string>();
+  return events.filter(({ event: e }) => {
+    if (!e.iCalUID) return true;
+    const key = `${e.iCalUID}|${e.start?.dateTime ?? e.start?.date}`;
+    if (seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 const FOCUS_RE = /\b(focus|deep work|deep-work|heads?[- ]down|no meeting|writing|block)\b/i;
@@ -178,10 +202,11 @@ export async function getAgenda(
     throw new Error("Every discovered calendar failed");
   }
 
-  return events
-    .filter(
+  return dedupeEvents(
+    events.filter(
       ({ event: e }) => e.status !== "cancelled" && e.start?.dateTime && e.end?.dateTime,
-    )
+    ),
+  )
     .map<AgendaEvent>(({ calendarId, event: e }) => {
       const kind = classify(e);
       const others = (e.attendees ?? []).filter((a) => !a.self).length;

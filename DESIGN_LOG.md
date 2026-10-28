@@ -450,6 +450,24 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-28 — One copy of an event shared across calendars
+
+**Problem** — An invitation that lands on your calendar and on a calendar shared
+with you (e.g. a partner's) came back once per calendar, so the same meeting
+showed twice on the day view and the week strip.
+
+**Decision** — Drop duplicates by `iCalUID` + start time (Google's own "same
+invitation" id; start is in the key because a recurring series shares one uid).
+Calendars are sorted owner → writer → reader → free/busy first, so the copy that
+survives is the one you can edit and delete.
+
+**Alternatives considered** — Matching on title + time (would merge two genuinely
+different events with the same name); showing both with a "shared" badge (more
+UI for something nobody wants to see twice).
+
+**Tradeoffs** — Events without a uid are never merged. If two calendars hold
+genuinely separate events with an identical uid and start, one is hidden.
+
 ## 2026-10-28 — Retry the Google token refresh when the connection drops
 
 **Problem** — Production still logs occasional Google "fetch failed … other
