@@ -106,6 +106,12 @@ the Focus timer moved into the calendar header. Clicking an event or task opens
 the same detail editors as before. "Needs a reply" (the list) and "Plan" are
 **archived**: the components stay in the repo, just not rendered.
 
+**Follow-up: calendar higher on the page** — With the week strip above it, the
+calendar started 686px down (barely visible on a 900px screen). The week strip
+now sits **below** the calendar and tasks (they start at 465px, about 435px of
+them visible on first load). Rationale: the week is look-ahead context, the
+calendar and tasks are what you act on, and the first screen belongs to action.
+
 **A misreading worth recording** — The first version removed everything except the
 two panels, reading "leave only these two" as the whole page. The intent was only
 the bottom blocks. Lesson: when a layout request is ambiguous about scope, restate

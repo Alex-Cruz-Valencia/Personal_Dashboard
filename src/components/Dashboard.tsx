@@ -59,8 +59,6 @@ export function Dashboard({ data, settings }: DashboardProps) {
             aiDraft={data.ai}
           />
 
-          {data.week ? <WeekStrip days={data.week} /> : null}
-
           <div className="twocol">
             <DayCalendar
               agenda={data.agenda}
@@ -71,6 +69,8 @@ export function Dashboard({ data, settings }: DashboardProps) {
             />
             <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
           </div>
+
+          {data.week ? <WeekStrip days={data.week} /> : null}
 
           <Footline agenda={data.agenda} today={data.today} settings={settings} />
         </div>
