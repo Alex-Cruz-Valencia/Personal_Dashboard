@@ -1741,3 +1741,20 @@ a:hover { color: var(--ink); text-decoration: underline; }
 /* The scene takes all the room left under the hours, to the bottom of the card, however tall that is. */
 .vcal__scroller { display: flex; flex-direction: column; }
 .vcal__body { flex: 0 0 auto; }
+
+/* ---- page scene extras: meteors by night, drifting sunbeams by day (calm, occasional) ---- */
+.scene__meteor { position: absolute; left: var(--x); top: var(--y); width: var(--l); height: 1.6px; border-radius: 2px; opacity: 0; transform-origin: 100% 50%; background: linear-gradient(to right, transparent, color-mix(in srgb, var(--ink) 88%, transparent)); filter: drop-shadow(0 0 4px rgba(190, 210, 255, 0.75)); animation: scene-meteor calc(var(--c) * 1s) linear var(--d) infinite; }
+@keyframes scene-meteor {
+  0%, 93% { opacity: 0; transform: rotate(var(--a)) translateX(0); }
+  94% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(520px); }
+}
+.scene__beam { position: absolute; top: -30cqh; left: -20cqw; width: var(--w); height: 170cqh; opacity: 0; transform-origin: 50% 0; background: linear-gradient(to right, transparent, rgba(255, 226, 160, 0.13), rgba(255, 226, 160, 0.045) 62%, transparent); filter: blur(10px); animation: scene-beam calc(var(--c) * 1s) ease-in-out var(--d) infinite; }
+@keyframes scene-beam {
+  0% { opacity: 0; transform: rotate(var(--a)) translateX(0); }
+  4% { opacity: 1; }
+  22% { opacity: 0.9; }
+  26%, 100% { opacity: 0; transform: rotate(var(--a)) translateX(150cqw); }
+}
+.vcal__eod-spacer { flex: 0 0 auto; height: 0; }
+.vcal--full .vcal__eod-spacer { height: var(--eod-h); }

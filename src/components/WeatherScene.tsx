@@ -9,6 +9,25 @@ const COUNT = { drizzle: 14, rain: 30, storm: 44, snow: 26 } as const;
 /** Evenly scattered, but the same on server and client (no Math.random in render). */
 const spread = (i: number, k: number) => ((i * k) % 97) / 97;
 
+/**
+ * Occasional shooting stars: each one crosses the sky for a second or two, then waits out a
+ * long, different cycle, so they come "here and there" without a rhythm. x/y are start points
+ * (% of the viewport), a the angle, c the cycle in seconds, d a head start, l the length (px).
+ */
+const METEORS = [
+  { x: 6, y: 5, a: 24, c: 21, d: -4, l: 120 },
+  { x: 38, y: 3, a: 30, c: 27, d: -13, l: 100 },
+  { x: 64, y: 9, a: 27, c: 34, d: -22, l: 140 },
+  { x: 18, y: 24, a: 22, c: 41, d: -31, l: 130 },
+  { x: 52, y: 28, a: 29, c: 47, d: -9, l: 110 },
+];
+
+/** Slow, soft bands of sunlight that drift across the page now and then, then leave it alone. */
+const BEAMS = [
+  { w: 170, a: 16, c: 61, d: -8 },
+  { w: 260, a: 20, c: 83, d: -47 },
+];
+
 function Particles({ n, className }: { n: number; className: string }) {
   return Array.from({ length: n }, (_, i) => (
     <i
@@ -49,8 +68,22 @@ export function WeatherScene({ sky, isDay, variant = "card" }: { sky: Sky; isDay
           </div>
         </>
       ) : null}
+      {variant === "page" && kind === "clear" && isDay
+        ? BEAMS.map((b, i) => (
+            <span key={i} className="scene__beam" style={{ "--w": `${b.w}px`, "--a": `${b.a}deg`, "--c": b.c, "--d": `${b.d}s` } as CSSProperties} />
+          ))
+        : null}
       {kind === "clear" && !isDay ? (
         <>
+          {variant === "page"
+            ? METEORS.map((m, i) => (
+                <span
+                  key={i}
+                  className="scene__meteor"
+                  style={{ "--x": `${m.x}%`, "--y": `${m.y}%`, "--a": `${m.a}deg`, "--c": m.c, "--d": `${m.d}s`, "--l": `${m.l}px` } as CSSProperties}
+                />
+              ))
+            : null}
           <span className="scene__moon" />
           <Particles n={14 * (variant === "page" ? 5 : 1)} className="scene__star" />
         </>
