@@ -476,6 +476,18 @@ sizes (full, a wide band, a sparkline), and the weather card now uses it too, so
 scrubbing works the same everywhere. On a phone the one-card version swaps the
 band for the normal chart, and the tiles stack.
 
+**Round two (One card chosen)** — Two notes: the temperature chart wasn't
+pretty, and the card felt squished at the top. Chart: a smooth curve (monotone
+cubic, so it never overshoots) with a soft accent-tinted fill, the hours already
+gone drawn dimmer than the hours ahead, a dashed line and a gently pulsing ring on
+"now", and just "68°" and "48°" beside the high and the low (the time moved into
+the hover readout), flipped away from the "now" dot when they'd collide. The
+labels moved off the top of the plot so the curve uses the full band height. Card:
+30px above the date and 34px at the sides (was 20 and 26), more space between the
+rows, the moon and the sun moved clear of the clock. Roughly 277px tall at 1280px
+(classic 251px): taller on purpose. Added a preview-only `?now=14.5` to see the
+page at another hour, which is how daylight was finally checked.
+
 **Open questions** — Is the footnote worth keeping in three tiles? In one card the
 moon sits beside the clock; is a corner better? Neither version has been looked at
 in daylight, since it was night when they were built. If one wins, the others and

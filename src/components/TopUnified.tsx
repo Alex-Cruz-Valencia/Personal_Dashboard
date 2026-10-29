@@ -37,10 +37,10 @@ export function TopUnified({ data, settings, frozen }: { data: DashboardData; se
       </div>
       {/* A band across a wide card; the usual chart shape on a phone, where the band would flatten. */}
       <div className="topuni__curve topuni__curve--wide">
-        <TempCurve weather={weather} arc={data.weatherArc} agenda={data.agenda} nowHour={today.nowHour} use24={use24Hour(settings)} size="wide" />
+        <TempCurve weather={weather} arc={data.weatherArc} agenda={data.agenda} nowHour={today.nowHour} use24={use24Hour(settings)} size="wide" refined />
       </div>
       <div className="topuni__curve topuni__curve--narrow">
-        <TempCurve weather={weather} arc={data.weatherArc} agenda={data.agenda} nowHour={today.nowHour} use24={use24Hour(settings)} size="full" />
+        <TempCurve weather={weather} arc={data.weatherArc} agenda={data.agenda} nowHour={today.nowHour} use24={use24Hour(settings)} size="full" refined />
       </div>
     </section>
   );
