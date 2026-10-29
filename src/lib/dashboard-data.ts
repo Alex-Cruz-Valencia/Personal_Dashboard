@@ -8,7 +8,7 @@ import { getDaySummary } from "./anthropic/summary";
 import { config, features, forceMock, isDemoMode } from "./config";
 import { deterministicDayNote, WIND_DOWN_HOUR } from "./day-note";
 import type { NoteStyle } from "./settings";
-import { getAgenda } from "./google/calendar";
+import { getAgenda, getCalendarLegend } from "./google/calendar";
 import { getReplies } from "./google/gmail";
 import { GoogleAuthError } from "./google/oauth";
 import { resolveLocation, type LocationOverride } from "./location";
@@ -123,6 +123,7 @@ export async function getDashboardData(
       week: null,
       ai: false,
       canAddTasks: false,
+      calendars: [],
       sources: {
         weather: "off",
         tasks: "off",
@@ -145,6 +146,10 @@ export async function getDashboardData(
   const weekTasks = features.todoist
     ? getWeekTasks(location.timezone).catch(() => null)
     : Promise.resolve(null);
+  // The calendar legend reuses the cached calendar list; failing just hides it.
+  const calendarLegend = features.google
+    ? getCalendarLegend().catch(() => [])
+    : Promise.resolve([]);
 
   const [weather, tasks, agenda, replies, geocoded]: [
     Settled<Weather>,
@@ -239,5 +244,6 @@ export async function getDashboardData(
     week,
     ai: features.llm && features.google,
     canAddTasks: features.todoist,
+    calendars: agenda.live ? await calendarLegend : [],
   };
 }

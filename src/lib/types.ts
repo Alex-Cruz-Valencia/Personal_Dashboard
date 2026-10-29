@@ -231,4 +231,12 @@ export interface DashboardData {
   ai: boolean;
   /** Todoist is connected, so "Make task" on an email can write to it. */
   canAddTasks: boolean;
+  /** Connected calendars and their color family, for the calendar's legend; empty when not live. */
+  calendars: CalendarLegendItem[];
+}
+
+export interface CalendarLegendItem {
+  /** "Personal", "Dartmouth", "DALI", "Evergreen 26F" … */
+  label: string;
+  color: EventColor;
 }

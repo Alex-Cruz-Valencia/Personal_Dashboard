@@ -5,7 +5,7 @@
 import "server-only";
 import { config } from "@/lib/config";
 import { dayBoundsUtc, decimalHourForTimestamp } from "@/lib/time";
-import type { AgendaEvent, EventKind } from "@/lib/types";
+import type { AgendaEvent, CalendarLegendItem, EventKind } from "@/lib/types";
 import { googleFetch } from "./tokens";
 import { colorFromHex, colorFromId, type EventColor } from "@/lib/event-colors";
 
@@ -51,6 +51,10 @@ interface GCalListEntry {
   accessRole?: string;
   /** The calendar's color as the viewer set it, e.g. "#16a765". */
   backgroundColor?: string;
+  summary?: string;
+  /** The viewer's own rename of a calendar, when they've set one. */
+  summaryOverride?: string;
+  primary?: boolean;
 }
 
 interface GCalCalendarListResponse {
@@ -64,7 +68,7 @@ interface GCalCalendarListResponse {
  * share is still included (its events just come back opaque; `classify()`
  * and the "(busy)" fallback already handle that).
  */
-async function discoverCalendars(): Promise<{ id: string; color?: EventColor }[]> {
+async function discoverCalendars(): Promise<{ id: string; color?: EventColor; label: string }[]> {
   // Writable calendars first: when the same event shows up on two calendars,
   // `dedupeEvents` keeps the first copy, and that should be one you can edit.
   const ROLE_RANK: Record<string, number> = { owner: 0, writer: 1, reader: 2, freeBusyReader: 3 };
@@ -81,7 +85,38 @@ async function discoverCalendars(): Promise<{ id: string; color?: EventColor }[]
   return (data.items ?? [])
     .filter((c) => !c.deleted && !excluded.has(c.id.toLowerCase()))
     .sort((a, b) => (ROLE_RANK[a.accessRole ?? ""] ?? 4) - (ROLE_RANK[b.accessRole ?? ""] ?? 4))
-    .map((c) => ({ id: c.id, color: colorFromHex(c.backgroundColor) }));
+    .map((c) => ({ id: c.id, color: colorFromHex(c.backgroundColor), label: calendarLabel(c) }));
+}
+
+/**
+ * A short name for the legend: the viewer's own rename if any; the primary
+ * calendar is "Personal"; another account's calendar is named by its domain
+ * ("dartmouth.edu" → "Dartmouth", "dali.dartmouth.edu" → "DALI"); a shared
+ * calendar by its title without "[TEAM]"-style tags.
+ */
+function calendarLabel(c: GCalListEntry): string {
+  if (c.summaryOverride?.trim()) return c.summaryOverride.trim();
+  if (c.primary) return "Personal";
+  const at = c.id.indexOf("@");
+  if (at > 0 && !/calendar\.google\.com$/.test(c.id)) {
+    const domain = c.id.slice(at + 1).toLowerCase();
+    if (domain === "gmail.com" || domain === "googlemail.com") return c.id.slice(0, at);
+    const word = domain.split(".")[0];
+    return word.length <= 4 ? word.toUpperCase() : word[0].toUpperCase() + word.slice(1);
+  }
+  return (c.summary ?? "Calendar").replace(/\[[^\]]*\]/g, "").trim() || "Calendar";
+}
+
+/** Google's built-in calendars (holidays, birthdays, week numbers) — not worth a legend entry. */
+const BUILT_IN = /#(holiday|contacts|weeknum)@group\.v\.calendar\.google\.com$/;
+
+/** Which color is which calendar, for the day calendar's legend. Reuses the cached calendar list. */
+export async function getCalendarLegend(): Promise<CalendarLegendItem[]> {
+  const seen = new Set<string>();
+  return (await discoverCalendars())
+    .filter((c) => c.color && !BUILT_IN.test(c.id))
+    .filter((c) => (seen.has(c.label) ? false : (seen.add(c.label), true)))
+    .map((c) => ({ label: c.label, color: c.color as EventColor }));
 }
 
 /** An event's color family: its own color if set, else its calendar's. */

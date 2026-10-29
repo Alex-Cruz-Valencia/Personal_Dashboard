@@ -116,6 +116,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
               editable={data.sources.calendar === "live"}
               tomorrow={data.week?.find((d) => d.iso > data.today.iso) ?? null}
               focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
+              legend={data.calendars}
             />
             <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
           </div>

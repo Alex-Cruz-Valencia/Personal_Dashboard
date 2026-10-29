@@ -122,6 +122,18 @@ calendar set to `#cd74e6`, which maps to grape. No event had its own color today
 palettes and needs per-color contrast work. *Keep kind colors*: loses information Alex
 deliberately curates.
 
+**Follow-up: a legend.** In use, a day where every event came from one account
+(Dartmouth) read as "all the same color". The colors were right, just unexplained.
+The calendar now has a one-line legend under its header naming each connected
+calendar with its dot:
+- **Personal:** the primary Gmail calendar.
+- **Dartmouth and DALI:** the other accounts, named by their domain.
+- **Evergreen 26F:** a shared team calendar, by title.
+- **Left out:** Google's holiday calendars.
+
+A rename in Google wins. A legend beats per-block account labels, since blocks are
+often too short to fit one.
+
 **Tradeoffs / open questions** — Hue snapping can land a borderline calendar color on
 a neighboring family; for example `#16a765` reads as sage rather than basil.
 Blueberry, peacock and lavender bring blue back into light mode, but only when Alex
