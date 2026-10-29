@@ -1743,19 +1743,19 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .vcal__body { flex: 0 0 auto; }
 
 /* ---- page scene extras: meteors by night, drifting sunbeams by day (calm, occasional) ---- */
-.scene__meteor { position: absolute; left: var(--x); top: var(--y); width: var(--l); height: 2px; border-radius: 2px; opacity: 0; transform-origin: 100% 50%; background: linear-gradient(to right, transparent, color-mix(in srgb, var(--ink) 95%, transparent)); filter: drop-shadow(0 0 5px rgba(190, 210, 255, 0.9)); animation: scene-meteor calc(var(--c) * 1s) linear var(--d) infinite; }
-.scene__meteor::after { content: ""; position: absolute; right: -1px; top: 50%; width: 4px; height: 4px; margin-top: -2px; border-radius: 50%; background: var(--ink); box-shadow: 0 0 9px 2px rgba(200, 218, 255, 0.85); }
+.scene__meteors { position: absolute; inset: 0; pointer-events: none; }
+.scene__meteor { position: absolute; left: var(--x); top: var(--y); width: var(--l); height: 1.6px; border-radius: 2px; opacity: 0; transform-origin: 100% 50%; background: linear-gradient(to right, transparent, color-mix(in srgb, var(--ink) 88%, transparent)); filter: drop-shadow(0 0 4px rgba(190, 210, 255, 0.75)); animation: scene-meteor calc(var(--c) * 1s) linear var(--d) infinite; }
 @keyframes scene-meteor {
-  0%, 90% { opacity: 0; transform: rotate(var(--a)) translateX(0); }
-  92% { opacity: 1; }
-  100% { opacity: 0; transform: rotate(var(--a)) translateX(680px); }
+  0%, 93% { opacity: 0; transform: rotate(var(--a)) translateX(0); }
+  94% { opacity: 1; }
+  100% { opacity: 0; transform: rotate(var(--a)) translateX(520px); }
 }
-.scene__beam { position: absolute; top: -30cqh; left: -20cqw; width: var(--w); height: 170cqh; opacity: 0; transform-origin: 50% 0; background: linear-gradient(to right, transparent, rgba(255, 226, 160, 0.2), rgba(255, 226, 160, 0.07) 62%, transparent); filter: blur(9px); animation: scene-beam calc(var(--c) * 1s) ease-in-out var(--d) infinite; }
+.scene__beam { position: absolute; top: -30cqh; left: -20cqw; width: var(--w); height: 170cqh; opacity: 0; transform-origin: 50% 0; background: linear-gradient(to right, transparent, rgba(255, 226, 160, 0.13), rgba(255, 226, 160, 0.045) 62%, transparent); filter: blur(10px); animation: scene-beam calc(var(--c) * 1s) ease-in-out var(--d) infinite; }
 @keyframes scene-beam {
   0% { opacity: 0; transform: rotate(var(--a)) translateX(0); }
   4% { opacity: 1; }
-  28% { opacity: 0.9; }
-  34%, 100% { opacity: 0; transform: rotate(var(--a)) translateX(150cqw); }
+  22% { opacity: 0.9; }
+  26%, 100% { opacity: 0; transform: rotate(var(--a)) translateX(150cqw); }
 }
 .vcal__eod-spacer { flex: 0 0 auto; height: 0; }
 .vcal--full .vcal__eod-spacer { height: var(--eod-h); }

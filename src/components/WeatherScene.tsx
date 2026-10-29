@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Sky } from "@/lib/types";
+import { MeteorField } from "./MeteorField";
 
 /** Wind this strong (mph) adds drifting streaks on top of whatever the sky is doing. */
 export const BREEZY_MPH = 15;
@@ -9,26 +10,11 @@ const COUNT = { drizzle: 14, rain: 30, storm: 44, snow: 26 } as const;
 /** Evenly scattered, but the same on server and client (no Math.random in render). */
 const spread = (i: number, k: number) => ((i * k) % 97) / 97;
 
-/**
- * Occasional shooting stars: each one crosses the sky for a second or two, then waits out a
- * different cycle (15–38s), so they come "here and there" without a rhythm (about one every 3s). x/y are start points
- * (% of the viewport), a the angle, c the cycle in seconds, d a head start, l the length (px).
- */
-const METEORS = [
-  { x: 4, y: 4, a: 24, c: 15, d: -3, l: 150 },
-  { x: 30, y: 2, a: 30, c: 18, d: -10, l: 130 },
-  { x: 58, y: 8, a: 27, c: 21, d: -16, l: 180 },
-  { x: 14, y: 22, a: 22, c: 24, d: -7, l: 160 },
-  { x: 46, y: 26, a: 29, c: 28, d: -21, l: 140 },
-  { x: 72, y: 14, a: 25, c: 33, d: -12, l: 170 },
-  { x: 24, y: 40, a: 32, c: 38, d: -27, l: 150 },
-];
 
 /** Slow, soft bands of sunlight that drift across the page now and then, then leave it alone. */
 const BEAMS = [
-  { w: 160, a: 16, c: 41, d: -6 },
-  { w: 250, a: 20, c: 53, d: -30 },
-  { w: 200, a: 14, c: 67, d: -52 },
+  { w: 170, a: 16, c: 61, d: -8 },
+  { w: 260, a: 20, c: 83, d: -47 },
 ];
 
 function Particles({ n, className }: { n: number; className: string }) {
@@ -78,15 +64,7 @@ export function WeatherScene({ sky, isDay, variant = "card" }: { sky: Sky; isDay
         : null}
       {kind === "clear" && !isDay ? (
         <>
-          {variant === "page"
-            ? METEORS.map((m, i) => (
-                <span
-                  key={i}
-                  className="scene__meteor"
-                  style={{ "--x": `${m.x}%`, "--y": `${m.y}%`, "--a": `${m.a}deg`, "--c": m.c, "--d": `${m.d}s`, "--l": `${m.l}px` } as CSSProperties}
-                />
-              ))
-            : null}
+          {variant === "page" ? <MeteorField /> : null}
           <span className="scene__moon" />
           <Particles n={14 * (variant === "page" ? 5 : 1)} className="scene__star" />
         </>

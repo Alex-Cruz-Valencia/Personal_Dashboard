@@ -463,14 +463,16 @@ away now only happen from the wind-down hour: ⚙ **Wind down at**, 9pm by
 default, the same hour that already turns the day note to "wind down" and stops
 Plan suggestions. Before it the calendar is just hours and events (with blank
 scroll room, no scene). Setting it to midnight turns the scene off. No new
-setting: one "when does my day end" knob. (2) On a clear night, seven
-shooting stars with glowing heads cross the page, each on its own 15–38 second
-cycle and visible for a second or two, so on average one every ~3 seconds with
-no pattern (measured by stepping the animations: about 18 a minute, one or more
-on screen about half the time, up to three at once). On a clear day, three slow
-bands of golden light drift across the page on 41, 53 and 67 second cycles,
-each on screen for about a third of its cycle: at least one is visible roughly
-60% of the time, and sometimes none. Both are part of the page-wide scene only
+setting: one "when does my day end" knob. (2) On a clear night, five faint
+shooting stars cross the page, each on its own 21–47 second cycle and visible
+for a second or two, so on average one every ~6 seconds with no pattern. On a
+clear day, two slow bands of golden light drift across the page, each on a
+61 or 83 second cycle and visible for roughly a quarter of it, so there are
+often none and sometimes one or two. The shooting stars are kept out of the sections: every card is cut
+out of the meteor layer, so a meteor vanishes as it passes behind one and is
+only seen in the margins and the gaps between cards. They fall diagonally; some
+start in a margin and fly in behind the cards, others start behind the cards and
+come out into a margin, so each is seen on its way in or out. Both are part of the page-wide scene only
 (⚙ Background: Scene; Motion: Still hides them) and are invisible, not just
 paused, under reduced motion.
 
@@ -481,15 +483,14 @@ showers or rays on a fixed beat (busy, and the point is that it's not always
 there); animated sun rays in the weather card too (the page is where the
 ambience lives).
 
-A first pass (five meteors, one every ~6s; two beams, visible ~45% of the time)
-was too faint to notice, hence the second pass: roughly twice the frequency,
-brighter heads and tails, a third beam.
-
 **Tradeoffs** — Before wind-down there is no "Plan tomorrow" button, since it
 lives in the scene; it appears with the scene. With the scene off, an
-evening calendar has a plain dark tail instead of the little hills. Shooting
-stars sit behind the frosted cards, so most of what you see is in the margins
-and the gaps between cards. I checked the animation frames by stepping them
+evening calendar has a plain dark tail instead of the little hills. How much of a
+meteor you see depends on the window: with wide margins about half of each
+streak (checked at 1600px wide), in a narrow window about a fifth, because the
+cards nearly fill it; no part of one is ever visible inside a card. A louder
+version (seven meteors with glowing heads, a third beam) was tried and rolled
+back as too much. I checked the animation frames by stepping them
 to mid-flight, not by watching them play.
 
 ## 2026-10-29 — When the day is done, "That's the day" covers the whole calendar
