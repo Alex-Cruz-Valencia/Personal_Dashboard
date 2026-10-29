@@ -27,7 +27,11 @@
 - **Style "clean"** (experiment, ⚙ Style, `settings.look`, `?look=clean`):
   `.morning--clean` layer at the end of `globals.css` — Todoist-like structure
   page-wide (bold sentence-case headings, hairlines, a colored bar as the only
-  category marker, text buttons, flat cards). Default stays "cards". 12/8/6px radii; no card shadow in dark,
+  category marker, text buttons, flat cards). Default stays "cards".
+- **Marker vs. text colors:** `--mark-*` tokens (negative/warning/neutral/
+  meeting/focus/personal) are bright hues for non-text marks only — bars,
+  dots, light tints. Text uses the darker readable tokens (`--negative`,
+  `--ink-soft`, …). Each light palette and dark sets its own `--mark-*`. 12/8/6px radii; no card shadow in dark,
   two soft levels in light (`--shadow` cards, `--shadow-pop` popovers); light
   secondary text held to ~6–8:1 for daylight; selected chips carry a border +
   bold, not tint alone; a flat day-arc band, a global accent-colored focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →

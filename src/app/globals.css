@@ -25,8 +25,8 @@
   --surface-2:  #F1EFEA;
   --line:       #E4E1DA;
   --ink:        #24262A;
-  --ink-soft:   #4E5257;
-  --ink-faint:  #5F6368;
+  --ink-soft:   #5F6266;
+  --ink-faint:  #6A6D72;
   --accent:     #4F725C;
   --accent-tint:#E6EEE8;
   /* CALENDAR KINDS — plum / amber / grey in light (the Solid layout below
@@ -43,6 +43,15 @@
   --warning-tint:  #F8EEDB;
   --neutral:       #55595E;
   --neutral-tint:  #EEEDEA;
+
+  /* MARKERS — bright hues for non-text marks only (bars, dots, fills), the way
+     Todoist colors its rings. Text keeps the darker readable tokens above. */
+  --mark-negative: #D1453B;
+  --mark-warning:  #EB8909;
+  --mark-neutral:  #A9ABAF;
+  --mark-meeting:  #A97CA3;
+  --mark-focus:    #6E9B7E;
+  --mark-personal: #A9A6A0;
 
   /* priority ramp — urgent / normal / someday (task list only) */
   /* text-on-tint pairs are kept at or above WCAG AA (4.5:1) */
@@ -93,6 +102,8 @@
   --warning-tint:  #2E2718;
   --neutral:       #A2B0B8;
   --neutral-tint:  #212A2F;
+  --mark-negative: #E4705A; --mark-warning: #D9A445; --mark-neutral: #A2B0B8;
+  --mark-meeting: #8FAAC6; --mark-focus: #4DC3C4; --mark-personal: #A39D90;
   --shadow:     none;
   --shadow-pop: none;
   color-scheme: dark;
@@ -141,6 +152,8 @@
   --warning-tint:  #2E2718;
   --neutral:       #A2B0B8;
   --neutral-tint:  #212A2F;
+  --mark-negative: #E4705A; --mark-warning: #D9A445; --mark-neutral: #A2B0B8;
+  --mark-meeting: #8FAAC6; --mark-focus: #4DC3C4; --mark-personal: #A39D90;
   --shadow:     none;
   --shadow-pop: none;
   color-scheme: dark;
@@ -171,6 +184,8 @@
     --warning-tint:  #2E2718;
     --neutral:       #A2B0B8;
     --neutral-tint:  #212A2F;
+  --mark-negative: #E4705A; --mark-warning: #D9A445; --mark-neutral: #A2B0B8;
+  --mark-meeting: #8FAAC6; --mark-focus: #4DC3C4; --mark-personal: #A39D90;
     --shadow:     none;
     --shadow-pop: none;
     color-scheme: dark;
@@ -1910,8 +1925,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
   --surface-2:  #F3EAE0;
   --line:       #E6D8C7;
   --ink:        #2F2520;
-  --ink-soft:   #59473C;
-  --ink-faint:  #6A5649;
+  --ink-soft:   #685A50;
+  --ink-faint:  #76675C;
   --accent:     #A04A28;
   --accent-tint:#F5E3D8;
   --cal-meeting:  #7A5274;
@@ -1923,6 +1938,12 @@ a:hover { color: var(--ink); text-decoration: underline; }
   --warning-tint:  #F6EBD6;
   --neutral:       #5E544C;
   --neutral-tint:  #EFE8E0;
+  --mark-negative: #C8463F;
+  --mark-warning:  #E08A2C;
+  --mark-neutral:  #B6AAA0;
+  --mark-meeting:  #B07AA6;
+  --mark-focus:    #D07A4E;
+  --mark-personal: #B3A79D;
   --p1:         #9E2A3A;
   --p1-tint:    #F6E1E3;
   --p2:         #805708;
@@ -1951,8 +1972,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
     --surface-2:  #F3EAE0;
     --line:       #E6D8C7;
     --ink:        #2F2520;
-    --ink-soft:   #59473C;
-    --ink-faint:  #6A5649;
+    --ink-soft:   #685A50;
+    --ink-faint:  #76675C;
     --accent:     #A04A28;
     --accent-tint:#F5E3D8;
     --cal-meeting:  #7A5274;
@@ -1964,6 +1985,12 @@ a:hover { color: var(--ink); text-decoration: underline; }
     --warning-tint:  #F6EBD6;
     --neutral:       #5E544C;
     --neutral-tint:  #EFE8E0;
+    --mark-negative: #C8463F;
+    --mark-warning:  #E08A2C;
+    --mark-neutral:  #B6AAA0;
+    --mark-meeting:  #B07AA6;
+    --mark-focus:    #D07A4E;
+    --mark-personal: #B3A79D;
     --p1:         #9E2A3A;
     --p1-tint:    #F6E1E3;
     --p2:         #805708;
@@ -2017,21 +2044,23 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .morning--clean .attn__title { margin-bottom: 10px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; text-transform: none; color: var(--ink); }
 .morning--clean .attn__list { gap: 10px; }
 .morning--clean .attn__item {
-  --bar: var(--neutral);
+  --bar: var(--mark-neutral);
   position: relative; gap: 4px; padding: 12px 36px 12px 16px; border-radius: 8px;
-  background: color-mix(in srgb, var(--bar) 7%, var(--surface));
-  box-shadow: inset 4px 0 0 var(--bar);
+  background: color-mix(in srgb, var(--bar) 6%, var(--surface));
+  box-shadow: inset 3px 0 0 var(--bar);
 }
 .morning--clean .attn__item::after {
   content: ""; position: absolute; right: 16px; top: 50%; width: 7px; height: 7px; margin-top: -4px;
   border-right: 2px solid var(--ink-faint); border-top: 2px solid var(--ink-faint); transform: rotate(45deg);
   transition: transform .15s ease, border-color .15s ease;
 }
-.morning--clean .attn__item:hover { background: color-mix(in srgb, var(--bar) 13%, var(--surface)); box-shadow: inset 4px 0 0 var(--bar); }
+.morning--clean .attn__item:hover { background: color-mix(in srgb, var(--bar) 12%, var(--surface)); box-shadow: inset 3px 0 0 var(--bar); }
 .morning--clean .attn__item:hover::after { border-color: var(--ink); transform: translateX(2px) rotate(45deg); }
-.morning--clean :is(.attn__item--conflict, .attn__item--overdue) { --bar: var(--negative); }
-.morning--clean .attn__item--tight { --bar: var(--warning); }
-.morning--clean .attn__label { font-size: 12.5px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--bar); }
+.morning--clean :is(.attn__item--conflict, .attn__item--overdue) { --bar: var(--mark-negative); }
+.morning--clean .attn__item--tight { --bar: var(--mark-warning); }
+/* color lives on the bar; the label stays a readable grey (red only when it's a real problem) */
+.morning--clean .attn__label { font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
+.morning--clean :is(.attn__item--conflict, .attn__item--overdue) .attn__label { color: var(--negative); }
 .morning--clean .attn__text { font-size: 15px; font-weight: 600; line-height: 1.3; }
 .morning--clean .attn__detail { font-size: 13px; color: var(--ink-soft); }
 
@@ -2042,12 +2071,12 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .morning--clean .vcal__btn:hover { background: var(--row-hover); }
 .morning--clean :is(.vcal__now-btn, .eod__plan) { border-color: transparent; color: var(--accent); }
 .morning--clean .vcal__event {
-  --kind: var(--cal-meeting);
+  --kind: var(--mark-meeting);
   background: color-mix(in srgb, var(--kind) 7%, var(--surface));
   border: 0; border-radius: 4px; box-shadow: inset 3px 0 0 var(--kind); padding: 4px 8px 4px 11px;
 }
-.morning--clean .vcal__event--focus { --kind: var(--cal-focus); }
-.morning--clean .vcal__event--personal { --kind: var(--cal-personal); }
+.morning--clean .vcal__event--focus { --kind: var(--mark-focus); }
+.morning--clean .vcal__event--personal { --kind: var(--mark-personal); }
 .morning--clean .vcal__event-title { font-weight: 600; }
 .morning--clean .vcal__event:hover { filter: none; background: color-mix(in srgb, var(--kind) 13%, var(--surface)); }
 

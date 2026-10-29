@@ -125,6 +125,21 @@ it's cheap to compare side by side and to drop.
 change to make without living with it. *Copy Todoist's exact visuals* (white page, red
 accent, system font): Alex asked for the style, not the brand.
 
+**Follow-up (same day): Todoist's lightness, not just its layout.** In use, light
+mode read too dark: muddy amber labels, brown-grey bars, heavy secondary text.
+Todoist keeps text neutral and only moderately dark, and puts bright color on
+small marks. So light mode now splits **marker** colors from **text** colors:
+- **Markers:** new `--mark-*` tokens (negative, warning, neutral, meeting, focus,
+  personal) in bright Todoist-like hues, e.g. red `#D1453B` and orange `#EB8909`,
+  used only for bars, dots and very light tints. Dark maps them to its existing
+  bright semantics.
+- **Secondary and faint text:** eased back to Todoist-like greys, about 6:1 and 5:1.
+  The earlier 7–8:1 overshot.
+- **Attention labels:** neutral grey, red only for a real problem.
+
+This walks back part of the "daylight standard" entry. Contrast still clears AA,
+but readable no longer means as dark as possible.
+
 **Tradeoffs / open questions** — Experimental; local only. Popovers (task/event
 editors, settings) keep the Cards styling for now. If Clean wins, fold it into the base
 styles and delete the toggle rather than maintain two looks.
