@@ -99,6 +99,8 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   // The card is only as tall as the day left needs; while the morning is open it keeps the height it had.
   const [lockH, setLockH] = useState<number | null>(null);
   const cardRef = useRef<HTMLElement>(null);
+  // How much of the calendar is visible: the end-of-day block is never taller than this.
+  const [viewH, setViewH] = useState<number | null>(null);
   const collapsed = settings.pastEvents === "hide" && !showPast;
   const viewFrom = collapsed ? Math.min(Math.max(Math.floor(nowHour - PAST_KEEP_H), arc.from), arc.to) : arc.from;
   const hiddenPx = (viewFrom - arc.from) * HOUR_PX;
@@ -240,6 +242,16 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => setViewH(el.clientHeight);
+    queueMicrotask(measure);
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // A second screen gets scrolled, then left alone: drift back to now after a quiet minute,
   // and snap there when the tab comes back into view.
   useEffect(() => {
@@ -335,6 +347,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
       <div
         className="vcal__scroller"
         ref={scrollerRef}
+        style={viewH ? ({ "--view-h": `${viewH}px` } as CSSProperties) : undefined}
         onScroll={() => setAway(measure().dir)}
         onWheel={(ev) => {
           if (collapsed && ev.currentTarget.scrollTop <= 0 && ev.deltaY < 0) reveal();

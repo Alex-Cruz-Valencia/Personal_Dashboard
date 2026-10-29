@@ -461,7 +461,12 @@ calendar sets the height: the hours left in the day plus the end-of-day scene.
 Mid-afternoon it reaches the limit and scrolls; in the evening it shrinks (about
 470px at 8pm, 430px late) and the page below moves up. While the morning is
 opened the card keeps the height it had, so revealing it doesn't push the rest
-of the page down. Also fixed: the "Earlier today" pill's box collapsed to zero
+of the page down. The "That's the day" block is sized from the calendar's
+measured visible height and is never taller than it, so scrolled to the very
+bottom it is always whole (it was cut off when the card was shorter than the
+height it had assumed); in a tight space its text compacts: subtitle first, then
+a smaller title, then the title goes and the button stays. Also fixed: the
+"Earlier today" pill's box collapsed to zero
 height, so its border and hover drew a thin line above the text.
 
 **Alternatives considered** — Making the tasks list fill the extra space (it
