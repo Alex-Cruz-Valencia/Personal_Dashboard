@@ -61,6 +61,15 @@ export function Dashboard({ data, settings }: DashboardProps) {
             <HelloCard
               user={data.user}
               today={data.today}
+              scene={
+                settings.motion === "on" ? (
+                  <WeatherScene
+                    sky={data.weather.sky}
+                    isDay={data.today.nowHour >= data.weather.sunrise && data.today.nowHour < data.weather.sunset}
+                    celestial={false}
+                  />
+                ) : null
+              }
             >
               <ClockCard
                 today={data.today}

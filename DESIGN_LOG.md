@@ -450,6 +450,47 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-30 — Two layers of scenery: the page behind, the weather card in front
+
+**Problem** — Moving the weather scene to the whole page backdrop (the Scene
+background) took it out of the weather card. The card is where the moon, the
+stars, the sun and the rain used to sit front and centre, and with the card
+frosted over the page they just read as more background.
+
+**Decision** — Two layers, with a clear rule. The page keeps its large,
+ever-moving background (stars, meteors, sunbeams, rain, clouds) that changes
+with the weather and the time of day. The weather card gets its own scene back,
+up front: moon and stars at night, sun by day, rain and clouds in bad weather.
+For now it is the only card with one. In Scene mode the weather card is nearly
+opaque (93%, the other cards stay at 60%) so its scene is its own and doesn't
+double up with the page's behind it. Background: Plain is unchanged (only the
+card scene, solid cards); Motion: Still hides both; Glass surfaces keep the card
+translucent.
+
+**Alternatives considered** — Letting the page scene show through the weather
+card as before (it read as background, not as the card's picture); a bigger
+moon and sun in the card (the earlier size is what was liked); adding a scene
+to every card (busy; the point is that the weather card is the one hero).
+
+**Follow-up** — The first version drew the moon (and, by day, the sun) in both
+places, so there were two moons. Rule now: the sun and the moon belong to the
+weather card alone; the page background never draws them. The page keeps the
+things that are atmosphere rather than a subject (stars, meteors, sunbeams,
+rain, snow, clouds, fog). Checked across weather and time of day: the moon
+appears only in the card on clear nights, the sun only in the card on clear days.
+
+**Second card** — The greeting card now gets a scene of its own as well, the
+same idea: stars on a clear night, clouds, rain, snow and wind in bad weather,
+a faint warm glow by day, and never the sun or moon (those stay the weather
+card's). Like the weather card it is nearly opaque in Scene mode so its picture
+is its own. Both cards read from one component with a "celestial" switch.
+Matrix checked for clear/cloudy/rain/snow by day and night on all three layers.
+
+**Tradeoffs** — Stars still appear twice on a clear night (a few in the page
+margins, a few inside the card), by design. The weather card is the one card you
+can't see the sky through. Morning and evening still use the same
+day or night scene; a dedicated dawn and dusk look is a possible next step.
+
 ## 2026-10-29 — "That's the day" waits for the evening; meteors by night, sunbeams by day
 
 **Problem** — Two things. The goodnight scene appeared the moment the last

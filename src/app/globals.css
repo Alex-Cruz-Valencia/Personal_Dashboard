@@ -1699,6 +1699,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .scene--page { position: fixed; z-index: -1; }
 .morning--scene { background: transparent; }
 .morning--scene:not(.morning--glass) :is(.card, .attn) { background: color-mix(in srgb, var(--surface) 60%, transparent); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+/* The weather card keeps its own scene up front (moon, stars, sun, rain), so it stays nearly opaque
+   and the page scene behind doesn't double up inside it. */
+.morning--scene:not(.morning--glass) :is(.weather, .hello) { background: color-mix(in srgb, var(--surface) 93%, transparent); }
 .scene--page::before { content: ""; position: absolute; inset: 0; background: radial-gradient(130% 75% at 82% 0%, var(--sky-a, rgba(70, 92, 176, 0.34)), transparent 62%), linear-gradient(to bottom, var(--sky-b, rgba(38, 50, 112, 0.26)), transparent 78%); }
 .scene--page.scene--day { --sky-a: rgba(255, 206, 128, 0.2); --sky-b: rgba(120, 190, 226, 0.2); }
 .scene--page.scene--cloudy, .scene--page.scene--fog { --sky-a: rgba(150, 164, 184, 0.22); --sky-b: rgba(120, 134, 156, 0.2); }
@@ -1707,8 +1710,6 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .scene--page .scene__star { top: calc(var(--s) * 96%); width: 2px; height: 2px; background: var(--ink); box-shadow: 0 0 5px color-mix(in srgb, var(--ink) 55%, transparent); animation-name: scene-twinkle-page; }
 .scene--page .scene__star:nth-child(3n) { width: 3px; height: 3px; }
 @keyframes scene-twinkle-page { 0%, 100% { opacity: 0.12; } 50% { opacity: 0.95; } }
-.scene--page .scene__moon { top: 36px; right: 7vw; width: 64px; height: 64px; box-shadow: inset -16px -7px 0 0 rgba(200, 214, 255, 0.55); filter: drop-shadow(0 0 28px rgba(180, 200, 255, 0.4)); }
-.scene--page .scene__sun { top: -300px; right: -300px; width: 760px; height: 760px; }
 .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 214, 130, 0.13), rgba(255, 200, 110, 0.04) 45%, transparent 70%); }
 .scene--page .scene__cloud { filter: blur(48px); }
 .scene--page .scene__drop { width: 2px; height: 22px; }
@@ -1759,3 +1760,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 }
 .vcal__eod-spacer { flex: 0 0 auto; height: 0; }
 .vcal--full .vcal__eod-spacer { height: var(--eod-h); }
+
+/* the greeting card has its own scene too (stars, clouds, rain; no sun or moon) */
+.hello { position: relative; overflow: hidden; }
+.hello > :not(.scene) { position: relative; z-index: 1; }
