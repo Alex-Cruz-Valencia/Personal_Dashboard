@@ -450,6 +450,36 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-29 — The weather scene becomes the whole page's background
+
+**Problem** — The starry night, sun, rain and clouds only lived inside the weather
+card, but the dashboard sits on a second screen all day, and that is where the
+ambience is wanted: across everything, not in one rectangle.
+
+**Decision** — The same scene now fills the viewport behind the whole page
+(fixed, so it doesn't scroll away): more stars, a bigger moon or sun tucked in
+the top-right corner, more rain and snow, and a soft sky-coloured gradient that
+follows the weather (night blue, day sky, rain slate, cloud grey, snow pale). To
+let it show through, cards turn lightly frosted (60% surface, a 3px blur) while
+it's on. New ⚙ **Background: Scene / Plain** setting, Scene by default; Plain
+restores the old look (scene only inside the weather card, opaque cards). Motion
+→ Still turns the scene off entirely, as before. With Glass surfaces it layers
+with the existing sky tint.
+
+**Alternatives considered** — Opaque cards with the scene only in the gutters
+(on a narrow window you'd see almost nothing); fully glass cards by default (the
+existing Glass surface, more transparent, but it reads as a different theme);
+scene only in the header card (the goal was the whole page); a heavier blur
+(it erased the stars behind cards, which was most of the effect).
+
+**Tradeoffs** — Text now sits on a faintly moving background: the cards stay 60%
+opaque and the scene is dim, but rain streaks and stars do pass behind text. The
+fixed animated layer plus backdrop blur on every card costs GPU on weak
+machines; I couldn't measure frame rate in the test pane, so Plain and Still are
+the escape hatches. In light theme the night gradient washes the cream a little
+purple-grey. Weather sets which scene you get, so on a grey day the background
+is quiet.
+
 ## 2026-10-29 — The calendar becomes editable; the empty tail of the day becomes "That's the day"
 
 **Problem** — The calendar could only be read. Moving a meeting, stretching it or

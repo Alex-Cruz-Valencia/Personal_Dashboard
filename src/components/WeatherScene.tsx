@@ -31,13 +31,15 @@ function Particles({ n, className }: { n: number; className: string }) {
  * the sun breathes. Purely decorative (aria-hidden, pointer-events none) and
  * pure CSS, so it costs no JS once rendered and stops under reduced motion.
  */
-export function WeatherScene({ sky, isDay }: { sky: Sky; isDay: boolean }) {
+export function WeatherScene({ sky, isDay, variant = "card" }: { sky: Sky; isDay: boolean; variant?: "card" | "page" }) {
   const { kind, windMph } = sky;
+  // The page-wide scene covers the whole viewport, so it needs more of everything.
+  const k = variant === "page" ? 3 : 1;
   const wet = kind === "drizzle" || kind === "rain" || kind === "storm";
   const windy = windMph >= BREEZY_MPH;
 
   return (
-    <div className={`scene scene--${kind} ${isDay ? "scene--day" : "scene--night"}`} aria-hidden>
+    <div className={`scene scene--${kind} ${isDay ? "scene--day" : "scene--night"}${variant === "page" ? " scene--page" : ""}`} aria-hidden>
       {kind === "clear" && isDay ? (
         <>
           <span className="scene__wash" />
@@ -50,7 +52,7 @@ export function WeatherScene({ sky, isDay }: { sky: Sky; isDay: boolean }) {
       {kind === "clear" && !isDay ? (
         <>
           <span className="scene__moon" />
-          <Particles n={14} className="scene__star" />
+          <Particles n={14 * (variant === "page" ? 5 : 1)} className="scene__star" />
         </>
       ) : null}
       {kind === "cloudy" || kind === "fog" || wet || kind === "snow" ? (
@@ -66,10 +68,10 @@ export function WeatherScene({ sky, isDay }: { sky: Sky; isDay: boolean }) {
           <span className="scene__mist scene__mist--b" />
         </>
       ) : null}
-      {wet ? <Particles n={COUNT[kind as "drizzle" | "rain" | "storm"]} className="scene__drop" /> : null}
+      {wet ? <Particles n={COUNT[kind as "drizzle" | "rain" | "storm"] * k} className="scene__drop" /> : null}
       {kind === "storm" ? <span className="scene__flash" /> : null}
-      {kind === "snow" ? <Particles n={COUNT.snow} className="scene__flake" /> : null}
-      {windy ? <Particles n={windMph >= 25 ? 9 : 5} className="scene__gust" /> : null}
+      {kind === "snow" ? <Particles n={COUNT.snow * k} className="scene__flake" /> : null}
+      {windy ? <Particles n={(windMph >= 25 ? 9 : 5) * (variant === "page" ? 2 : 1)} className="scene__gust" /> : null}
     </div>
   );
 }
