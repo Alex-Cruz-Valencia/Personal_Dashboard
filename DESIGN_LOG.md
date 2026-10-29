@@ -208,6 +208,13 @@ token pair would need an in-between that still passes contrast — far more work
 for an experiment. *A brighter, separate "morning" palette*: possible next step
 if the existing light theme doesn't feel light enough.
 
+**Update (same day): follow the sun, not the clock.** In use, noon was wrong —
+the page went dark at 12:35 on a bright afternoon (Alex's real location is on
+Eastern time). "Dark when it's dark out" is what was meant, so the option is
+now **Daylight**: light from today's sunrise to today's sunset for the viewer's
+location (the weather slice already has both), dark otherwise. The "Dark from"
+hour is gone — the sun replaces it, and it tracks the seasons for free.
+
 **Tradeoffs / open questions** — The flip is a hard cut at the minute
 boundary, not a fade. Before 5am it's dark, which assumes nobody wants a light
 page in the small hours. Worth living with for a few days before deciding

@@ -115,8 +115,8 @@
   `LocationSync`;
   `AutoRefresh` (60s `router.refresh()` while visible); `SettingsPanel`
   (writes the `dashboard_prefs` cookie, then `router.refresh()`).
-- **Theme "timed"** ("By time", 2026-10-29 experiment): light from `LIGHT_FROM`
-  (5) to `settings.darkFrom` (default 12), dark otherwise. `settings.theme` is a
+- **Theme "timed"** ("Daylight" in ⚙, 2026-10-29 experiment): light from today's
+  sunrise to sunset (`data.weather`), dark otherwise. `settings.theme` is a
   `ThemeChoice`; `Dashboard` resolves it once with `shownTheme()` and passes
   `ShownSettings` (theme is plain light/dark/system) down — anything that sets
   `data-theme` must use the resolved theme, never the raw choice. Only

@@ -12,8 +12,8 @@ export const PREFS_COOKIE = "dashboard_prefs";
 /** What the page renders: "system" follows the viewer's OS light/dark preference; the rest force it. */
 export type Theme = "light" | "dark" | "system";
 /**
- * What the viewer picks. "timed" is light through the morning and dark from
- * `darkFrom` on — resolve it with `shownTheme()` before rendering.
+ * What the viewer picks. "timed" follows the sun: light from sunrise, dark from
+ * sunset — resolve it with `shownTheme()` before rendering.
  */
 export type ThemeChoice = Theme | "timed";
 export type TimeFormat = "12-hour" | "24-hour";
@@ -55,8 +55,6 @@ export interface DashboardSettings {
    * winding down and the Plan card stops suggesting tasks. 24 = never.
    */
   windDown: number;
-  /** With theme "timed": the hour the dark theme takes over (light from `LIGHT_FROM` until then). */
-  darkFrom: number;
 }
 
 /**
@@ -78,19 +76,15 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   dayEnd: 22,
   weatherStart: 6,
   windDown: 21,
-  darkFrom: 12,
 };
 
 /** Settings as rendered: the theme already resolved (see `shownTheme`). */
 export type ShownSettings = Omit<DashboardSettings, "theme"> & { theme: Theme };
 
-/** With theme "timed", the light theme starts here (before it, it's still night). */
-export const LIGHT_FROM = 5;
-
-/** The theme to render right now: "timed" becomes light or dark by the local hour. */
-export function shownTheme(theme: ThemeChoice, darkFrom: number, nowHour: number): Theme {
+/** The theme to render right now: "timed" is light between sunrise and sunset (local decimal hours). */
+export function shownTheme(theme: ThemeChoice, nowHour: number, sun: { sunrise: number; sunset: number }): Theme {
   if (theme !== "timed") return theme;
-  return nowHour >= LIGHT_FROM && nowHour < darkFrom ? "light" : "dark";
+  return nowHour >= sun.sunrise && nowHour < sun.sunset ? "light" : "dark";
 }
 
 type SearchParams = Record<string, string | string[] | undefined>;
@@ -156,7 +150,6 @@ export function parseSettings(
       safeEnd - 1,
     ),
     windDown: pickHour(searchParams.windDown, base.windDown),
-    darkFrom: pickHour(searchParams.darkFrom, base.darkFrom),
   };
 }
 
@@ -208,9 +201,6 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   }
   if (typeof obj.windDown === "number" && obj.windDown >= 0 && obj.windDown <= 24) {
     out.windDown = obj.windDown;
-  }
-  if (typeof obj.darkFrom === "number" && obj.darkFrom >= 0 && obj.darkFrom <= 24) {
-    out.darkFrom = obj.darkFrom;
   }
   return out;
 }

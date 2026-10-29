@@ -4,7 +4,6 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatHour } from "@/lib/format";
 import {
-  LIGHT_FROM,
   PREFS_COOKIE,
   readStoredSettings,
   use24Hour,
@@ -96,19 +95,10 @@ export function SettingsPanel({ settings, shownTheme }: { settings: DashboardSet
               ["light", "Light"],
               ["dark", "Dark"],
               ["system", "System"],
-              ["timed", "By time"],
+              ["timed", "Daylight"],
             ]}
             onPick={(theme) => update({ theme })}
           />
-          {settings.theme === "timed" ? (
-            <HourField
-              label="Dark from"
-              value={settings.darkFrom}
-              min={LIGHT_FROM + 1}
-              use24={use24}
-              onCommit={(darkFrom) => update({ darkFrom })}
-            />
-          ) : null}
           <Segmented<Surface>
             label="Surfaces"
             value={settings.surface}

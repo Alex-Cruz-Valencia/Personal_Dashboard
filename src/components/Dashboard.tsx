@@ -26,9 +26,9 @@ interface DashboardProps {
  * source exactly — see `globals.css` for the ported stylesheet.
  */
 export function Dashboard({ data, settings: chosen }: DashboardProps) {
-  // "timed" resolves to light or dark for this render; AutoRefresh's minute
-  // re-render flips it when the hour passes. The panel still sees the choice.
-  const settings: ShownSettings = { ...chosen, theme: shownTheme(chosen.theme, chosen.darkFrom, data.today.nowHour) };
+  // "timed" resolves to light or dark by the sun for this render; AutoRefresh's
+  // minute re-render flips it at sunrise / sunset. The panel still sees the choice.
+  const settings: ShownSettings = { ...chosen, theme: shownTheme(chosen.theme, data.today.nowHour, data.weather) };
   const frozen = data.today.iso === MOCK_TODAY.iso && data.today.nowHour === MOCK_TODAY.nowHour;
   const use24 = use24Hour(settings);
   // The weather scene across the whole page (cards turn frosted so it shows through).
