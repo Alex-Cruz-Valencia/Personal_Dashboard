@@ -2070,15 +2070,24 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .morning--clean .vcal__btn { border-color: transparent; background: none; font-size: 13px; font-weight: 500; padding: 5px 9px; border-radius: 6px; }
 .morning--clean .vcal__btn:hover { background: var(--row-hover); }
 .morning--clean :is(.vcal__now-btn, .eod__plan) { border-color: transparent; color: var(--accent); }
-.morning--clean .vcal__event {
+/* Blocks are a pale tint of their kind's bright marker color with a solid bar
+   (a pseudo-element, so the now/soon glow animating box-shadow can't hide it).
+   `.morning.morning--clean` outranks the light theme's personal-event rule. */
+.morning.morning--clean .vcal__event {
   --kind: var(--mark-meeting);
-  background: color-mix(in srgb, var(--kind) 7%, var(--surface));
-  border: 0; border-radius: 4px; box-shadow: inset 3px 0 0 var(--kind); padding: 4px 8px 4px 11px;
+  background: color-mix(in srgb, var(--kind) 8%, var(--surface));
+  border: 0; border-radius: 4px; padding: 4px 8px 4px 12px;
 }
-.morning--clean .vcal__event--focus { --kind: var(--mark-focus); }
-.morning--clean .vcal__event--personal { --kind: var(--mark-personal); }
-.morning--clean .vcal__event-title { font-weight: 600; }
-.morning--clean .vcal__event:hover { filter: none; background: color-mix(in srgb, var(--kind) 13%, var(--surface)); }
+.morning.morning--clean .vcal__event::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--kind); border-radius: 4px 0 0 4px; z-index: 1;
+}
+.morning.morning--clean .vcal__event--focus { --kind: var(--mark-focus); }
+.morning.morning--clean .vcal__event--personal { --kind: var(--mark-personal); }
+.morning.morning--clean .vcal__event--now { background: color-mix(in srgb, var(--kind) 12%, var(--surface)); }
+.morning.morning--clean .vcal__event:hover { filter: none; background: color-mix(in srgb, var(--kind) 15%, var(--surface)); }
+.morning--clean .vcal__event-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+.morning--clean .vcal__event-elapsed { background: color-mix(in srgb, var(--kind) 10%, transparent); }
+.morning--clean .vcal__event--past { opacity: 0.6; filter: none; }
 
 /* this week: plain columns split by hairlines; today in the accent, not a box */
 .morning--clean .week__key { font-size: 12.5px; }
@@ -2089,7 +2098,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .morning--clean .week__day--today .week__name { color: var(--accent); }
 .morning--clean .week__day--picked { box-shadow: none; }
 .morning--clean .week__day--picked .week__daybtn { background: var(--row-hover); }
-.morning--clean .week__bar { height: 4px; }
+.morning--clean .week__bar { height: 4px; background: color-mix(in srgb, var(--mark-neutral) 30%, var(--surface)); }
+.morning--clean .week__bar-booked, .morning--clean .week__key-item::before { background: var(--mark-neutral); }
+.morning--clean .week__key-item--tasks::before { background: var(--accent); }
 .morning--clean .week__heavy { font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; }
 .morning--clean .weekday__h { font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--ink); }
 .morning--clean .week__expand { border-color: transparent; background: none; font-size: 13px; font-weight: 500; border-radius: 6px; }
