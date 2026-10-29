@@ -472,9 +472,16 @@ card as before (it read as background, not as the card's picture); a bigger
 moon and sun in the card (the earlier size is what was liked); adding a scene
 to every card (busy; the point is that the weather card is the one hero).
 
-**Tradeoffs** — The moon and the stars appear twice on a clear night (a few in
-the page margins, a few inside the card), by design. The weather card is the
-one card you can't see the sky through. Morning and evening still use the same
+**Follow-up** — The first version drew the moon (and, by day, the sun) in both
+places, so there were two moons. Rule now: the sun and the moon belong to the
+weather card alone; the page background never draws them. The page keeps the
+things that are atmosphere rather than a subject (stars, meteors, sunbeams,
+rain, snow, clouds, fog). Checked across weather and time of day: the moon
+appears only in the card on clear nights, the sun only in the card on clear days.
+
+**Tradeoffs** — Stars still appear twice on a clear night (a few in the page
+margins, a few inside the card), by design. The weather card is the one card you
+can't see the sky through. Morning and evening still use the same
 day or night scene; a dedicated dawn and dusk look is a possible next step.
 
 ## 2026-10-29 — "That's the day" waits for the evening; meteors by night, sunbeams by day

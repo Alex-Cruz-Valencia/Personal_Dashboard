@@ -51,10 +51,13 @@ export function WeatherScene({ sky, isDay, variant = "card" }: { sky: Sky; isDay
       {kind === "clear" && isDay ? (
         <>
           <span className="scene__wash" />
-          <div className="scene__sun">
-            <span className="scene__rays" />
-            <span className="scene__orb" />
-          </div>
+          {/* The sun and the moon are the weather card's: the page behind never repeats them. */}
+          {variant === "card" ? (
+            <div className="scene__sun">
+              <span className="scene__rays" />
+              <span className="scene__orb" />
+            </div>
+          ) : null}
         </>
       ) : null}
       {variant === "page" && kind === "clear" && isDay
@@ -65,7 +68,7 @@ export function WeatherScene({ sky, isDay, variant = "card" }: { sky: Sky; isDay
       {kind === "clear" && !isDay ? (
         <>
           {variant === "page" ? <MeteorField /> : null}
-          <span className="scene__moon" />
+          {variant === "card" ? <span className="scene__moon" /> : null}
           <Particles n={14 * (variant === "page" ? 5 : 1)} className="scene__star" />
         </>
       ) : null}
