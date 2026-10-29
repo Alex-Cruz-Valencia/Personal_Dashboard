@@ -450,6 +450,71 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-29 — Calendar and tasks are only as tall as they need to be
+
+**Problem** — The calendar/tasks row was a fixed 78% of the window. With the past
+tucked away and four tasks, that left a large empty block under both cards.
+
+**Decision** — The row is as tall as its content needs, up to the old limit
+(78% of the window, 780px), and the two cards always match. In practice the
+calendar sets the height: the hours left in the day plus the end-of-day scene.
+Mid-afternoon it reaches the limit and scrolls; in the evening it shrinks (about
+470px at 8pm, 430px late) and the page below moves up. While the morning is
+opened the card keeps the height it had, so revealing it doesn't push the rest
+of the page down. The "That's the day" block is sized from the calendar's
+measured visible height and is never taller than it, so scrolled to the very
+bottom it is always whole (it was cut off when the card was shorter than the
+height it had assumed); in a tight space its text compacts: subtitle first, then
+a smaller title, then the title goes and the button stays. And it fills: the
+scene is the last thing in the calendar and takes every pixel left under the
+hours to the bottom of the card, so when the tasks column makes the row taller
+than the calendar needs (or no hours remain, late at night) there is no empty
+strip under it. Also fixed: the
+"Earlier today" pill's box collapsed to zero
+height, so its border and hover drew a thin line above the text.
+
+**Alternatives considered** — Making the tasks list fill the extra space (it
+would need filler content); a fixed shorter row (still wrong at both ends of the
+day); letting the card grow when the morning opens (the page jumped 250px).
+
+**Tradeoffs** — The page below shifts by about an hour of calendar (56px) each
+hour as the evening comes in, animated with the same slide. The scene sets a
+floor (about 240px) so a nearly-empty evening is still not tiny. If tasks are
+few the tasks card still has blank space at the bottom whenever the calendar is
+taller; the cards match, they aren't each filled.
+
+## 2026-10-29 — The calendar tucks the past away
+
+**Problem** — By mid-afternoon the top half of the day view was meetings that
+were over, taking the room that "what's next" should have. The calendar already
+landed on now, but with the line 40% down you were still looking at four hours
+of history by default.
+
+**Decision** — By default the calendar starts at the hour before the hour
+before now (so one to two hours of the recent past stay in view), and everything
+earlier sits above the top edge, unreachable until you ask. Scrolling up at the
+top reveals the whole morning, or tap the small "↑ Earlier today · 7 events"
+pill; the view doesn't jump when it opens. "Now", or a quiet minute, tucks it
+away again. The slide at each new hour is animated. A long meeting that began
+before the visible top keeps its title in view. New ⚙ **Past events: Tuck away /
+Show** setting, Tuck away by default; Show restores the full day with now 40%
+down. The calendar only ever draws today, so there is no previous day to hide;
+the evening after the last event it shows the last hour or two and the
+"That's the day" scene.
+
+**Alternatives considered** — Just moving the scroll position (the past would
+still be one flick away and still counted in the scrollbar); deleting past
+events from the page (no way back, and the week strip and Plan tomorrow need
+them); fading past events (still takes the space); hiding at exactly one hour
+(the hour grid would slide continuously instead of once an hour).
+
+**Tradeoffs** — The first screen shows less of the day's story; the pill is the
+only hint that anything is above, so it is always there when there's something
+to see. Drag and draw keep working because positions are computed from the
+hidden offset (checked: the 8:00pm line gives 20:00). The earlier "now near the
+middle at night" rule only applies in Show mode; in Tuck away the line sits an
+hour or two from the top and the end-of-day scene fills the rest.
+
 ## 2026-10-29 — The weather scene becomes the whole page's background
 
 **Problem** — The starry night, sun, rain and clouds only lived inside the weather

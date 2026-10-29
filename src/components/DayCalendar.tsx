@@ -24,6 +24,8 @@ const THREE_LINE_PX = 60;
 const NOW_AT = 0.4;
 /** Untouched this long (ms) and off-centre: drift back to now by itself. */
 const IDLE_RETURN_MS = 60_000;
+/** With past events tucked away, the calendar starts this many hours before now (to the hour above). */
+const PAST_KEEP_H = 1;
 /** Dragging and drawing snap to this many hours (15 minutes). */
 const SNAP = 0.25;
 /** A pointer that moves less than this many px is a click, not a drag. */
@@ -90,23 +92,61 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   const [away, setAway] = useState<"up" | "down" | null>(null);
   const lastTouch = useRef(0);
 
+  // Past events: by default the calendar starts about an hour before now and the rest of the
+  // morning sits above the top edge, out of sight. Scrolling up (or the pill) brings it back.
+  const [showPast, setShowPast] = useState(false);
+  const [snap, setSnap] = useState(false);
+  // The card is only as tall as the day left needs; while the morning is open it keeps the height it had.
+  const [lockH, setLockH] = useState<number | null>(null);
+  const cardRef = useRef<HTMLElement>(null);
+  // How much of the calendar is visible: the end-of-day block is never taller than this.
+  const [viewH, setViewH] = useState<number | null>(null);
+  const collapsed = settings.pastEvents === "hide" && !showPast;
+  const viewFrom = collapsed ? Math.min(Math.max(Math.floor(nowHour - PAST_KEEP_H), arc.from), arc.to) : arc.from;
+  const hiddenPx = (viewFrom - arc.from) * HOUR_PX;
+  const hiddenCount = collapsed ? agenda.filter((e) => e.end <= viewFrom).length : 0;
+  const shift = useRef(0);
+  /** Change the layout without the slide, so the view doesn't visibly jump. */
+  const instant = (change: () => void) => {
+    setSnap(true);
+    change();
+    setTimeout(() => setSnap(false), 80);
+  };
+  const reveal = () => {
+    shift.current = hiddenPx;
+    setLockH(cardRef.current?.offsetHeight ?? null);
+    instant(() => setShowPast(true));
+  };
+  // Keep what was on screen where it was when the tucked-away hours come back above it.
+  useLayoutEffect(() => {
+    const el = scrollerRef.current;
+    if (showPast && el && shift.current) el.scrollTop += shift.current;
+    shift.current = 0;
+  }, [showPast]);
+
   /** Is the now line off screen (and which way), or well outside the comfortable middle? */
   const measure = useCallback(() => {
     const el = scrollerRef.current;
     if (!el || !nowVisible) return { dir: null as "up" | "down" | null, off: false };
-    const rel = (nowY - el.scrollTop) / el.clientHeight;
+    const rel = (nowY - hiddenPx - el.scrollTop) / el.clientHeight;
     return { dir: rel < 0 ? ("up" as const) : rel > 1 ? ("down" as const) : null, off: rel < 0.12 || rel > 0.75 };
-  }, [nowY, nowVisible]);
+  }, [nowY, nowVisible, hiddenPx]);
 
   const goNow = useCallback(
     (smooth: boolean) => {
       const el = scrollerRef.current;
       if (!el) return;
+      if (settings.pastEvents === "hide") {
+        // The top of the calendar is already about an hour before now.
+        if (showPast) instant(() => { setShowPast(false); setLockH(null); });
+        el.scrollTo({ top: 0, behavior: smooth && !showPast ? "smooth" : "auto" });
+        return;
+      }
       const anchor = nowVisible ? nowY : y(agenda[0]?.start ?? arc.from);
       el.scrollTo({ top: Math.max(0, anchor - el.clientHeight * NOW_AT), behavior: smooth ? "smooth" : "auto" });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [nowY, nowVisible, agenda, arc.from],
+    [nowY, nowVisible, agenda, arc.from, settings.pastEvents, showPast],
   );
 
   const maxHour = Math.min(arc.to, 23.75);
@@ -118,7 +158,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   const hourAt = (clientY: number) => {
     const el = scrollerRef.current;
     if (!el) return arc.from;
-    return arc.from + (clientY - el.getBoundingClientRect().top + el.scrollTop) / HOUR_PX;
+    return arc.from + (clientY - el.getBoundingClientRect().top + el.scrollTop + hiddenPx) / HOUR_PX;
   };
   const edgeScroll = (clientY: number) => {
     const el = scrollerRef.current;
@@ -202,6 +242,16 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    const measure = () => setViewH(el.clientHeight);
+    queueMicrotask(measure);
+    const ro = new ResizeObserver(measure);
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, []);
+
   // A second screen gets scrolled, then left alone: drift back to now after a quiet minute,
   // and snap there when the tab comes back into view.
   useEffect(() => {
@@ -230,7 +280,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   }, [measure, goNow]);
 
   return (
-    <section className="card vcal" aria-label="Today's calendar">
+    <section ref={cardRef} className={`card vcal${collapsed ? "" : " vcal--full"}`} style={lockH ? { height: lockH } : undefined} aria-label="Today's calendar">
       <div className="vcal__head">
         <h2 className="card__title">
           Today
@@ -297,13 +347,24 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
       <div
         className="vcal__scroller"
         ref={scrollerRef}
+        style={viewH ? ({ "--view-h": `${viewH}px` } as CSSProperties) : undefined}
         onScroll={() => setAway(measure().dir)}
+        onWheel={(ev) => {
+          if (collapsed && ev.currentTarget.scrollTop <= 0 && ev.deltaY < 0) reveal();
+        }}
       >
-        <div className="vcal__body" style={{ height }}>
+        {collapsed && hiddenCount > 0 ? (
+          <div className="vcal__earlier">
+            <button type="button" onClick={reveal}>
+              ↑ Earlier today · {hiddenCount} {hiddenCount === 1 ? "event" : "events"}
+            </button>
+          </div>
+        ) : null}
+        <div className={`vcal__body${snap ? " vcal__body--snap" : ""}`} style={{ height, marginTop: -hiddenPx }}>
           <div className="vcal__gutter" aria-hidden="true">
             {hourMarks.map((h) => (
               <span key={h} className="vcal__hour-label" style={{ top: y(h) }}>
-                {h === Math.ceil(arc.from) ? "" : formatHour(h, use24)}
+                {h <= Math.ceil(viewFrom) ? "" : formatHour(h, use24)}
               </span>
             ))}
           </div>
@@ -383,6 +444,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
                       height: h,
                       left: `calc(${(lane / n) * 100}% + 2px)`,
                       width: `calc(${100 / n}% - 4px)`,
+                      ...(start < viewFrom && end > viewFrom ? { paddingTop: 3 + Math.min((viewFrom - start) * HOUR_PX, Math.max(0, h - 26)) } : null),
                     } as CSSProperties
                   }
                   role="button"
