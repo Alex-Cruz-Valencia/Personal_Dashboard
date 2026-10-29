@@ -1699,6 +1699,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .scene--page { position: fixed; z-index: -1; }
 .morning--scene { background: transparent; }
 .morning--scene:not(.morning--glass) :is(.card, .attn) { background: color-mix(in srgb, var(--surface) 60%, transparent); -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px); }
+/* The weather card keeps its own scene up front (moon, stars, sun, rain), so it stays nearly opaque
+   and the page scene behind doesn't double up inside it. */
+.morning--scene:not(.morning--glass) .weather { background: color-mix(in srgb, var(--surface) 93%, transparent); }
 .scene--page::before { content: ""; position: absolute; inset: 0; background: radial-gradient(130% 75% at 82% 0%, var(--sky-a, rgba(70, 92, 176, 0.34)), transparent 62%), linear-gradient(to bottom, var(--sky-b, rgba(38, 50, 112, 0.26)), transparent 78%); }
 .scene--page.scene--day { --sky-a: rgba(255, 206, 128, 0.2); --sky-b: rgba(120, 190, 226, 0.2); }
 .scene--page.scene--cloudy, .scene--page.scene--fog { --sky-a: rgba(150, 164, 184, 0.22); --sky-b: rgba(120, 134, 156, 0.2); }

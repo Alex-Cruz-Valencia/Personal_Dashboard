@@ -88,7 +88,7 @@ export function WeatherCard({
 
   return (
     <section className="card weather">
-      {settings.motion === "on" && settings.background === "plain" ? (
+      {settings.motion === "on" ? (
         <WeatherScene sky={weather.sky} isDay={nowHour >= weather.sunrise && nowHour < weather.sunset} />
       ) : null}
       {weather.place ? (
