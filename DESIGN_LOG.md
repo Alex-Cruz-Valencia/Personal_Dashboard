@@ -465,7 +465,11 @@ of the page down. The "That's the day" block is sized from the calendar's
 measured visible height and is never taller than it, so scrolled to the very
 bottom it is always whole (it was cut off when the card was shorter than the
 height it had assumed); in a tight space its text compacts: subtitle first, then
-a smaller title, then the title goes and the button stays. Also fixed: the
+a smaller title, then the title goes and the button stays. And it fills: the
+scene is the last thing in the calendar and takes every pixel left under the
+hours to the bottom of the card, so when the tasks column makes the row taller
+than the calendar needs (or no hours remain, late at night) there is no empty
+strip under it. Also fixed: the
 "Earlier today" pill's box collapsed to zero
 height, so its border and hover drew a thin line above the text.
 

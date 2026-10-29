@@ -1677,7 +1677,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .vcal__draft-input::placeholder { color: var(--ink-faint); font-weight: 600; }
 .vcal__notice { margin: 0; flex-basis: 100%; order: 9; font-size: 12px; font-weight: 600; color: var(--negative); }
 
-.vcal__eod { position: relative; overflow: hidden; height: var(--eod-h, 240px); container-type: size; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; padding: 0 22px; text-align: center; }
+.vcal__eod { position: relative; overflow: hidden; flex: 1 0 auto; height: auto; min-height: var(--eod-h, 240px); container-type: size; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 4px; padding: 0 22px; text-align: center; }
 .eod__art { position: absolute; inset: 0; width: 100%; height: 100%; z-index: 0; pointer-events: none; }
 .vcal__eod > :not(.eod__art) { position: relative; z-index: 1; }
 .eod__title { margin: clamp(8px, 10cqh, 44px) 0 0; font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--ink); }
@@ -1737,3 +1737,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 @container (max-height: 150px) { .eod__sub { display: none; } }
 @container (max-height: 130px) { .eod__title { font-size: 14px; } .eod__plan { margin-top: 4px; padding: 3px 10px; font-size: 11.5px; } }
 @container (max-height: 95px) { .eod__title { display: none; } }
+
+/* The scene takes all the room left under the hours, to the bottom of the card, however tall that is. */
+.vcal__scroller { display: flex; flex-direction: column; }
+.vcal__body { flex: 0 0 auto; }
