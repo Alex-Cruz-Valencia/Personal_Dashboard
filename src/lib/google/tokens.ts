@@ -90,6 +90,9 @@ export async function getGoogleAccessToken(): Promise<string> {
  * token early, and without this the dashboard kept sending a dead token
  * (sample mail, no calendar) until its recorded expiry passed.
  */
+/** A Google call that hangs would hold the whole page render; give up instead. */
+const GOOGLE_TIMEOUT_MS = 15_000;
+
 export async function googleFetch(input: string | URL, init: RequestInit = {}): Promise<Response> {
   assertNoSend(input); // mail is only ever drafted here, never sent
   const send = (token: string) =>
@@ -97,6 +100,7 @@ export async function googleFetch(input: string | URL, init: RequestInit = {}): 
       () =>
         fetch(input, {
           ...init,
+          signal: init.signal ?? AbortSignal.timeout(GOOGLE_TIMEOUT_MS),
           headers: { ...(init.headers as Record<string, string>), Authorization: `Bearer ${token}` },
         }),
       init,

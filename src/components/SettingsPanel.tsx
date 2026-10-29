@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { formatHour } from "@/lib/format";
 import {
   PREFS_COOKIE,
+  readStoredSettings,
   use24Hour,
   type Background,
   type DashboardSettings,
@@ -20,6 +21,16 @@ import {
 import { Popover } from "./Popover";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
+
+function readCookie(name: string): string | undefined {
+  const hit = document.cookie.split("; ").find((c) => c.startsWith(`${name}=`));
+  if (!hit) return undefined;
+  try {
+    return decodeURIComponent(hit.slice(name.length + 1));
+  } catch {
+    return undefined;
+  }
+}
 
 /**
  * The Appearance / Behavior knobs, as an in-app panel. Each change writes the
@@ -40,7 +51,10 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
   };
 
   const update = (patch: Partial<DashboardSettings>) => {
-    const next = { ...settings, ...patch };
+    // Merge into what's already stored, not the resolved settings: those also
+    // carry one-off URL overrides (?theme=dark) and the deployment's env
+    // defaults, which shouldn't get frozen into the cookie by an unrelated change.
+    const next = { ...readStoredSettings(readCookie(PREFS_COOKIE)), ...patch };
     document.cookie =
       `${PREFS_COOKIE}=${encodeURIComponent(JSON.stringify(next))}` +
       `;path=/;max-age=${ONE_YEAR};samesite=lax`;
@@ -161,12 +175,14 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
             <HourField
               label="Day starts"
               value={settings.dayStart}
+              max={settings.dayEnd - 1}
               use24={use24}
               onCommit={(dayStart) => update({ dayStart })}
             />
             <HourField
               label="Day ends"
               value={settings.dayEnd}
+              min={settings.dayStart + 1}
               use24={use24}
               onCommit={(dayEnd) => update({ dayEnd })}
             />
@@ -199,11 +215,16 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
 function HourField({
   label,
   value,
+  min = 0,
+  max = 24,
   use24,
   onCommit,
 }: {
   label: string;
   value: number;
+  /** The day must run forward at least an hour, so start and end bound each other. */
+  min?: number;
+  max?: number;
   use24: boolean;
   onCommit: (value: number) => void;
 }) {
@@ -219,7 +240,7 @@ function HourField({
 
   const commit = () => {
     const n = Number(draft);
-    if (Number.isFinite(n) && n >= 0 && n <= 24 && n !== value) {
+    if (draft.trim() !== "" && Number.isFinite(n) && n >= min && n <= max && n !== value) {
       onCommit(n);
     } else {
       setDraft(String(value));
@@ -232,8 +253,8 @@ function HourField({
       <div className="settings__hour">
         <input
           type="number"
-          min={0}
-          max={24}
+          min={min}
+          max={max}
           step={1}
           className="settings__number"
           value={draft}

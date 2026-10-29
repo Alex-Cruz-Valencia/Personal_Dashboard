@@ -13,6 +13,8 @@ import {
 
 /** Local only: a focus session is remembered in this browser and writes nothing anywhere. */
 const KEY = "dashboard_focus";
+/** A session that ended this long ago is from another day; don't bring it back. */
+const STALE_MS = 6 * 60 * 60 * 1000;
 
 interface Session {
   name: string;
@@ -53,7 +55,13 @@ function load(): Session | null {
     const raw = window.localStorage.getItem(KEY);
     if (!raw) return null;
     const s = JSON.parse(raw) as Session;
-    return typeof s.name === "string" && typeof s.durationMs === "number" ? s : null;
+    if (typeof s.name !== "string" || typeof s.durationMs !== "number") return null;
+    // Otherwise yesterday's finished session sits in the tab title and on today's calendar.
+    if (s.endsAt != null && Date.now() - s.endsAt > STALE_MS) {
+      window.localStorage.removeItem(KEY);
+      return null;
+    }
+    return s;
   } catch {
     return null;
   }

@@ -127,7 +127,7 @@ export async function getWeather(
   url.searchParams.set("temperature_unit", "fahrenheit");
   url.searchParams.set("wind_speed_unit", "mph");
 
-  const res = await fetch(url, { next: { revalidate: 900 } });
+  const res = await fetch(url, { next: { revalidate: 900 }, signal: AbortSignal.timeout(10_000) });
   if (!res.ok) {
     throw new Error(`Open-Meteo responded ${res.status}`);
   }

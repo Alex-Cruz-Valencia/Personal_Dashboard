@@ -164,8 +164,23 @@
   throws `GoogleAuthError` (`oauth.ts`); `settle` in `dashboard-data.ts`
   surfaces it as `DashboardData.googleReconnect`, and `StaleTag`'s `reconnect`
   prop turns the "Sample" pill into a "Reconnect Google" link.
+- **Every write route calls `rejectCrossSite(request)`** (`src/lib/request-guard.ts`)
+  first — 403 for requests from another site (`localhost` has no login in front
+  of it). Path ids are validated before they reach a URL (`validTaskId`,
+  `validMessageId`; calendar event ids are `encodeURIComponent`-ed in
+  `eventUrl`). Add both to any new write route. `guardAi` builds on the same check.
+- External fetches carry `AbortSignal.timeout` (Google/Todoist 15s, Open-Meteo
+  10s, geocode 4s) so a hung API can't hold the page render.
+- Popover editors save fields on blur; `Popover` blurs the focused field before
+  closing (outside click / Esc), and × buttons call `flushFocus()` first — keep
+  that for any new editor, or an in-progress edit is dropped on close.
+  Destructive actions (delete, complete) close the card only after the server
+  says ok. `EventDetail` debounces reschedules (one PATCH once fields settle);
+  events clipped to 00:00/24:00 (they span past today) can't be dragged or
+  re-timed here.
 - **Never send email.** Drafts only. `googleFetch` calls `assertNoSend`
-  (`src/lib/google/no-send.ts`) and `scripts/check-no-send.mjs` runs before
+  (`src/lib/google/no-send.ts`, which also blocks the `/upload/...send` form and
+  any `/batch` request) and `scripts/check-no-send.mjs` runs before
   every build/lint; both refuse Gmail send endpoints. `gmail.modify` allows
   sending, so these are the real guarantee. Don't add a send path or weaken
   them (DESIGN_LOG → "Hard guardrail").

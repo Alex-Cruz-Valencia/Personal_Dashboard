@@ -13,7 +13,7 @@ import { PRIORITY_LABEL } from "@/lib/format";
 import type { Theme } from "@/lib/settings";
 import type { Priority, Project, Task } from "@/lib/types";
 import { useFocus } from "./Focus";
-import { Popover } from "./Popover";
+import { flushFocus, Popover } from "./Popover";
 
 interface Meta {
   projects: Project[];
@@ -134,7 +134,7 @@ function TaskDetailCard({
   });
 
   const send = useCallback(
-    async (body: Record<string, unknown>, method: "PATCH" | "DELETE" | "POST" = "PATCH", path = `/api/tasks/${id}`) => {
+    async (body: Record<string, unknown>, method: "PATCH" | "DELETE" | "POST" = "PATCH", path = `/api/tasks/${id}`): Promise<boolean> => {
       setSaving(true);
       setError(null);
       try {
@@ -145,8 +145,10 @@ function TaskDetailCard({
         });
         if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Request failed");
         router.refresh();
+        return true;
       } catch (e) {
         setError((e as Error).message);
+        return false;
       } finally {
         setSaving(false);
       }
@@ -189,7 +191,7 @@ function TaskDetailCard({
         <span className="taskedit__eyebrow">
           Task{saving ? " · saving…" : ""}
         </span>
-        <button type="button" className="taskedit__close" onClick={onClose} aria-label="Close">
+        <button type="button" className="taskedit__close" onClick={() => { flushFocus(); onClose(); }} aria-label="Close">
           ×
         </button>
       </div>
@@ -346,9 +348,11 @@ function TaskDetailCard({
             defaultValue={local.durationMinutes ?? ""}
             placeholder="min"
             onBlur={(e) => {
-              const v = e.target.value.trim();
-              const n = v ? Number(v) : null;
-              if (n !== (task.durationMinutes ?? null)) {
+              // Blank or 0 clears it; Todoist takes whole minutes up to a day.
+              const v = Number(e.target.value.trim());
+              const n = Number.isFinite(v) && v > 0 ? Math.min(1440, Math.round(v)) : null;
+              if (n !== (local.durationMinutes ?? null)) {
+                setLocal((s) => ({ ...s, durationMinutes: n }));
                 send({ durationMinutes: n });
               }
             }}
@@ -376,9 +380,9 @@ function TaskDetailCard({
         <button
           type="button"
           className="taskedit__done"
-          onClick={() => {
-            send({}, "POST", `/api/tasks/${id}/complete`);
-            onClose();
+          disabled={saving}
+          onClick={async () => {
+            if (await send({}, "POST", `/api/tasks/${id}/complete`)) onClose();
           }}
         >
           ✓ Complete
@@ -388,9 +392,9 @@ function TaskDetailCard({
             <button
               type="button"
               className="taskedit__delete is-armed"
-              onClick={() => {
-                send({}, "DELETE");
-                onClose();
+              disabled={saving}
+              onClick={async () => {
+                if (await send({}, "DELETE")) onClose();
               }}
             >
               Delete

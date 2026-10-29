@@ -87,6 +87,7 @@ async function postToken(
     method: "POST",
     headers: { "Content-Type": "application/x-www-form-urlencoded" },
     body: new URLSearchParams(body),
+    signal: AbortSignal.timeout(15_000),
   };
   const res = await retryOnDroppedConnection(() => fetch(TOKEN_ENDPOINT, init), { ...init, idempotent });
   const data = (await res.json()) as TokenResponse;

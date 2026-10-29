@@ -72,21 +72,35 @@ export function decimalHourForTimestamp(
   return p.hour + p.minute / 60 + p.second / 3600;
 }
 
-/** Start and end of `referenceDay` (local) as absolute ISO timestamps. */
+/** The UTC instant that reads as 00:00 on `day` in `timeZone`. */
+function localMidnightUtc(day: string, timeZone: string): number {
+  const wall = Date.parse(`${day}T00:00:00Z`);
+  // The zone's offset at a given instant, from how that instant reads there.
+  const offsetAt = (t: number) => {
+    const p = partsInZone(new Date(t), timeZone);
+    return Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second) - t;
+  };
+  // Guess with the offset at wall-clock midnight read as UTC, then correct once
+  // with the offset at the guess: that lands on the right side of a DST change
+  // (a noon-based offset is an hour off at midnight on change days).
+  const guess = wall - offsetAt(wall);
+  return wall - offsetAt(guess);
+}
+
+/**
+ * Start and end of `referenceDay` (local) as absolute ISO timestamps. A DST
+ * day is 23 or 25 hours long, so the end is the next day's midnight, not
+ * start + 24h.
+ */
 export function dayBoundsUtc(
   referenceDay: string,
   timeZone: string,
 ): { timeMin: string; timeMax: string } {
-  // Find the UTC instant that reads as 00:00:00 on referenceDay in timeZone by
-  // measuring the zone's offset at noon that day (avoids DST edge cases).
-  const noonGuess = new Date(`${referenceDay}T12:00:00Z`);
-  const p = partsInZone(noonGuess, timeZone);
-  const asUtcNoon = Date.UTC(p.year, p.month - 1, p.day, p.hour, p.minute, p.second);
-  const offsetMs = asUtcNoon - noonGuess.getTime();
-  const localMidnight = new Date(`${referenceDay}T00:00:00Z`).getTime() - offsetMs;
+  const next = new Date(`${referenceDay}T12:00:00Z`);
+  next.setUTCDate(next.getUTCDate() + 1);
   return {
-    timeMin: new Date(localMidnight).toISOString(),
-    timeMax: new Date(localMidnight + 24 * 60 * 60 * 1000).toISOString(),
+    timeMin: new Date(localMidnightUtc(referenceDay, timeZone)).toISOString(),
+    timeMax: new Date(localMidnightUtc(next.toISOString().slice(0, 10), timeZone)).toISOString(),
   };
 }
 

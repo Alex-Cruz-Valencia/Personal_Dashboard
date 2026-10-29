@@ -4,6 +4,8 @@ import {
   createContext,
   useCallback,
   useContext,
+  useEffect,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -11,7 +13,7 @@ import { useRouter } from "next/navigation";
 import { decimalHourToTimeInput, formatHour } from "@/lib/format";
 import type { Theme } from "@/lib/settings";
 import type { AgendaEvent } from "@/lib/types";
-import { Popover } from "./Popover";
+import { flushFocus, Popover } from "./Popover";
 
 interface OpenState {
   event: AgendaEvent;
@@ -112,19 +114,21 @@ function EventDetailCard({
   const [confirmDelete, setConfirmDelete] = useState(false);
 
   const send = useCallback(
-    async (body: Record<string, unknown>, method: "PATCH" | "DELETE" = "PATCH") => {
+    async (body: Record<string, unknown>, method: "PATCH" | "DELETE" = "PATCH"): Promise<boolean> => {
       setSaving(true);
       setError(null);
       try {
-        const res = await fetch(`/api/events/${id}`, {
+        const res = await fetch(`/api/events/${encodeURIComponent(id)}`, {
           method,
           headers: method === "DELETE" ? undefined : { "content-type": "application/json" },
           body: method === "DELETE" ? undefined : JSON.stringify(body),
         });
         if (!res.ok) throw new Error((await res.json().catch(() => ({}))).error || "Request failed");
         router.refresh();
+        return true;
       } catch (e) {
         setError((e as Error).message);
+        return false;
       } finally {
         setSaving(false);
       }
@@ -132,13 +136,35 @@ function EventDetailCard({
     [id, router],
   );
 
+  // Date and time inputs change on every keystroke ("1" then "10" for 10:00), so a
+  // reschedule waits until the fields settle: one PATCH, not several racing ones
+  // that could land out of order. A pending one is still sent if the card closes.
+  const pending = useRef<(() => void) | null>(null);
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const flush = useCallback(() => {
+    if (timer.current) clearTimeout(timer.current);
+    timer.current = null;
+    const run = pending.current;
+    pending.current = null;
+    run?.();
+  }, []);
+  useEffect(() => flush, [flush]);
+
   const reschedule = (nextDate: string, nextStart: string, nextEnd: string) => {
+    if (timer.current) clearTimeout(timer.current);
+    pending.current = null;
+    if (!nextDate || !nextStart || !nextEnd) return; // a half-typed field
     if (nextEnd <= nextStart) {
       setError("End time must be after start time.");
       return;
     }
-    send({ date: nextDate, startTime: nextStart, endTime: nextEnd });
+    setError(null);
+    pending.current = () => send({ date: nextDate, startTime: nextStart, endTime: nextEnd });
+    timer.current = setTimeout(flush, 700);
   };
+  // An event that runs past either end of today is drawn clipped (00:00 or 24:00);
+  // saving those clipped times would cut the real event short.
+  const clipped = event.start <= 0 || event.end >= 24;
 
   return (
     <Popover
@@ -153,7 +179,7 @@ function EventDetailCard({
           {event.kind === "focus" ? "focus block" : event.kind}
           {saving ? " · saving…" : ""}
         </span>
-        <button type="button" className="eventedit__close" onClick={onClose} aria-label="Close">
+        <button type="button" className="eventedit__close" onClick={() => { flushFocus(); onClose(); }} aria-label="Close">
           ×
         </button>
       </div>
@@ -173,11 +199,15 @@ function EventDetailCard({
         {formatHour(timeInputToDecimal(endTime), use24)}
       </div>
 
+      {clipped ? (
+        <p className="eventedit__hint">This runs past today, so change its times in Google Calendar.</p>
+      ) : null}
       <div className="eventedit__field">
         <span className="eventedit__label">Date</span>
         <input
           type="date"
           className="eventedit__text"
+          disabled={clipped}
           value={date}
           onChange={(e) => {
             setDate(e.target.value);
@@ -191,6 +221,7 @@ function EventDetailCard({
           <input
             type="time"
             className="eventedit__text"
+            disabled={clipped}
             value={startTime}
             onChange={(e) => {
               setStartTime(e.target.value);
@@ -203,6 +234,7 @@ function EventDetailCard({
           <input
             type="time"
             className="eventedit__text"
+            disabled={clipped}
             value={endTime}
             onChange={(e) => {
               setEndTime(e.target.value);
@@ -276,9 +308,13 @@ function EventDetailCard({
             <button
               type="button"
               className="eventedit__delete is-armed"
-              onClick={() => {
-                send({}, "DELETE");
-                onClose();
+              disabled={saving}
+              onClick={async () => {
+                // Close only once it's gone, so a refusal (e.g. a read-only
+                // calendar) is shown instead of the card just vanishing.
+                if (timer.current) clearTimeout(timer.current);
+                pending.current = null; // no reschedule of an event being deleted
+                if (await send({}, "DELETE")) onClose();
               }}
             >
               Delete

@@ -12,10 +12,12 @@
 import "server-only";
 import { config } from "@/lib/config";
 import { formatHour } from "@/lib/format";
-import { decimalHourForTimestamp } from "@/lib/time";
+import { decimalHourForTimestamp, isoDateInZone } from "@/lib/time";
 import type { Priority, Project, Task, WeekTask } from "@/lib/types";
 
 const API = "https://api.todoist.com/api/v1";
+/** A hung Todoist call would hold the whole page render; give up instead. */
+const TIMEOUT_MS = 15_000;
 
 /** Cache tag on task reads — mutations call `revalidateTag(TODOIST_TAG)`. */
 export const TODOIST_TAG = "todoist";
@@ -86,12 +88,20 @@ function hasExplicitZone(value: string): boolean {
   return /[zZ]$|[+-]\d\d:?\d\d$/.test(value);
 }
 
+/** The local date a due falls on: a zoned timestamp is read in the viewer's zone, not as UTC. */
+function dueDayOf(due: TodoistDue, timezone: string): string {
+  return isTimed(due) && hasExplicitZone(due.date)
+    ? isoDateInZone(new Date(due.date), timezone)
+    : due.date.slice(0, 10);
+}
+
+/** Due time as a decimal hour, only when it falls on `todayIso` (an overdue 3pm isn't "3pm today"). */
 function dueHourOf(
   due: TodoistDue | null,
   todayIso: string,
   timezone: string,
 ): number | null {
-  if (!due || !isTimed(due)) return null;
+  if (!due || !isTimed(due) || dueDayOf(due, timezone) !== todayIso) return null;
   if (!hasExplicitZone(due.date)) {
     // Floating local time — read the clock components straight off the string.
     const t = due.date.split("T")[1] ?? "00:00:00";
@@ -102,9 +112,9 @@ function dueHourOf(
 }
 
 /** Whole calendar days a due date is behind today (0 when due today or later). */
-function overdueDaysOf(due: TodoistDue | null, todayIso: string): number {
+function overdueDaysOf(due: TodoistDue | null, todayIso: string, timezone: string): number {
   if (!due) return 0;
-  const day = due.date.slice(0, 10);
+  const day = dueDayOf(due, timezone);
   if (day >= todayIso) return 0;
   const ms = Date.parse(`${todayIso}T00:00:00Z`) - Date.parse(`${day}T00:00:00Z`);
   return Math.max(1, Math.round(ms / 86_400_000));
@@ -126,6 +136,7 @@ function dueLabel(
 async function todoistGet<T>(path: string): Promise<Page<T>> {
   const res = await fetch(`${API}${path}`, {
     headers: { Authorization: `Bearer ${config.todoist.token}` },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
     next: { revalidate: 30, tags: [TODOIST_TAG] },
   });
   if (!res.ok) {
@@ -159,7 +170,7 @@ export async function getTasks(
       meta: projectName.get(t.project_id) ?? t.labels[0] ?? "Task",
       due: dueLabel(t.due, todayIso, timezone),
       dueHour: dueHourOf(t.due, todayIso, timezone),
-      overdueDays: overdueDaysOf(t.due, todayIso) || undefined,
+      overdueDays: overdueDaysOf(t.due, todayIso, timezone) || undefined,
       projectId: t.project_id,
       description: t.description || undefined,
       labels: t.labels,
@@ -186,6 +197,7 @@ export async function listProjects(): Promise<Project[]> {
   if (!config.todoist.token) throw new Error("Todoist not configured");
   const res = await fetch(`${API}/projects?limit=200`, {
     headers: { Authorization: `Bearer ${config.todoist.token}` },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
     next: metaTtl(),
   });
   if (!res.ok) throw new Error(`Todoist /projects responded ${res.status}`);
@@ -199,6 +211,7 @@ export async function listLabels(): Promise<string[]> {
   if (!config.todoist.token) throw new Error("Todoist not configured");
   const res = await fetch(`${API}/labels?limit=200`, {
     headers: { Authorization: `Bearer ${config.todoist.token}` },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
     next: metaTtl(),
   });
   if (!res.ok) throw new Error(`Todoist /labels responded ${res.status}`);
@@ -255,6 +268,7 @@ async function todoistWrite(
       ...(body ? { "Content-Type": "application/json" } : {}),
     },
     body: body ? JSON.stringify(body) : undefined,
+    signal: AbortSignal.timeout(TIMEOUT_MS),
     cache: "no-store",
   });
   if (!res.ok) {
@@ -338,10 +352,7 @@ export async function getWeekTasks(
   for (const t of page.results) {
     if (!t.due) continue;
     // Timed tasks carry a timestamp; read its date in the viewer's zone.
-    const day =
-      t.due.date.includes("T") && hasExplicitZone(t.due.date)
-        ? new Date(t.due.date).toLocaleDateString("en-CA", { timeZone: timezone })
-        : t.due.date.slice(0, 10);
+    const day = dueDayOf(t.due, timezone);
     (byDay[day] ??= []).push({
       id: t.id,
       name: t.content,

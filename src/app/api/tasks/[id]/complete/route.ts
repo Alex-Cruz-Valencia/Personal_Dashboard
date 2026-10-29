@@ -2,12 +2,15 @@ import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
 import { completeTask, TODOIST_TAG } from "@/lib/tasks/todoist";
+import { badId, rejectCrossSite, validTaskId } from "@/lib/request-guard";
 
 /** Mark a task done. Undo with POST /api/tasks/[id]/reopen. */
 export async function POST(
-  _request: Request,
+  request: Request,
   ctx: RouteContext<"/api/tasks/[id]/complete">,
 ) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   if (!features.todoist) {
     return NextResponse.json(
       { error: "Set TODOIST_API_TOKEN to complete tasks." },
@@ -15,6 +18,7 @@ export async function POST(
     );
   }
   const { id } = await ctx.params;
+  if (!validTaskId(id)) return badId();
 
   try {
     await completeTask(id);
