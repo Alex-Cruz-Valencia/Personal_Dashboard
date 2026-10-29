@@ -104,7 +104,10 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   const collapsed = settings.pastEvents === "hide" && !showPast;
   // Nothing left today (events all over, or an empty day that has run out): the hours slide
   // away and "That's the day" takes the whole calendar. The pill or a scroll up brings them back.
-  const dayDone = next === null && (agenda.length > 0 || nowHour >= arc.to);
+  // "That's the day" belongs to the evening: it appears from the wind-down hour (⚙ Wind down at,
+  // 9pm by default), not as soon as the last meeting ends.
+  const sceneOn = nowHour >= settings.windDown;
+  const dayDone = sceneOn && next === null && (agenda.length > 0 || nowHour >= arc.to);
   const viewFrom = collapsed
     ? dayDone
       ? arc.to
@@ -568,7 +571,11 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
             ) : null}
           </div>
         </div>
-        <EndOfDay tomorrow={tomorrow} onPlan={(b) => setPlanAnchor(b.getBoundingClientRect())} />
+        {sceneOn ? (
+          <EndOfDay tomorrow={tomorrow} onPlan={(b) => setPlanAnchor(b.getBoundingClientRect())} />
+        ) : (
+          <div className="vcal__eod-spacer" aria-hidden="true" />
+        )}
       </div>
       </div>
       {planAnchor && tomorrow ? (

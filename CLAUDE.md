@@ -76,6 +76,12 @@
   marker); no quotes around names. From `settings.windDown` (default 21,
   ⚙ "Wind down at") the note is a fixed wind-down line (no AI call) and
   `PlanCard` hides suggestions; before it, free time is capped at wind-down.
+  The calendar's "That's the day" scene (`EndOfDay`) also starts at this hour;
+  with nothing left today it then replaces the hours entirely. The page-wide
+  `WeatherScene` (variant "page") adds meteors on clear nights and drifting
+  sunbeams on clear days; `MeteorField` cuts every `.card`/`.attn` out of the
+  meteor layer (clip-path, re-measured on scroll/resize) so meteors vanish
+  behind sections.
 - **List rows**: tasks, replies and Plan suggestions share one row style
   (`--row-hover` / `--row-lift`, no divider lines, neutral hover — never a
   colored text change).

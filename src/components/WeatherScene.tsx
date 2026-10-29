@@ -1,5 +1,6 @@
 import type { CSSProperties } from "react";
 import type { Sky } from "@/lib/types";
+import { MeteorField } from "./MeteorField";
 
 /** Wind this strong (mph) adds drifting streaks on top of whatever the sky is doing. */
 export const BREEZY_MPH = 15;
@@ -8,6 +9,13 @@ const COUNT = { drizzle: 14, rain: 30, storm: 44, snow: 26 } as const;
 
 /** Evenly scattered, but the same on server and client (no Math.random in render). */
 const spread = (i: number, k: number) => ((i * k) % 97) / 97;
+
+
+/** Slow, soft bands of sunlight that drift across the page now and then, then leave it alone. */
+const BEAMS = [
+  { w: 170, a: 16, c: 61, d: -8 },
+  { w: 260, a: 20, c: 83, d: -47 },
+];
 
 function Particles({ n, className }: { n: number; className: string }) {
   return Array.from({ length: n }, (_, i) => (
@@ -49,8 +57,14 @@ export function WeatherScene({ sky, isDay, variant = "card" }: { sky: Sky; isDay
           </div>
         </>
       ) : null}
+      {variant === "page" && kind === "clear" && isDay
+        ? BEAMS.map((b, i) => (
+            <span key={i} className="scene__beam" style={{ "--w": `${b.w}px`, "--a": `${b.a}deg`, "--c": b.c, "--d": `${b.d}s` } as CSSProperties} />
+          ))
+        : null}
       {kind === "clear" && !isDay ? (
         <>
+          {variant === "page" ? <MeteorField /> : null}
           <span className="scene__moon" />
           <Particles n={14 * (variant === "page" ? 5 : 1)} className="scene__star" />
         </>

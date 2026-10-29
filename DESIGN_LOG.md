@@ -450,6 +450,49 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-29 — "That's the day" waits for the evening; meteors by night, sunbeams by day
+
+**Problem** — Two things. The goodnight scene appeared the moment the last
+meeting ended, which in mid-afternoon is premature and made the calendar feel
+like it had given up on the day. And the page-wide background, though pretty,
+was static apart from twinkling stars; the wish was a little life that comes
+and goes without demanding attention.
+
+**Decision** — (1) The scene, its "That's the day." text and the hours sliding
+away now only happen from the wind-down hour: ⚙ **Wind down at**, 9pm by
+default, the same hour that already turns the day note to "wind down" and stops
+Plan suggestions. Before it the calendar is just hours and events (with blank
+scroll room, no scene). Setting it to midnight turns the scene off. No new
+setting: one "when does my day end" knob. (2) On a clear night, five faint
+shooting stars cross the page, each on its own 21–47 second cycle and visible
+for a second or two, so on average one every ~6 seconds with no pattern. On a
+clear day, two slow bands of golden light drift across the page, each on a
+61 or 83 second cycle and visible for roughly a quarter of it, so there are
+often none and sometimes one or two. The shooting stars are kept out of the sections: every card is cut
+out of the meteor layer, so a meteor vanishes as it passes behind one and is
+only seen in the margins and the gaps between cards. They fall diagonally; some
+start in a margin and fly in behind the cards, others start behind the cards and
+come out into a margin, so each is seen on its way in or out. Both are part of the page-wide scene only
+(⚙ Background: Scene; Motion: Still hides them) and are invisible, not just
+paused, under reduced motion.
+
+**Alternatives considered** — Tying the scene to clock time only (wrong when an
+evening event is still ahead, so it still needs "nothing left" as well); a
+separate "scene starts at" setting (two settings for one idea); denser meteor
+showers or rays on a fixed beat (busy, and the point is that it's not always
+there); animated sun rays in the weather card too (the page is where the
+ambience lives).
+
+**Tradeoffs** — Before wind-down there is no "Plan tomorrow" button, since it
+lives in the scene; it appears with the scene. With the scene off, an
+evening calendar has a plain dark tail instead of the little hills. How much of a
+meteor you see depends on the window: with wide margins about half of each
+streak (checked at 1600px wide), in a narrow window about a fifth, because the
+cards nearly fill it; no part of one is ever visible inside a card. A louder
+version (seven meteors with glowing heads, a third beam) was tried and rolled
+back as too much. I checked the animation frames by stepping them
+to mid-flight, not by watching them play.
+
 ## 2026-10-29 — When the day is done, "That's the day" covers the whole calendar
 
 **Problem** — With a day window ending at midnight, the calendar still showed
