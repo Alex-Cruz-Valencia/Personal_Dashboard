@@ -1,15 +1,19 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useRouter } from "next/navigation";
 import { upNext } from "@/lib/attention";
-import { dateLineFor, formatHour, layoutOverlaps } from "@/lib/format";
+import { dateLineFor, decimalHourToTimeInput, formatHour, layoutOverlaps } from "@/lib/format";
 import { minutesLabel } from "@/lib/plan";
 import type { DashboardSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
-import type { AgendaEvent, ArcWindow, TodayInfo } from "@/lib/types";
+import type { AgendaEvent, ArcWindow, TodayInfo, WeekDay } from "@/lib/types";
 import { useNowSeconds } from "@/lib/use-now";
+import { EndOfDay } from "./EndOfDay";
 import { useEventDetail } from "./EventDetail";
 import { formatClock, useFocus } from "./Focus";
+import { Popover } from "./Popover";
+import { DayDetail } from "./WeekStrip";
 
 /** Pixels per hour. A 30-minute event is 28px: room for a one-line title. */
 const HOUR_PX = 56;
@@ -20,6 +24,17 @@ const THREE_LINE_PX = 60;
 const NOW_AT = 0.4;
 /** Untouched this long (ms) and off-centre: drift back to now by itself. */
 const IDLE_RETURN_MS = 60_000;
+/** Dragging and drawing snap to this many hours (15 minutes). */
+const SNAP = 0.25;
+/** A pointer that moves less than this many px is a click, not a drag. */
+const DRAG_PX = 4;
+/** Within this many px of the scroller's edge a drag scrolls it. */
+const EDGE_PX = 30;
+
+interface Span {
+  start: number;
+  end: number;
+}
 
 interface DayCalendarProps {
   agenda: AgendaEvent[];
@@ -30,14 +45,20 @@ interface DayCalendarProps {
   frozen?: boolean;
   /** The task the Focus button starts on. */
   focusTask?: string;
+  /** Google is connected: events can be dragged, resized and drawn. */
+  editable?: boolean;
+  /** Tomorrow's agenda and tasks, for "Plan tomorrow" (null when neither source is readable). */
+  tomorrow?: WeekDay | null;
 }
 
 /**
  * Today as a vertical day view, the way Google Calendar draws it: hours down
  * the left, events as blocks sized by duration, overlapping events side by
- * side, a line at the current time. Click an event for its details.
+ * side, a line at the current time. Click an event for its details; when
+ * Google is connected, drag one to move it, drag its bottom edge to resize it,
+ * or drag on an empty stretch to add a new one. Nothing is saved until you let go.
  */
-export function DayCalendar({ agenda, arc, today, settings, frozen = false, focusTask }: DayCalendarProps) {
+export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = false, focusTask, editable = false, tomorrow = null }: DayCalendarProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const focus = useFocus();
@@ -49,6 +70,15 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
   const hours = arc.to - arc.from;
   const height = hours * HOUR_PX;
   const y = (h: number) => (Math.min(Math.max(h, arc.from), arc.to) - arc.from) * HOUR_PX;
+  const router = useRouter();
+
+  // A moved event shows at its new time at once; the override only applies to the
+  // agenda it was made against, so the next server render replaces it.
+  const [moved, setMoved] = useState<Record<string, Span & { base: AgendaEvent[] }>>({});
+  const agenda = rawAgenda.map((e) => {
+    const m = e.id ? moved[e.id] : undefined;
+    return m && m.base === rawAgenda ? { ...e, start: m.start, end: m.end } : e;
+  });
   const lanes = layoutOverlaps(agenda);
   const next = upNext(agenda, nowHour);
   const nowVisible = nowHour >= arc.from && nowHour <= arc.to;
@@ -78,6 +108,91 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
     // eslint-disable-next-line react-hooks/exhaustive-deps
     [nowY, nowVisible, agenda, arc.from],
   );
+
+  const maxHour = Math.min(arc.to, 23.75);
+  const clampSpan = (start: number, end: number): Span => {
+    const dur = end - start;
+    const s0 = Math.min(Math.max(start, arc.from), maxHour - Math.min(dur, maxHour - arc.from));
+    return { start: s0, end: Math.min(maxHour, s0 + dur) };
+  };
+  const hourAt = (clientY: number) => {
+    const el = scrollerRef.current;
+    if (!el) return arc.from;
+    return arc.from + (clientY - el.getBoundingClientRect().top + el.scrollTop) / HOUR_PX;
+  };
+  const edgeScroll = (clientY: number) => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const r = el.getBoundingClientRect();
+    if (clientY < r.top + EDGE_PX) el.scrollTop -= 12;
+    else if (clientY > r.bottom - EDGE_PX) el.scrollTop += 12;
+  };
+
+  const [notice, setNotice] = useState<string | null>(null);
+  const noticeTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const tell = (msg: string) => {
+    setNotice(msg);
+    if (noticeTimer.current) clearTimeout(noticeTimer.current);
+    noticeTimer.current = setTimeout(() => setNotice(null), 7000);
+  };
+
+  /** Drag in progress: which event, and where it would land. */
+  const [drag, setDrag] = useState<(Span & { id: string }) | null>(null);
+  const dragRef = useRef<{ id: string; mode: "move" | "resize"; h0: number; span: Span; active: boolean; latest: Span | null } | null>(null);
+  const suppressClick = useRef(false);
+
+  const saveMove = async (id: string, span: Span) => {
+    setMoved((m) => ({ ...m, [id]: { ...span, base: rawAgenda } }));
+    try {
+      const res = await fetch(`/api/events/${encodeURIComponent(id)}`, {
+        method: "PATCH",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          date: today.iso,
+          startTime: decimalHourToTimeInput(span.start),
+          endTime: decimalHourToTimeInput(span.end),
+        }),
+      });
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error || "Couldn't move that event.");
+      router.refresh();
+    } catch (e) {
+      setMoved((m) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== id)));
+      tell((e as Error).message);
+    }
+  };
+
+  /** A new event being drawn: `locked` once the pointer is up and it's waiting for a name. */
+  const [draft, setDraft] = useState<(Span & { locked: boolean }) | null>(null);
+  const [draftName, setDraftName] = useState("");
+  const [draftBusy, setDraftBusy] = useState(false);
+  const drawRef = useRef<{ h0: number; active: boolean } | null>(null);
+
+  const createDraft = async () => {
+    const name = draftName.trim();
+    if (!draft || !name || draftBusy) return;
+    setDraftBusy(true);
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({
+          name,
+          date: today.iso,
+          startTime: decimalHourToTimeInput(draft.start),
+          endTime: decimalHourToTimeInput(draft.end),
+        }),
+      });
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error || "Couldn't add that event.");
+      setDraft(null);
+      setDraftName("");
+      router.refresh();
+    } catch (e) {
+      tell((e as Error).message);
+    }
+    setDraftBusy(false);
+  };
+
+  const [planAnchor, setPlanAnchor] = useState<DOMRect | null>(null);
 
   // Land on the present before first paint.
   useLayoutEffect(() => {
@@ -171,6 +286,11 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
         >
           {away === "up" ? "↑ " : away === "down" ? "↓ " : ""}Now
         </button>
+        {notice ? (
+          <p className="vcal__notice" role="alert">
+            {notice}
+          </p>
+        ) : null}
       </div>
 
       <div className="vcal__wrap">
@@ -188,7 +308,40 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
             ))}
           </div>
 
-          <div className="vcal__col">
+          <div
+            className={`vcal__col${editable ? " vcal__col--editable" : ""}`}
+            onPointerDown={(ev) => {
+              if (!editable || ev.button !== 0 || ev.pointerType === "touch") return;
+              if ((ev.target as HTMLElement).closest(".vcal__event, .vcal__draft")) return;
+              const h0 = Math.floor(hourAt(ev.clientY) / SNAP) * SNAP;
+              drawRef.current = { h0, active: false };
+              ev.currentTarget.setPointerCapture(ev.pointerId);
+              setDraftName("");
+              setDraft({ ...clampSpan(h0, h0 + 0.5), locked: false });
+            }}
+            onPointerMove={(ev) => {
+              const d = drawRef.current;
+              if (!d) return;
+              d.active = true;
+              edgeScroll(ev.clientY);
+              const h = hourAt(ev.clientY);
+              const lo = Math.floor(Math.min(d.h0, h) / SNAP) * SNAP;
+              const hi = Math.max(lo + SNAP, Math.ceil(Math.max(d.h0 + 0.01, h) / SNAP) * SNAP);
+              setDraft({ ...clampSpan(lo, hi), locked: false });
+            }}
+            onPointerUp={(ev) => {
+              const d = drawRef.current;
+              drawRef.current = null;
+              if (!d) return;
+              ev.currentTarget.releasePointerCapture(ev.pointerId);
+              // A bare click keeps the 30-minute default; a drag keeps what was drawn.
+              setDraft((cur) => (cur ? { ...cur, locked: true } : cur));
+            }}
+            onPointerCancel={() => {
+              drawRef.current = null;
+              setDraft(null);
+            }}
+          >
             {hourMarks.map((h) => (
               <div key={h} className="vcal__line" style={{ top: y(h) }} />
             ))}
@@ -211,15 +364,19 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
             ) : null}
 
             {agenda.map((e, i) => {
-              const top = y(e.start);
-              const h = Math.max(20, y(e.end) - top - 2);
+              const dragging = drag && drag.id === e.id ? drag : null;
+              const start = dragging ? dragging.start : e.start;
+              const end = dragging ? dragging.end : e.end;
+              const canEdit = editable && Boolean(e.id);
+              const top = y(start);
+              const h = Math.max(20, y(end) - top - 2);
               const { lane, lanes: n } = lanes[i];
               const state =
                 e.end <= nowHour ? "past" : e.start <= nowHour ? "now" : e.start - nowHour <= 0.25 ? "soon" : "later";
               return (
                 <div
                   key={e.id ?? `${e.name}${i}`}
-                  className={`vcal__event vcal__event--${e.kind} vcal__event--${state}${isSelected(e) ? " vcal__event--selected" : ""}`}
+                  className={`vcal__event vcal__event--${e.kind} vcal__event--${state}${isSelected(e) ? " vcal__event--selected" : ""}${canEdit ? " vcal__event--editable" : ""}${dragging ? " vcal__event--dragging" : ""}`}
                   style={
                     {
                       top,
@@ -231,7 +388,54 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
                   role="button"
                   tabIndex={0}
                   aria-label={`${e.name}, ${formatHour(e.start, use24)} to ${formatHour(e.end, use24)}. Details`}
-                  onClick={(ev) => open(e, ev.currentTarget)}
+                  onPointerDown={(ev) => {
+                    if (!canEdit || ev.button !== 0 || ev.pointerType === "touch") return;
+                    dragRef.current = {
+                      id: e.id as string,
+                      mode: (ev.target as HTMLElement).dataset.resize === "1" ? "resize" : "move",
+                      h0: hourAt(ev.clientY),
+                      span: { start: e.start, end: e.end },
+                      active: false,
+                      latest: null,
+                    };
+                    ev.currentTarget.setPointerCapture(ev.pointerId);
+                  }}
+                  onPointerMove={(ev) => {
+                    const d = dragRef.current;
+                    if (!d || d.id !== e.id) return;
+                    const dh = hourAt(ev.clientY) - d.h0;
+                    if (!d.active) {
+                      if (Math.abs(dh) * HOUR_PX < DRAG_PX) return;
+                      d.active = true;
+                    }
+                    edgeScroll(ev.clientY);
+                    const delta = Math.round(dh / SNAP) * SNAP;
+                    const span =
+                      d.mode === "move"
+                        ? clampSpan(d.span.start + delta, d.span.end + delta)
+                        : { start: d.span.start, end: Math.min(maxHour, Math.max(d.span.start + SNAP, d.span.end + delta)) };
+                    d.latest = span;
+                    setDrag({ id: d.id, ...span });
+                  }}
+                  onPointerUp={(ev) => {
+                    const d = dragRef.current;
+                    dragRef.current = null;
+                    if (!d) return;
+                    ev.currentTarget.releasePointerCapture(ev.pointerId);
+                    if (!d.active) return;
+                    suppressClick.current = true;
+                    setTimeout(() => (suppressClick.current = false), 0);
+                    const final = d.latest;
+                    setDrag(null);
+                    if (final && (final.start !== d.span.start || final.end !== d.span.end)) saveMove(d.id, final);
+                  }}
+                  onPointerCancel={() => {
+                    dragRef.current = null;
+                    setDrag(null);
+                  }}
+                  onClick={(ev) => {
+                    if (!suppressClick.current) open(e, ev.currentTarget);
+                  }}
                   onKeyDown={(ev) => {
                     if (ev.key === "Enter" || ev.key === " ") {
                       ev.preventDefault();
@@ -242,9 +446,15 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
                   <div className="vcal__event-title">{e.name}</div>
                   {h >= TWO_LINE_PX ? (
                     <div className="vcal__event-time">
-                      {formatHour(e.start, use24)} – {formatHour(e.end, use24)}
+                      {formatHour(start, use24)} – {formatHour(end, use24)}
                     </div>
                   ) : null}
+                  {dragging && h < TWO_LINE_PX ? (
+                    <div className="vcal__event-chip">
+                      {formatHour(start, use24)} – {formatHour(end, use24)}
+                    </div>
+                  ) : null}
+                  {canEdit && h >= 24 ? <i className="vcal__resize" data-resize="1" aria-hidden="true" /> : null}
                   {h >= THREE_LINE_PX && (e.location || e.where) ? (
                     <div className="vcal__event-where">{e.location || e.where}</div>
                   ) : null}
@@ -255,6 +465,33 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
               );
             })}
 
+            {draft ? (
+              <div
+                className="vcal__event vcal__draft"
+                style={{ top: y(draft.start), height: Math.max(20, y(draft.end) - y(draft.start) - 2), left: 2, right: 2 }}
+              >
+                {draft.locked ? (
+                  <input
+                    autoFocus
+                    className="vcal__draft-input"
+                    value={draftName}
+                    disabled={draftBusy}
+                    placeholder="New event"
+                    aria-label="New event name"
+                    onChange={(ev) => setDraftName(ev.target.value)}
+                    onKeyDown={(ev) => {
+                      if (ev.key === "Enter") createDraft();
+                      if (ev.key === "Escape") setDraft(null);
+                    }}
+                    onBlur={() => !draftBusy && setDraft(null)}
+                  />
+                ) : null}
+                <div className="vcal__event-time">
+                  {formatHour(draft.start, use24)} – {formatHour(draft.end, use24)}
+                </div>
+              </div>
+            ) : null}
+
             {nowVisible ? (
               <div className="vcal__now" style={{ top: y(nowHour) }} aria-label={`Now, ${formatHour(nowHour, use24)}`}>
                 <i />
@@ -262,8 +499,14 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
             ) : null}
           </div>
         </div>
+        <EndOfDay tomorrow={tomorrow} onPlan={(b) => setPlanAnchor(b.getBoundingClientRect())} />
       </div>
       </div>
+      {planAnchor && tomorrow ? (
+        <Popover anchor={planAnchor} theme={settings.theme} onClose={() => setPlanAnchor(null)} ariaLabel="Tomorrow" className="taskedit plantomorrow">
+          <DayDetail day={tomorrow} use24={use24} onClose={() => setPlanAnchor(null)} />
+        </Popover>
+      ) : null}
     </section>
   );
 }
