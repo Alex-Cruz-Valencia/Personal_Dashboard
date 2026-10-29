@@ -81,7 +81,8 @@
   #4DC3C4) and **sage in light** (#4F725C, since 2026-10-29), instead of the
   source's green. Light mode has no blue at all: someday priority and meetings
   are plum, the neutral status a grey (DESIGN_LOG "Clean daylight").
-  Don't reintroduce blue tokens in light.
+  Don't reintroduce blue tokens in light. (One exception: the task card's
+  Todoist P3 ring is Todoist's own blue — see List rows.)
 - **Day note** (`src/lib/day-note.ts`): three voices via `settings.noteStyle`
   (timely default / gentle / plain); the task name is wrapped `**…**` and
   `HelloCard` bolds it via `splitNote` (the AI prompt asks for the same
@@ -94,9 +95,16 @@
   sunbeams on clear days; `MeteorField` cuts every `.card`/`.attn` out of the
   meteor layer (clip-path, re-measured on scroll/resize) so meteors vanish
   behind sections.
-- **List rows**: tasks, replies and Plan suggestions share one row style
+- **List rows**: replies and Plan suggestions share one row style
   (`--row-hover` / `--row-lift`, no divider lines, neutral hover — never a
-  colored text change).
+  colored text change). **Tasks mirror the Todoist app** instead (2026-10-29,
+  "TODOIST-STYLE TASK ROWS" at the end of `globals.css`): a ring in Todoist's
+  P1–P4 colors (`--todo-p1..4`, from `Task.todoistPriority` — the 3-level
+  `priority` merges P2/P3 and stays for the editor/filters), "Project / Section"
+  right-aligned with the project's color on the `#` (`section`, `projectColor`;
+  `PROJECT_COLORS` in `todoist.ts` maps Todoist's color names), hairline dividers,
+  and no "Today" on each row — only a time, a late date or a deadline. Sorted
+  P1→P4 like the app.
 - **Removed from the reference:** the day arc's task-due ticks + legend
   entry (tasks aren't calendar events; they stay in the task card), and the
   agenda card (replaced by `PlanCard`).

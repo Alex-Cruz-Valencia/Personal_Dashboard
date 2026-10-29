@@ -117,11 +117,22 @@ export function TaskList({ tasks, settings, source }: TaskListProps) {
                 >
                   <div className="task__name">{t.name}</div>
                   <div className="task__meta">
-                    <span className={t.tagCls}>{t.priorityLabel}</span>
-                    <span className="task__tag">{t.meta}</span>
+                    {t.dueShown ? <span className="task__when">{t.dueShown}</span> : null}
+                    {t.deadlineLabel ? (
+                      <span className="task__deadline" title="Deadline">
+                        <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
+                          <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                          <circle cx="8" cy="8" r="2.5" fill="none" stroke="currentColor" strokeWidth="1.5" />
+                        </svg>
+                        {t.deadlineLabel}
+                      </span>
+                    ) : null}
+                    <span className="task__place">
+                      {t.place}
+                      <span className="task__hash" style={t.projectColor ? { color: t.projectColor } : undefined} aria-hidden>#</span>
+                    </span>
                   </div>
                 </div>
-                <div className="task__due">{t.due}</div>
               </li>
             );
           })}

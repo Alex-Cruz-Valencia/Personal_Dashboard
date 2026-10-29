@@ -73,23 +73,49 @@ export function dateLineFor(iso: string): string {
 
 /* ---------- tasks ---------- */
 
+/**
+ * A task row, shaped like the Todoist app's Today view: the check is colored by
+ * Todoist's own P1–P4, the right side reads "Project / Section", and "Today"
+ * isn't repeated on every row — only a time, a late date or a deadline is.
+ */
 export interface TaskVM extends Task {
-  priorityLabel: string;
-  tagCls: string;
+  /** Todoist P-level, 1 (red) … 4 (none); sample tasks map urgent/normal/someday to 1/2/4. */
+  level: 1 | 2 | 3 | 4;
   cls: string;
+  /** "School / Algorithms" (or just the project). */
+  place: string;
+  /** Due text worth showing (a time, or a past date) — null for plain "today". */
+  dueShown: string | null;
+  /** "Oct 19" for a hard deadline, else null. */
+  deadlineLabel: string | null;
+}
+
+const SAMPLE_LEVEL: Record<Priority, 1 | 2 | 4> = { 1: 1, 2: 2, 3: 4 };
+const MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+/** "2026-10-19" → "Oct 19". */
+export function shortDate(iso: string): string {
+  const [, m, d] = iso.split("-").map(Number);
+  return m && d ? `${MONTHS[m - 1]} ${d}` : iso;
 }
 
 export function buildTasks(tasks: Task[], density: Density, use24?: boolean): TaskVM[] {
   return tasks
     .filter((t) => (density === "comfortable" ? true : t.priority < 3))
-    .map((t) => ({
-      ...t,
+    .map((t) => {
+      const level = t.todoistPriority ?? SAMPLE_LEVEL[t.priority];
       // A timed task's label is rendered 24-hour on the server; follow ⚙ Time here.
-      due: use24 !== undefined && t.dueHour != null ? formatHour(t.dueHour, use24) : t.due,
-      priorityLabel: PRIORITY_LABEL[t.priority],
-      tagCls: `task__tag task__tag--p${t.priority}`,
-      cls: `task task--p${t.priority}`,
-    }));
+      const due = use24 !== undefined && t.dueHour != null ? formatHour(t.dueHour, use24) : t.due;
+      return {
+        ...t,
+        due,
+        level,
+        cls: `task task--P${level}${t.overdueDays ? " task--late" : ""}`,
+        place: t.section ? `${t.meta} / ${t.section}` : t.meta,
+        dueShown: due === "Today" || due === "—" ? null : due,
+        deadlineLabel: t.deadline ? shortDate(t.deadline) : null,
+      };
+    });
 }
 
 export function taskCountLabel(tasks: TaskVM[]): string {

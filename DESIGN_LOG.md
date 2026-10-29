@@ -95,6 +95,47 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — The task card looks like Todoist
+
+**Problem / trigger** — Side by side with the Todoist app's Today view, our task
+card read like a different list:
+- **Priority:** we showed "Urgent"/"Normal" pills. We also collapsed Todoist's four
+  priorities into three, so P2 and P3 tasks looked identical.
+- **Project:** shown as a chip.
+- **Dates:** "Today" was repeated on every row.
+
+Alex lives in Todoist, so the mismatch made the dashboard slower to read, not faster.
+
+**Decision** — Mirror the app's row:
+- **Priority:** a check ring in Todoist's own P1–P4 colors (red, orange, blue, grey;
+  Todoist's brighter set in dark), driven by a new `Task.todoistPriority`.
+- **Project:** "Project / Section" right-aligned, with the project's own color on the
+  `#`. Sections and project colors are now fetched, fail-soft.
+- **Dates and deadlines:** a deadline shows with a target icon in red. The due date
+  shows only when it says something today doesn't: a time, or a late date in red.
+- **Layout:** hairline dividers between rows, regular-weight names, and sorting
+  P1→P4 like the app.
+
+**Reasoning** — Recognition over invention: one glance should map a row here to the
+same row in Todoist. The priority pill duplicated what the ring color already says,
+so dropping it also removes noise.
+
+**Alternatives considered** — *Keep our pills, just recolor them*: still two
+encodings of one fact, and the P2/P3 merge would remain. *Restyle the whole
+dashboard like Todoist*: the calendar and attention strip aren't Todoist's, and
+copying one app's look everywhere isn't the goal.
+
+**Tradeoffs / open questions** — Two exceptions to house rules, both scoped to this
+card:
+- **Blue in light:** Todoist's P3 ring is blue. It's Todoist's meaning, not decoration.
+- **Divider lines:** the other list rows still have none.
+
+The editor still offers three priorities (Urgent/Normal/Someday), so it can't set P3
+directly. Subtask counts (Todoist's "0/1") aren't shown, since that needs a parent/child
+fetch.
+
+---
+
 ## 2026-10-29 — Clean daylight: a new light palette, not a retint
 
 **Problem / trigger** — After three rounds of warming the old light palette (cream,
