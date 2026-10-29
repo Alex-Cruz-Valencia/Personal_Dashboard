@@ -14,13 +14,14 @@
   "Morning Dashboard v2.dc.html" (project `0e114d1c-17f4-4cf4-9af5-6e2d7e880dc0`)
   and its class names and stylesheet structure are still the base in
   `src/app/globals.css`. **Since 2026-10-27 it deliberately departs from the
-  reference** (see `DESIGN_LOG.md`): warm neutral tokens (light is a warm cream
-  since 2026-10-29: canvas `#F3E6D3`, surface `#FCF6EC`, espresso ink `#2B2118`;
-  in light the page sky uses sunrise tones — the "warm light" block at the end of
-  `globals.css`), 12/8/6px radii, no card shadow in dark (light has two soft warm levels since
-  2026-10-29: `--shadow` for cards, `--shadow-pop` for popovers; secondary text
-  held to ~6–8:1 for daylight; selected chips carry a border + bold, not tint alone), a flat day-arc band, a global teal
-  focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →
+  reference** (see `DESIGN_LOG.md`). Light and dark are **separate palettes**:
+  light is "Clean daylight" (2026-10-29: canvas `#F6F5F1`, surface `#FFFEFB`,
+  charcoal ink `#24262A`, sage accent, no blue; its page sky, clouds and
+  near-opaque cards are the "clean daylight" block at the end of `globals.css`),
+  dark is the warm near-black with teal. 12/8/6px radii; no card shadow in dark,
+  two soft levels in light (`--shadow` cards, `--shadow-pop` popovers); light
+  secondary text held to ~6–8:1 for daylight; selected chips carry a border +
+  bold, not tint alone; a flat day-arc band, a global accent-colored focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →
   Surfaces). Function over polish: nothing decorative may push actionable content
   off the first screen. Don't "restore" the reference tokens.
 - Additions **not** in the static reference, kept token-only (see the marked
@@ -77,9 +78,9 @@
   the attention strip's `ReplyQueue` popover). The server still fetches mail and the
   week-ahead data. To bring one back, render it in `Dashboard.tsx`.
 - **Changed from the reference:** the accent is teal in dark (`--accent`
-  #4DC3C4) and **moss in light** (#4E6A2C, since 2026-10-29), instead of the
+  #4DC3C4) and **sage in light** (#4F725C, since 2026-10-29), instead of the
   source's green. Light mode has no blue at all: someday priority and meetings
-  are plum, the neutral status a warm grey (DESIGN_LOG "A warm light theme").
+  are plum, the neutral status a grey (DESIGN_LOG "Clean daylight").
   Don't reintroduce blue tokens in light.
 - **Day note** (`src/lib/day-note.ts`): three voices via `settings.noteStyle`
   (timely default / gentle / plain); the task name is wrapped `**…**` and

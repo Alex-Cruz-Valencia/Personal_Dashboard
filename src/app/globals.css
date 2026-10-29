@@ -10,50 +10,48 @@
    the reference pixel-for-pixel.
 
    Changes vs. the source: the accent is teal in dark (#4DC3C4; DESIGN_LOG
-   2026-09-30) and moss in light (#4E6A2C; DESIGN_LOG 2026-10-29), each with a
-   matching deep note text, instead of the source's green. And --font-display / --font-body now point at the
+   2026-09-30) and sage in light (#4F725C, "Clean daylight", DESIGN_LOG
+   2026-10-29), each with a matching deep note text, instead of the source's green. And --font-display / --font-body now point at the
    next/font CSS variables (self-hosted Bricolage Grotesque + Plus Jakarta
    Sans) instead of a Google Fonts <link>. Same typefaces, no external request.
    ========================================================================== */
 :root {
-  /* Light is warm on purpose (2026-10-29): cream canvas, parchment cards,
-     espresso ink instead of near-black — see DESIGN_LOG "warm light". */
-  --canvas:     #F3E6D3;
-  --surface:    #FCF6EC;
-  --surface-2:  #F3E7D6;
-  --line:       #E6D6C0;
-  --ink:        #2B2118;
-  /* Secondary text is held to ~6–8:1, not just AA: bright rooms wash out
-     screen contrast, and the morning view is read in daylight. */
-  --ink-soft:   #594938;
-  --ink-faint:  #665441;
-  /* Light's accent is moss, not teal: blue fought the warm cream (2026-10-29).
-     Dark keeps teal. */
-  --accent:     #4E6A2C;
-  --accent-tint:#E8EBD6;
-  /* CALENDAR KINDS — colorblind-safe blue / amber / slate triad.
-     Deliberately NOT red-vs-green: those two read identically to a
-     deuteranope, and a meeting is not a "bad" status. */
-  --cal-meeting:  #7E5274;
-  --cal-focus:    #8F5A0E;
-  --cal-personal: #6B7A82;
+  /* LIGHT = "Clean daylight" (2026-10-29; DESIGN_LOG). Soft off-white, never
+     #FFF; charcoal ink; sage accent; no blue anywhere. Secondary text is held
+     to 6–8:1, not just AA — the light theme is read in daylight. Dark (below)
+     is a separate palette and keeps its teal. */
+  --canvas:     #F6F5F1;
+  --surface:    #FFFEFB;
+  --surface-2:  #F1EFEA;
+  --line:       #E4E1DA;
+  --ink:        #24262A;
+  --ink-soft:   #4E5257;
+  --ink-faint:  #5F6368;
+  --accent:     #4F725C;
+  --accent-tint:#E6EEE8;
+  /* CALENDAR KINDS — plum / amber / grey in light (the Solid layout below
+     swaps focus to the accent). Distinct in hue AND lightness so they hold
+     for colorblind viewers; never red-vs-green, a meeting isn't "bad". */
+  --cal-meeting:  #76587A;
+  --cal-focus:    #855A0C;
+  --cal-personal: #6E6C66;
 
   /* SEMANTIC STATUS — meaning first, hue second. Text pairs pass AA on their tint. */
-  --negative:      #B93A22;
-  --negative-tint: #FBEAE5;
-  --warning:       #8A5E0D;
-  --warning-tint:  #FAF2DF;
-  --neutral:       #665A4E;
-  --neutral-tint:  #EFE7DC;
+  --negative:      #B0362B;
+  --negative-tint: #F9E7E3;
+  --warning:       #855A0C;
+  --warning-tint:  #F8EEDB;
+  --neutral:       #55595E;
+  --neutral-tint:  #EEEDEA;
 
   /* priority ramp — urgent / normal / someday (task list only) */
   /* text-on-tint pairs are kept at or above WCAG AA (4.5:1) */
-  --p1:         #B93A22;
-  --p1-tint:    #FBEAE5;
-  --p2:         #8A5E0D;
-  --p2-tint:    #FAF2DF;
-  --p3:         #7A4E6E;
-  --p3-tint:    #F2E4EA;
+  --p1:         #B0362B;
+  --p1-tint:    #F9E7E3;
+  --p2:         #855A0C;
+  --p2-tint:    #F8EEDB;
+  --p3:         #74567A;
+  --p3-tint:    #F1E9F2;
 
   --font-display: var(--font-bricolage), "Plus Jakarta Sans", sans-serif;
   --font-body:    var(--font-jakarta), Helvetica, Arial, sans-serif;
@@ -61,10 +59,10 @@
   --radius-lg: 12px;
   --radius:    8px;
   --radius-sm: 6px;
-  /* Two depth levels, light only: cards barely lift, popovers float. Warm
-     (umber), soft, no hard edges. Dark sets both back to none. */
-  --shadow:     0 1px 2px rgba(74, 48, 22, 0.05), 0 8px 20px -12px rgba(74, 48, 22, 0.14);
-  --shadow-pop: 0 2px 6px rgba(74, 48, 22, 0.08), 0 18px 40px -16px rgba(74, 48, 22, 0.28);
+  /* Two depth levels, light only: cards lift a little, popovers float. Soft,
+     neutral, no hard edges. Dark sets both back to none. */
+  --shadow:     0 1px 2px rgba(30, 32, 28, 0.06), 0 6px 18px -8px rgba(30, 32, 28, 0.12);
+  --shadow-pop: 0 2px 6px rgba(30, 32, 28, 0.08), 0 18px 40px -14px rgba(30, 32, 28, 0.24);
   --page-max:  1280px;
   --gutter:    28px;
   --gap:       18px;
@@ -215,7 +213,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .hello__greeting { font-family: var(--font-display); font-size: clamp(30px, 4vw, 44px); font-weight: 600; letter-spacing: -0.025em; line-height: 1.02; margin: 0; }
 .hello__note { display: flex; align-items: flex-start; gap: 10px; margin-top: 4px; background: var(--accent-tint); border-radius: var(--radius); padding: 12px 14px; max-width: 62ch; }
 .hello__note-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; padding-top: 3px; }
-.hello__note-text { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 500; color: #33441C; }
+.hello__note-text { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 500; color: #2E4A38; }
 
 /* ---------- weather ---------- */
 .weather { padding: 20px 24px; display: grid; gap: 13px; min-width: 300px; align-content: center; }
@@ -951,9 +949,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
    never a colored text change. In glass it lifts as a frosted chip. The
    rows bleed 10px into the card's padding so their text stays aligned. */
 :root {
-  /* warm and just visible on cream (a cool 4.5% grey vanished there) */
-  --row-hover: rgba(92, 62, 30, 0.065);
-  --row-active: rgba(92, 62, 30, 0.1);
+  /* just visible on off-white (4.5% vanished) */
+  --row-hover: rgba(36, 38, 42, 0.055);
+  --row-active: rgba(36, 38, 42, 0.09);
   --row-lift: none;
 }
 [data-theme="dark"] {
@@ -1279,9 +1277,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
    the reference card layout.
    ========================================================================== */
 .morning:not(.morning--glass) {
-  --cal-meeting:  #7A5A70; /* muted plum in light — slate blue fought the warm cream */
+  --cal-meeting:  #76587A; /* plum in light — no blue in the light palette */
   --cal-focus:    var(--accent);
-  --cal-personal: #7C766A;
+  --cal-personal: #6E6C66;
   --gap: 20px;
 }
 :root:has(.morning[data-theme="dark"]) .morning:not(.morning--glass),
@@ -1825,22 +1823,26 @@ a:hover { color: var(--ink); text-decoration: underline; }
 @media (prefers-reduced-motion: reduce) { .tempcurve__halo { animation: none !important; opacity: 0; } }
 .morning--still .tempcurve__halo { animation: none; opacity: 0; }
 
-/* ---- warm light: the page sky in the light theme (sunrise tones, not grey-blue) ----
-   Dark keeps the cool night sky above. Light = an explicit data-theme="light"
-   (including "By time" before its dark hour), or no theme with the OS in light. */
-.morning[data-theme="light"] .scene--page.scene--day { --sky-a: rgba(255, 184, 112, 0.30); --sky-b: rgba(250, 210, 168, 0.34); }
-.morning[data-theme="light"] .scene--page:is(.scene--cloudy, .scene--fog) { --sky-a: rgba(238, 186, 140, 0.26); --sky-b: rgba(232, 208, 180, 0.32); }
-.morning[data-theme="light"] .scene--page:is(.scene--drizzle, .scene--rain, .scene--storm) { --sky-a: rgba(196, 160, 132, 0.26); --sky-b: rgba(178, 160, 146, 0.26); }
-.morning[data-theme="light"] .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 196, 120, 0.24), rgba(255, 186, 110, 0.08) 45%, transparent 70%); }
-.morning[data-theme="light"] .scene__cloud { background: #D9B996; opacity: 0.22; }
-.morning[data-theme="light"] :is(.vcal__event--personal, .week__ev--personal) { background: color-mix(in srgb, var(--cal-personal) 8%, var(--surface-2)); border-color: color-mix(in srgb, var(--cal-personal) 45%, var(--surface)); }
-.morning[data-theme="light"] .scene__mist { background: linear-gradient(to right, transparent, #D9B996, transparent); }
+/* ---- clean daylight: the page sky and cards in the light theme ----
+   Light = an explicit data-theme="light" (including Daylight before sunset), or
+   no theme with the OS in light. The sky is a faint sun glow, no blue; clouds
+   are a pale neutral; and cards stay nearly opaque so nothing smudges through
+   them (the dark theme keeps its translucent cards over the night scene). */
+.morning[data-theme="light"] .scene--page { --sky-a: rgba(255, 220, 160, 0.16); --sky-b: rgba(236, 233, 224, 0.4); }
+.morning[data-theme="light"] .scene--page:is(.scene--drizzle, .scene--rain, .scene--storm) { --sky-a: rgba(200, 198, 190, 0.22); --sky-b: rgba(214, 211, 202, 0.32); }
+.morning[data-theme="light"] .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 214, 150, 0.16), transparent 65%); }
+.morning[data-theme="light"] .scene__cloud { background: #CFCBC2; opacity: 0.14; }
+.morning[data-theme="light"] .card--scene .scene__cloud { opacity: 0.07; }
+.morning[data-theme="light"] .scene__mist { background: linear-gradient(to right, transparent, #CFCBC2, transparent); }
+.morning[data-theme="light"]:not(.morning--glass) :is(.card, .attn) { background: color-mix(in srgb, var(--surface) 94%, transparent); }
+.morning[data-theme="light"] :is(.vcal__event--personal, .week__ev--personal) { background: color-mix(in srgb, var(--cal-personal) 7%, var(--surface)); border-color: color-mix(in srgb, var(--cal-personal) 35%, var(--surface)); }
 @media (prefers-color-scheme: light) {
-  .morning:not([data-theme]) .scene--page.scene--day { --sky-a: rgba(255, 184, 112, 0.30); --sky-b: rgba(250, 210, 168, 0.34); }
-  .morning:not([data-theme]) .scene--page:is(.scene--cloudy, .scene--fog) { --sky-a: rgba(238, 186, 140, 0.26); --sky-b: rgba(232, 208, 180, 0.32); }
-  .morning:not([data-theme]) .scene--page:is(.scene--drizzle, .scene--rain, .scene--storm) { --sky-a: rgba(196, 160, 132, 0.26); --sky-b: rgba(178, 160, 146, 0.26); }
-  .morning:not([data-theme]) .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 196, 120, 0.24), rgba(255, 186, 110, 0.08) 45%, transparent 70%); }
-  .morning:not([data-theme]) .scene__cloud { background: #D9B996; opacity: 0.22; }
-  .morning:not([data-theme]) :is(.vcal__event--personal, .week__ev--personal) { background: color-mix(in srgb, var(--cal-personal) 8%, var(--surface-2)); border-color: color-mix(in srgb, var(--cal-personal) 45%, var(--surface)); }
-  .morning:not([data-theme]) .scene__mist { background: linear-gradient(to right, transparent, #D9B996, transparent); }
+  .morning:not([data-theme]) .scene--page { --sky-a: rgba(255, 220, 160, 0.16); --sky-b: rgba(236, 233, 224, 0.4); }
+  .morning:not([data-theme]) .scene--page:is(.scene--drizzle, .scene--rain, .scene--storm) { --sky-a: rgba(200, 198, 190, 0.22); --sky-b: rgba(214, 211, 202, 0.32); }
+  .morning:not([data-theme]) .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 214, 150, 0.16), transparent 65%); }
+  .morning:not([data-theme]) .scene__cloud { background: #CFCBC2; opacity: 0.14; }
+  .morning:not([data-theme]) .card--scene .scene__cloud { opacity: 0.07; }
+  .morning:not([data-theme]) .scene__mist { background: linear-gradient(to right, transparent, #CFCBC2, transparent); }
+  .morning:not([data-theme]):not(.morning--glass) :is(.card, .attn) { background: color-mix(in srgb, var(--surface) 94%, transparent); }
+  .morning:not([data-theme]) :is(.vcal__event--personal, .week__ev--personal) { background: color-mix(in srgb, var(--cal-personal) 7%, var(--surface)); border-color: color-mix(in srgb, var(--cal-personal) 35%, var(--surface)); }
 }

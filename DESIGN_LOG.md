@@ -95,6 +95,49 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Clean daylight: a new light palette, not a retint
+
+**Problem / trigger** — After three rounds of warming the old light palette (cream,
+espresso, moss), Alex still found it "odd". Each fix nudged the same family of
+colors, and the result read muddy rather than calm:
+- Cream cards sat on a cream canvas, and translucent cards let peach sky and cloud
+  blobs smudge through.
+- Contrast and shadow fixes were too subtle to see.
+- Separately, Daylight was going dark at noon on a bright afternoon (now sun-based;
+  see the "theme follows the day" entry).
+
+**Decision** — Replace the light palette outright. Alex chose "Clean daylight" from
+three previewed directions (the others were "Desert clay": sand and terracotta; and
+"Blush morning": blush and plum).
+- **Base:** soft off-white canvas `#F6F5F1` and cards `#FFFEFB` (never pure white).
+- **Text:** charcoal ink `#24262A`, with neutral greys for secondary (7.8:1) and
+  faint (6:1) text.
+- **Color:** a sage accent `#4F725C`; plum for meetings and "someday"; amber and red
+  stay as warning and urgent; no blue anywhere.
+- **Depth:** one neutral soft shadow for cards and a deeper one for popovers.
+- **Sky:** in light, the page sky is a faint sun glow with pale neutral clouds, and
+  cards are 94% opaque, so the weather never smudges through.
+- **Dark:** unchanged.
+
+**Reasoning** — The warm retints kept fighting the old palette's assumptions;
+starting over let light be designed for daylight on its own terms, which the
+light-UI checklist recommends: off-white base, grays tuned for legibility, color
+only where it carries meaning. Every text/background pair was contrast-checked
+before it went in.
+
+**Alternatives considered** — *Keep tuning the cream palette*: three rounds showed
+diminishing returns. *Desert clay*: warm and characterful, but terracotta sits close
+to the urgent red. *Blush morning*: soft, but pink-on-pink lowers hierarchy in a
+dense, data-heavy page.
+
+**Tradeoffs / open questions** — This supersedes the "warm light theme" entries
+below (canvas, accent and sky values), though their principles still apply:
+daylight-grade contrast, two shadow levels, visible states, no blue. Light and dark
+now share almost no colors; the dashboard has two palettes, not one with a dark
+variant.
+
+---
+
 ## 2026-10-29 — Light theme, held to a daylight standard
 
 **Problem / trigger** — With the warm light theme in place, Alex shared a light-UI
