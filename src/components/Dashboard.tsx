@@ -44,7 +44,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
         {/* "system" leaves the attribute off so globals.css can fall through
             to prefers-color-scheme (see the effective-theme block there). */}
         <div
-          className={`morning${settings.surface === "glass" ? " morning--glass" : ""}${settings.motion === "off" ? " morning--still" : ""}${pageScene ? " morning--scene" : ""}`}
+          className={`morning${settings.surface === "glass" ? " morning--glass" : ""}${settings.motion === "off" ? " morning--still" : ""}${pageScene ? " morning--scene" : ""}${settings.look === "clean" ? " morning--clean" : ""}`}
           data-theme={settings.theme === "system" ? undefined : settings.theme}
           data-palette={settings.lightPalette}
         >

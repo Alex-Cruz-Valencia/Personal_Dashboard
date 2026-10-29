@@ -23,7 +23,11 @@
   `settings.lightPalette` (⚙ Light palette, `?palette=clay`) → `data-palette` on
   `.morning`; its block at the end of `globals.css` only matches while light is
   showing and sets tokens on `:root` via `:has()` so popovers follow. Any new
-  light-only hardcoded color needs a clay counterpart there. 12/8/6px radii; no card shadow in dark,
+  light-only hardcoded color needs a clay counterpart there.
+- **Style "clean"** (experiment, ⚙ Style, `settings.look`, `?look=clean`):
+  `.morning--clean` layer at the end of `globals.css` — Todoist-like structure
+  page-wide (bold sentence-case headings, hairlines, a colored bar as the only
+  category marker, text buttons, flat cards). Default stays "cards". 12/8/6px radii; no card shadow in dark,
   two soft levels in light (`--shadow` cards, `--shadow-pop` popovers); light
   secondary text held to ~6–8:1 for daylight; selected chips carry a border +
   bold, not tint alone; a flat day-arc band, a global accent-colored focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →

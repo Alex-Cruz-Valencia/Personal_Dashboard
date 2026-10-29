@@ -9,6 +9,7 @@ import {
   use24Hour,
   type Background,
   type LightPalette,
+  type Look,
   type DashboardSettings,
   type Density,
   type NoteStyle,
@@ -108,6 +109,15 @@ export function SettingsPanel({ settings, shownTheme }: { settings: DashboardSet
               ["clay", "Desert clay"],
             ]}
             onPick={(lightPalette) => update({ lightPalette })}
+          />
+          <Segmented<Look>
+            label="Style"
+            value={settings.look}
+            options={[
+              ["cards", "Cards"],
+              ["clean", "Clean"],
+            ]}
+            onPick={(look) => update({ look })}
           />
           <Segmented<Surface>
             label="Surfaces"

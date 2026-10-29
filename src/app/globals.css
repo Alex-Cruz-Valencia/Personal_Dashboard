@@ -1986,3 +1986,69 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .morning[data-palette="clay"]:not([data-theme]) .skytint__blob--b { background: radial-gradient(circle, rgb(236, 208, 180), transparent 68%); }
   .morning[data-palette="clay"]:not([data-theme]).morning--glass, :root:has(.morning[data-palette="clay"]:not([data-theme]).morning--glass) .eventedit { --cal-meeting: #B07AA6; }
 }
+
+/* =============================================================================
+   CLEAN STYLE (experiment, 2026-10-29) — ⚙ Style → Clean (`settings.look`,
+   `.morning--clean`). The whole page borrows what makes the Todoist task card
+   read so calmly: one sans family with bold sentence-case headings (no spaced
+   caps), regular-weight body text with grey metadata, hairlines instead of
+   tinted tiles, a thin colored bar as the only category marker, quiet text
+   buttons instead of pills, and flat cards (hairline, no shadow). Colors stay
+   whichever palette is chosen. Cards (the default) is untouched.
+   ========================================================================== */
+.morning--clean { --gap: 22px; }
+
+/* cards: flat sheets with a hairline */
+.morning--clean:not(.morning--glass) :is(.card, .attn) { box-shadow: none; border-color: var(--line); border-radius: 10px; }
+
+/* headings: one family, bold, sentence case */
+.morning--clean .card__title { font-family: var(--font-body); font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.morning--clean .hello__greeting { font-family: var(--font-body); font-weight: 700; letter-spacing: -0.03em; }
+.morning--clean .hello__date { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
+.morning--clean .clock__hm { font-family: var(--font-body); font-weight: 600; letter-spacing: -0.04em; }
+.morning--clean .clock__ampm { letter-spacing: 0; }
+
+/* counts: plain grey text, not a pill */
+.morning--clean .card__count { font-size: 13px; font-weight: 500; letter-spacing: 0; padding: 0; background: none; border: 0; color: var(--ink-soft); }
+
+/* needs attention: rows with a colored bar, not tinted tiles */
+.morning--clean .attn { padding: 16px 20px 14px; }
+.morning--clean .attn__title { margin-bottom: 6px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; text-transform: none; color: var(--ink); }
+.morning--clean .attn__list { gap: 0 24px; }
+.morning--clean .attn__item { --bar: var(--neutral); background: none; border-radius: 0; padding: 10px 0 10px 12px; box-shadow: inset 2px 0 0 var(--bar); }
+.morning--clean .attn__item:hover { background: var(--row-hover); box-shadow: inset 2px 0 0 var(--bar); }
+.morning--clean :is(.attn__item--conflict, .attn__item--overdue) { --bar: var(--negative); }
+.morning--clean .attn__item--tight { --bar: var(--warning); }
+.morning--clean .attn__label { font-size: 12.5px; font-weight: 500; letter-spacing: 0; text-transform: none; }
+.morning--clean .attn__text { font-weight: 500; }
+
+/* calendar: light blocks with a kind-colored bar, quiet header controls */
+.morning--clean .vcal__tag { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
+.morning--clean .vcal__name { font-weight: 500; }
+.morning--clean .vcal__btn { border-color: transparent; background: none; font-size: 13px; font-weight: 500; padding: 5px 9px; border-radius: 6px; }
+.morning--clean .vcal__btn:hover { background: var(--row-hover); }
+.morning--clean :is(.vcal__now-btn, .eod__plan) { border-color: transparent; color: var(--accent); }
+.morning--clean .vcal__event {
+  --kind: var(--cal-meeting);
+  background: color-mix(in srgb, var(--kind) 7%, var(--surface));
+  border: 0; border-radius: 4px; box-shadow: inset 3px 0 0 var(--kind); padding: 4px 8px 4px 11px;
+}
+.morning--clean .vcal__event--focus { --kind: var(--cal-focus); }
+.morning--clean .vcal__event--personal { --kind: var(--cal-personal); }
+.morning--clean .vcal__event-title { font-weight: 600; }
+.morning--clean .vcal__event:hover { filter: none; background: color-mix(in srgb, var(--kind) 13%, var(--surface)); }
+
+/* this week: plain columns split by hairlines; today in the accent, not a box */
+.morning--clean .week__key { font-size: 12.5px; }
+.morning--clean .week__days { gap: 0; }
+.morning--clean .week__day { background: none; border-radius: 0; box-shadow: none; border-left: 1px solid var(--line); }
+.morning--clean .week__day:first-child { border-left: 0; }
+.morning--clean .week__daybtn { border-radius: 6px; }
+.morning--clean .week__day--today .week__name { color: var(--accent); }
+.morning--clean .week__day--picked { box-shadow: none; }
+.morning--clean .week__day--picked .week__daybtn { background: var(--row-hover); }
+.morning--clean .week__bar { height: 4px; }
+.morning--clean .week__heavy { font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.morning--clean .weekday__h { font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--ink); }
+.morning--clean .week__expand { border-color: transparent; background: none; font-size: 13px; font-weight: 500; border-radius: 6px; }
+.morning--clean .week__expand:hover { background: var(--row-hover); }

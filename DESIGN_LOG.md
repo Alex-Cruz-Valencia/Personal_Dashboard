@@ -95,6 +95,42 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Experiment: a "Clean" style borrowed from Todoist
+
+**Problem / trigger** — After the task card was made to mirror Todoist, it became the
+calmest part of the page. Alex wanted to try that feel everywhere: not Todoist's
+colors, but its clean structure, spacing and type.
+
+**Decision** — A ⚙ **Style** setting (`settings.look`, `?look=clean`): Cards (default,
+unchanged) or **Clean**, a scoped layer (`.morning--clean`) that applies the task row's
+ingredients page-wide:
+- **Type:** one sans family with bold sentence-case headings (no spaced capitals,
+  no display face on titles, greeting or clock). Regular-weight body text with grey
+  metadata; counts as plain text, not pills.
+- **Lines and markers:** hairlines instead of tinted tiles. A thin colored bar is the
+  only category marker, on attention items (red/amber/grey) and calendar blocks (by
+  kind).
+- **Controls and surfaces:** quiet text buttons instead of pills, and flat cards with a
+  hairline and no shadow.
+- **Week strip:** plain columns split by hairlines, today named in the accent.
+
+Works with both light palettes and dark.
+
+**Reasoning** — The Todoist look works because it removes encodings: one color cue per
+row, one weight for content, labels that read like words. Applying the same rules to
+the other cards keeps them consistent without copying Todoist's palette. As a setting
+it's cheap to compare side by side and to drop.
+
+**Alternatives considered** — *Make Clean the new default straight away*: too big a
+change to make without living with it. *Copy Todoist's exact visuals* (white page, red
+accent, system font): Alex asked for the style, not the brand.
+
+**Tradeoffs / open questions** — Experimental; local only. Popovers (task/event
+editors, settings) keep the Cards styling for now. If Clean wins, fold it into the base
+styles and delete the toggle rather than maintain two looks.
+
+---
+
 ## 2026-10-29 — A choice of light palettes, and a lighter weather curve
 
 **Problem / trigger** — Two notes from using Clean daylight:
