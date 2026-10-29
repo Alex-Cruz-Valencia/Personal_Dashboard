@@ -18,7 +18,12 @@
   light is "Clean daylight" (2026-10-29: canvas `#F6F5F1`, surface `#FFFEFB`,
   charcoal ink `#24262A`, sage accent, no blue; its page sky, clouds and
   near-opaque cards are the "clean daylight" block at the end of `globals.css`),
-  dark is the warm near-black with teal. 12/8/6px radii; no card shadow in dark,
+  dark is the warm near-black with teal. A second light palette, **Desert clay**
+  (sand, terracotta accent, wine-crimson urgent), is opt-in via
+  `settings.lightPalette` (⚙ Light palette, `?palette=clay`) → `data-palette` on
+  `.morning`; its block at the end of `globals.css` only matches while light is
+  showing and sets tokens on `:root` via `:has()` so popovers follow. Any new
+  light-only hardcoded color needs a clay counterpart there. 12/8/6px radii; no card shadow in dark,
   two soft levels in light (`--shadow` cards, `--shadow-pop` popovers); light
   secondary text held to ~6–8:1 for daylight; selected chips carry a border +
   bold, not tint alone; a flat day-arc band, a global accent-colored focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →

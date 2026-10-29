@@ -8,6 +8,7 @@ import {
   readStoredSettings,
   use24Hour,
   type Background,
+  type LightPalette,
   type DashboardSettings,
   type Density,
   type NoteStyle,
@@ -98,6 +99,15 @@ export function SettingsPanel({ settings, shownTheme }: { settings: DashboardSet
               ["timed", "Daylight"],
             ]}
             onPick={(theme) => update({ theme })}
+          />
+          <Segmented<LightPalette>
+            label="Light palette"
+            value={settings.lightPalette}
+            options={[
+              ["daylight", "Clean daylight"],
+              ["clay", "Desert clay"],
+            ]}
+            onPick={(lightPalette) => update({ lightPalette })}
           />
           <Segmented<Surface>
             label="Surfaces"

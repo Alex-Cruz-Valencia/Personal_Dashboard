@@ -1832,6 +1832,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .morning[data-theme="light"] .scene--page:is(.scene--drizzle, .scene--rain, .scene--storm) { --sky-a: rgba(200, 198, 190, 0.22); --sky-b: rgba(214, 211, 202, 0.32); }
 .morning[data-theme="light"] .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 214, 150, 0.16), transparent 65%); }
 .morning[data-theme="light"] .scene__cloud { background: #CFCBC2; opacity: 0.14; }
+.morning[data-theme="light"] .tempcurve--refined { --curve-fill: 0.12; }
+.morning[data-theme="light"] .tempcurve--refined .tempcurve__line--ahead { stroke: var(--ink-soft); stroke-width: 1.75; }
+.morning[data-theme="light"] .tempcurve--refined .tempcurve__line--past { stroke: var(--ink-faint); opacity: 0.45; }
 .morning[data-theme="light"] .card--scene .scene__cloud { opacity: 0.07; }
 .morning[data-theme="light"] .scene__mist { background: linear-gradient(to right, transparent, #CFCBC2, transparent); }
 .morning[data-theme="light"]:not(.morning--glass) :is(.card, .attn) { background: color-mix(in srgb, var(--surface) 94%, transparent); }
@@ -1841,6 +1844,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .morning:not([data-theme]) .scene--page:is(.scene--drizzle, .scene--rain, .scene--storm) { --sky-a: rgba(200, 198, 190, 0.22); --sky-b: rgba(214, 211, 202, 0.32); }
   .morning:not([data-theme]) .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 214, 150, 0.16), transparent 65%); }
   .morning:not([data-theme]) .scene__cloud { background: #CFCBC2; opacity: 0.14; }
+  .morning:not([data-theme]) .tempcurve--refined { --curve-fill: 0.12; }
+  .morning:not([data-theme]) .tempcurve--refined .tempcurve__line--ahead { stroke: var(--ink-soft); stroke-width: 1.75; }
+  .morning:not([data-theme]) .tempcurve--refined .tempcurve__line--past { stroke: var(--ink-faint); opacity: 0.45; }
   .morning:not([data-theme]) .card--scene .scene__cloud { opacity: 0.07; }
   .morning:not([data-theme]) .scene__mist { background: linear-gradient(to right, transparent, #CFCBC2, transparent); }
   .morning:not([data-theme]):not(.morning--glass) :is(.card, .attn) { background: color-mix(in srgb, var(--surface) 94%, transparent); }
@@ -1887,3 +1893,96 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .tasks .task__place { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; text-align: right; min-width: 0; }
 .tasks .task__hash { font-weight: 600; font-size: 14px; color: var(--ink-faint); }
 .tasks .task--done .task__check { border-color: var(--todo-c); background: var(--todo-c); }
+
+/* =============================================================================
+   DESERT CLAY — the alternative light palette (⚙ Light palette → Desert clay;
+   `settings.lightPalette`, `data-palette` on .morning). Light only: every rule
+   requires the light theme to be showing, so dark is untouched. Tokens land on
+   :root (via :has) so the portalled popovers follow. Sand and linen, terracotta
+   accent, wine-crimson urgent (kept apart from the terracotta), olive "someday";
+   every text pair checked at ≥4.8:1 (secondary 7–8:1). Task rings keep Todoist's
+   own colors in either palette.
+   ========================================================================== */
+/* explicit light (incl. Daylight before sunset) */
+:root:has(.morning[data-palette="clay"][data-theme="light"]) {
+  --canvas:     #F4ECE2;
+  --surface:    #FCF8F3;
+  --surface-2:  #F3EAE0;
+  --line:       #E6D8C7;
+  --ink:        #2F2520;
+  --ink-soft:   #59473C;
+  --ink-faint:  #6A5649;
+  --accent:     #A04A28;
+  --accent-tint:#F5E3D8;
+  --cal-meeting:  #7A5274;
+  --cal-focus:    #805708;
+  --cal-personal: #6E6259;
+  --negative:      #9E2A3A;
+  --negative-tint: #F6E1E3;
+  --warning:       #805708;
+  --warning-tint:  #F6EBD6;
+  --neutral:       #5E544C;
+  --neutral-tint:  #EFE8E0;
+  --p1:         #9E2A3A;
+  --p1-tint:    #F6E1E3;
+  --p2:         #805708;
+  --p2-tint:    #F6EBD6;
+  --p3:         #5F6B2A;
+  --p3-tint:    #ECEED9;
+  --shadow:     0 1px 2px rgba(90, 50, 20, 0.06), 0 6px 18px -8px rgba(90, 50, 20, 0.14);
+  --shadow-pop: 0 2px 6px rgba(90, 50, 20, 0.09), 0 18px 40px -14px rgba(90, 50, 20, 0.26);
+  --row-hover:  rgba(90, 50, 20, 0.06);
+  --row-active: rgba(90, 50, 20, 0.1);
+}
+.morning[data-palette="clay"][data-theme="light"]:not(.morning--glass) { --cal-meeting: #7A5274; --cal-focus: var(--accent); --cal-personal: #6E6259; }
+.morning[data-palette="clay"][data-theme="light"] .hello__note-text { color: #6E2F17; }
+.morning[data-palette="clay"][data-theme="light"] .scene--page { --sky-a: rgba(240, 178, 124, 0.2); --sky-b: rgba(236, 218, 196, 0.42); }
+.morning[data-palette="clay"][data-theme="light"] .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(250, 190, 120, 0.2), transparent 65%); }
+.morning[data-palette="clay"][data-theme="light"] .scene__cloud { background: #D8C3AC; }
+.morning[data-palette="clay"][data-theme="light"] .scene__mist { background: linear-gradient(to right, transparent, #D8C3AC, transparent); }
+/* Glass keeps its frosted material but drops its blues: a warm sky tint, plum meetings */
+.morning[data-palette="clay"][data-theme="light"] .skytint__blob--a { background: radial-gradient(circle, rgb(244, 196, 150), transparent 68%); }
+.morning[data-palette="clay"][data-theme="light"] .skytint__blob--b { background: radial-gradient(circle, rgb(236, 208, 180), transparent 68%); }
+.morning[data-palette="clay"][data-theme="light"].morning--glass, :root:has(.morning[data-palette="clay"][data-theme="light"].morning--glass) .eventedit { --cal-meeting: #B07AA6; }
+@media (prefers-color-scheme: light) {
+  :root:has(.morning[data-palette="clay"]:not([data-theme])) {
+    --canvas:     #F4ECE2;
+    --surface:    #FCF8F3;
+    --surface-2:  #F3EAE0;
+    --line:       #E6D8C7;
+    --ink:        #2F2520;
+    --ink-soft:   #59473C;
+    --ink-faint:  #6A5649;
+    --accent:     #A04A28;
+    --accent-tint:#F5E3D8;
+    --cal-meeting:  #7A5274;
+    --cal-focus:    #805708;
+    --cal-personal: #6E6259;
+    --negative:      #9E2A3A;
+    --negative-tint: #F6E1E3;
+    --warning:       #805708;
+    --warning-tint:  #F6EBD6;
+    --neutral:       #5E544C;
+    --neutral-tint:  #EFE8E0;
+    --p1:         #9E2A3A;
+    --p1-tint:    #F6E1E3;
+    --p2:         #805708;
+    --p2-tint:    #F6EBD6;
+    --p3:         #5F6B2A;
+    --p3-tint:    #ECEED9;
+    --shadow:     0 1px 2px rgba(90, 50, 20, 0.06), 0 6px 18px -8px rgba(90, 50, 20, 0.14);
+    --shadow-pop: 0 2px 6px rgba(90, 50, 20, 0.09), 0 18px 40px -14px rgba(90, 50, 20, 0.26);
+    --row-hover:  rgba(90, 50, 20, 0.06);
+    --row-active: rgba(90, 50, 20, 0.1);
+  }
+  .morning[data-palette="clay"]:not([data-theme]):not(.morning--glass) { --cal-meeting: #7A5274; --cal-focus: var(--accent); --cal-personal: #6E6259; }
+  .morning[data-palette="clay"]:not([data-theme]) .hello__note-text { color: #6E2F17; }
+  .morning[data-palette="clay"]:not([data-theme]) .scene--page { --sky-a: rgba(240, 178, 124, 0.2); --sky-b: rgba(236, 218, 196, 0.42); }
+  .morning[data-palette="clay"]:not([data-theme]) .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(250, 190, 120, 0.2), transparent 65%); }
+  .morning[data-palette="clay"]:not([data-theme]) .scene__cloud { background: #D8C3AC; }
+  .morning[data-palette="clay"]:not([data-theme]) .scene__mist { background: linear-gradient(to right, transparent, #D8C3AC, transparent); }
+  /* Glass keeps its frosted material but drops its blues: a warm sky tint, plum meetings */
+  .morning[data-palette="clay"]:not([data-theme]) .skytint__blob--a { background: radial-gradient(circle, rgb(244, 196, 150), transparent 68%); }
+  .morning[data-palette="clay"]:not([data-theme]) .skytint__blob--b { background: radial-gradient(circle, rgb(236, 208, 180), transparent 68%); }
+  .morning[data-palette="clay"]:not([data-theme]).morning--glass, :root:has(.morning[data-palette="clay"]:not([data-theme]).morning--glass) .eventedit { --cal-meeting: #B07AA6; }
+}

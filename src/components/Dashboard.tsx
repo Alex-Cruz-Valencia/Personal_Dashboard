@@ -46,6 +46,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
         <div
           className={`morning${settings.surface === "glass" ? " morning--glass" : ""}${settings.motion === "off" ? " morning--still" : ""}${pageScene ? " morning--scene" : ""}`}
           data-theme={settings.theme === "system" ? undefined : settings.theme}
+          data-palette={settings.lightPalette}
         >
           {/* Everything above is unchanged. Experiment: below it, the day arc and
               the three columns (tasks / plan / replies) are replaced by a

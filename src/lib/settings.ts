@@ -28,11 +28,14 @@ export type Background = "scene" | "plain";
 export type PastEvents = "hide" | "show";
 /** The top row: "unified" is one scenic card (greeting, clock, weather and its curve); "classic" is the greeting card beside the weather card. */
 export type TopRow = "classic" | "unified";
+/** The light theme's palette: "daylight" (off-white, sage) or "clay" (sand, terracotta). Dark is unaffected. */
+export type LightPalette = "daylight" | "clay";
 /** Voice of the "shape of the day" note — see src/lib/day-note.ts. */
 export type NoteStyle = "timely" | "gentle" | "plain";
 
 export interface DashboardSettings {
   theme: ThemeChoice;
+  lightPalette: LightPalette;
   timeFormat: TimeFormat;
   density: Density;
   surface: Surface;
@@ -64,6 +67,7 @@ export interface DashboardSettings {
  */
 export const DEFAULT_SETTINGS: DashboardSettings = {
   theme: "system",
+  lightPalette: "daylight",
   timeFormat: "12-hour",
   density: "comfortable",
   surface: "solid",
@@ -127,6 +131,7 @@ export function parseSettings(
 
   return {
     theme: pick(searchParams.theme, ["light", "dark", "system", "timed"], base.theme),
+    lightPalette: pick(searchParams.palette, ["daylight", "clay"], base.lightPalette),
     timeFormat: pick(
       searchParams.timeFormat ?? searchParams.time,
       ["12-hour", "24-hour"],
@@ -165,6 +170,9 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   const out: Partial<DashboardSettings> = {};
   if (obj.theme === "light" || obj.theme === "dark" || obj.theme === "system" || obj.theme === "timed") {
     out.theme = obj.theme;
+  }
+  if (obj.lightPalette === "daylight" || obj.lightPalette === "clay") {
+    out.lightPalette = obj.lightPalette;
   }
   if (obj.timeFormat === "12-hour" || obj.timeFormat === "24-hour") {
     out.timeFormat = obj.timeFormat;

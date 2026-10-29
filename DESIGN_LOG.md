@@ -95,6 +95,44 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — A choice of light palettes, and a lighter weather curve
+
+**Problem / trigger** — Two notes from using Clean daylight:
+- **The header looked "burnt".** The temperature curve's shading (an accent gradient
+  at 26%) and its full-charcoal 2px line read heavy on the off-white card.
+- **The sage/teal accent.** Alex wasn't sure about it, and wanted the earlier
+  "Desert clay" direction available as an option.
+
+**Decision**
+- **Curve (light only):** shading drops to 12% (`--curve-fill`), and the line ahead
+  of now uses the secondary ink at 1.75px, with the past half-faded.
+- **New setting:** ⚙ **Light palette** (`settings.lightPalette`): Clean daylight
+  (default) or **Desert clay**, which uses:
+  - sand canvas `#F4ECE2` and linen cards `#FCF8F3`;
+  - espresso ink, secondary text 7–8:1;
+  - terracotta accent `#A04A28`;
+  - wine-crimson urgent `#9E2A3A`, kept apart from the terracotta;
+  - olive "someday", plum meetings.
+- **Clay with Glass:** the sky tint turns apricot and meetings turn pastel plum, so
+  no blue survives. Glass with Clean daylight is unchanged; Alex liked it as is.
+- **Dark:** unaffected by either choice.
+
+**Reasoning** — The accent is the most personal part of a palette, and the decision
+wasn't converging. A setting lets Alex live with both instead of us flipping a global
+default back and forth. Clay is a scoped layer: tokens on `:root` via `:has()`, so
+popovers follow, and only while light is showing, so dark never changes.
+
+**Alternatives considered** — *Just swap the accent to terracotta in Clean
+daylight*: a terracotta accent on cool off-white looked pasted on; the palette needs
+warm neutrals around it. *An accent color picker*: open-ended colors break the
+contrast guarantees each palette was checked for.
+
+**Tradeoffs / open questions** — Two light palettes to maintain. Any new light-only
+hardcoded color needs a clay counterpart (noted in CLAUDE.md). Todoist rings keep
+Todoist's colors in both.
+
+---
+
 ## 2026-10-29 — The task card looks like Todoist
 
 **Problem / trigger** — Side by side with the Todoist app's Today view, our task
