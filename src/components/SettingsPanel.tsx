@@ -6,6 +6,7 @@ import { formatHour } from "@/lib/format";
 import {
   PREFS_COOKIE,
   use24Hour,
+  type Background,
   type DashboardSettings,
   type Density,
   type NoteStyle,
@@ -97,6 +98,15 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
               ["off", "Still"],
             ]}
             onPick={(motion) => update({ motion })}
+          />
+          <Segmented<Background>
+            label="Background"
+            value={settings.background}
+            options={[
+              ["scene", "Scene"],
+              ["plain", "Plain"],
+            ]}
+            onPick={(background) => update({ background })}
           />
           <Segmented<NoteStyle>
             label="Day note"

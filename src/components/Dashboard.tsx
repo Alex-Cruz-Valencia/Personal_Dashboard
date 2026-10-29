@@ -12,6 +12,7 @@ import { HelloCard } from "./HelloCard";
 import { TaskDetailProvider } from "./TaskDetail";
 import { TaskList } from "./TaskList";
 import { WeatherCard } from "./WeatherCard";
+import { WeatherScene } from "./WeatherScene";
 import { WeekStrip } from "./WeekStrip";
 
 interface DashboardProps {
@@ -26,6 +27,8 @@ interface DashboardProps {
 export function Dashboard({ data, settings }: DashboardProps) {
   const frozen = data.today.iso === MOCK_TODAY.iso && data.today.nowHour === MOCK_TODAY.nowHour;
   const use24 = use24Hour(settings);
+  // The weather scene across the whole page (cards turn frosted so it shows through).
+  const pageScene = settings.motion === "on" && settings.background === "scene";
   return (
     <FocusProvider nowHour={data.today.nowHour}>
     <EventDetailProvider
@@ -37,13 +40,20 @@ export function Dashboard({ data, settings }: DashboardProps) {
         {/* "system" leaves the attribute off so globals.css can fall through
             to prefers-color-scheme (see the effective-theme block there). */}
         <div
-          className={`morning${settings.surface === "glass" ? " morning--glass" : ""}${settings.motion === "off" ? " morning--still" : ""}`}
+          className={`morning${settings.surface === "glass" ? " morning--glass" : ""}${settings.motion === "off" ? " morning--still" : ""}${pageScene ? " morning--scene" : ""}`}
           data-theme={settings.theme === "system" ? undefined : settings.theme}
         >
           {/* Everything above is unchanged. Experiment: below it, the day arc and
               the three columns (tasks / plan / replies) are replaced by a
               vertical calendar beside today's tasks. Archived from this view
               (components kept, not rendered): DayArc, PlanCard, EmailList. */}
+          {pageScene ? (
+            <WeatherScene
+              variant="page"
+              sky={data.weather.sky}
+              isDay={data.today.nowHour >= data.weather.sunrise && data.today.nowHour < data.weather.sunset}
+            />
+          ) : null}
           {settings.surface === "glass" && settings.motion === "on" ? (
             <SkyTint today={data.today} sunrise={data.weather.sunrise} sunset={data.weather.sunset} frozen={frozen} />
           ) : null}
