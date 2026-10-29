@@ -2,7 +2,6 @@ import { use24Hour, type DashboardSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
 import { MOCK_TODAY } from "@/lib/mock-data";
 import { AttentionStrip } from "./AttentionStrip";
-import { SunLine } from "./SunLine";
 import { SkyTint } from "./SkyTint";
 import { ClockCard } from "./ClockCard";
 import { DayCalendar } from "./DayCalendar";
@@ -52,15 +51,6 @@ export function Dashboard({ data, settings }: DashboardProps) {
             <HelloCard
               user={data.user}
               today={data.today}
-              sub={
-                <SunLine
-                  today={data.today}
-                  sunrise={data.weather.sunrise}
-                  sunset={data.weather.sunset}
-                  use24={use24Hour(settings)}
-                  frozen={frozen}
-                />
-              }
             >
               <ClockCard
                 today={data.today}

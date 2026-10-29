@@ -27,7 +27,7 @@ export function ClockCard({ today, use24, frozen }: ClockCardProps) {
           {String(mm).padStart(2, "0")}
         </span>
         <span className="clock__side">
-          <span className="clock__sec">{String(ss).padStart(2, "0")}</span>
+          <span key={ss} className="clock__sec">{String(ss).padStart(2, "0")}</span>
           {use24 ? null : <span className="clock__ampm">{hh >= 12 ? "pm" : "am"}</span>}
         </span>
       </div>
