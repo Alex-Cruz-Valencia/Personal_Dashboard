@@ -450,6 +450,29 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-29 — When the day is done, "That's the day" covers the whole calendar
+
+**Problem** — With a day window ending at midnight, the calendar still showed
+the last empty hours (11pm, 12am) as a plain grid above the scene, so the scene
+looked like a card tacked onto the bottom instead of the calendar's whole
+state. It only filled everything in a window that happened to end at 10pm.
+
+**Decision** — When nothing is left today (every event is over, or the day has
+no events and the window has run out) the remaining hours slide away and the
+scene fills the entire calendar under the header. The "↑ Earlier today"
+pill and scrolling up still bring the day back, and "Now" returns to the scene.
+While anything is still ahead the calendar is unchanged: hours and events, with
+the scene at the bottom.
+
+**Alternatives considered** — Keeping the empty hours over a full-bleed scene
+(hour labels and lines on the scenery looked cluttered); showing the scene by
+clock time only (wrong when an evening event is still ahead); a fade instead
+of the slide.
+
+**Tradeoffs** — Once the last event ends you can't draw a new event for later
+that night without first revealing the day (tap the pill). The "now" line is
+hidden when the day is done; it has nothing to point at.
+
 ## 2026-10-29 — Calendar and tasks are only as tall as they need to be
 
 **Problem** — The calendar/tasks row was a fixed 78% of the window. With the past

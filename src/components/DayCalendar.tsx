@@ -102,7 +102,14 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   // How much of the calendar is visible: the end-of-day block is never taller than this.
   const [viewH, setViewH] = useState<number | null>(null);
   const collapsed = settings.pastEvents === "hide" && !showPast;
-  const viewFrom = collapsed ? Math.min(Math.max(Math.floor(nowHour - PAST_KEEP_H), arc.from), arc.to) : arc.from;
+  // Nothing left today (events all over, or an empty day that has run out): the hours slide
+  // away and "That's the day" takes the whole calendar. The pill or a scroll up brings them back.
+  const dayDone = next === null && (agenda.length > 0 || nowHour >= arc.to);
+  const viewFrom = collapsed
+    ? dayDone
+      ? arc.to
+      : Math.min(Math.max(Math.floor(nowHour - PAST_KEEP_H), arc.from), arc.to)
+    : arc.from;
   const hiddenPx = (viewFrom - arc.from) * HOUR_PX;
   const hiddenCount = collapsed ? agenda.filter((e) => e.end <= viewFrom).length : 0;
   const shift = useRef(0);
