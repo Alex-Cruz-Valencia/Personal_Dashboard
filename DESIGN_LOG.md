@@ -95,6 +95,40 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Calendar blocks use your Google Calendar colors (in our palette)
+
+**Problem / trigger** — Alex color-codes events in Google Calendar, but the dashboard
+ignored it. Every block was colored by our own guess at its kind
+(meeting/focus/personal), so nearly everything showed as "personal".
+
+**Decision** — Read the color Google already sends, but don't paint it verbatim:
+- **Source:** an event's own `colorId` (Google's 11 event colors), else its
+  calendar's `backgroundColor` from the calendar list we already fetch, snapped by hue
+  to the nearest family.
+- **Family names, not hex:** each becomes a family (tomato, flamingo, tangerine,
+  banana, sage, basil, peacock, blueberry, lavender, grape, graphite), painted in our
+  own `--ev-*` shades, lighter in dark mode.
+- **Where it shows:** block bars and tints in both Styles, and the week strip. Kind
+  still drives the labels.
+- **Scope:** no new OAuth scope; `calendar.readonly` already covers it.
+
+**Reasoning** — Alex asked for "colors adjacent in the same style", not Google's
+exact ones. Google's palette is heavier and more saturated than the page. Mapping by
+family keeps the meaning (red is red) while every block still sits in the dashboard's
+palette and contrast rules. Checked against live data: today's events are all on a
+calendar set to `#cd74e6`, which maps to grape. No event had its own color today.
+
+**Alternatives considered** — *Use Google's hex directly*: it clashes with the
+palettes and needs per-color contrast work. *Keep kind colors*: loses information Alex
+deliberately curates.
+
+**Tradeoffs / open questions** — Hue snapping can land a borderline calendar color on
+a neighboring family; for example `#16a765` reads as sage rather than basil.
+Blueberry, peacock and lavender bring blue back into light mode, but only when Alex
+chose those colors.
+
+---
+
 ## 2026-10-29 — Experiment: a "Clean" style borrowed from Todoist
 
 **Problem / trigger** — After the task card was made to mirror Todoist, it became the

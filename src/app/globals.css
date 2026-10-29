@@ -53,6 +53,18 @@
   --mark-meeting:  #CC6FB0;
   --mark-focus:    #EE9A2E;
   --mark-personal: #2FB38F;
+  /* Google Calendar color families, in this page's style (src/lib/event-colors.ts) */
+  --ev-tomato: #DD4B3E;
+  --ev-flamingo: #E8787A;
+  --ev-tangerine: #EE8A3A;
+  --ev-banana: #E2B42A;
+  --ev-sage: #2FB38F;
+  --ev-basil: #3C9A5A;
+  --ev-peacock: #26A6C4;
+  --ev-blueberry: #5B7FDB;
+  --ev-lavender: #8B8FE0;
+  --ev-grape: #A866C9;
+  --ev-graphite: #9A9AA0;
 
   /* priority ramp — urgent / normal / someday (task list only) */
   /* text-on-tint pairs are kept at or above WCAG AA (4.5:1) */
@@ -105,6 +117,7 @@
   --neutral-tint:  #212A2F;
   --mark-negative: #E4705A; --mark-warning: #D9A445; --mark-neutral: #A2B0B8;
   --mark-meeting: #8FAAC6; --mark-focus: #4DC3C4; --mark-personal: #A39D90;
+  --ev-tomato: #F07A6E; --ev-flamingo: #F29A9B; --ev-tangerine: #F5A764; --ev-banana: #F0CB5C; --ev-sage: #5FD0B0; --ev-basil: #6CC48A; --ev-peacock: #5EC6DE; --ev-blueberry: #8CA6F0; --ev-lavender: #ADB0F2; --ev-grape: #C796E0; --ev-graphite: #B4B4BA;
   --shadow:     none;
   --shadow-pop: none;
   color-scheme: dark;
@@ -155,6 +168,7 @@
   --neutral-tint:  #212A2F;
   --mark-negative: #E4705A; --mark-warning: #D9A445; --mark-neutral: #A2B0B8;
   --mark-meeting: #8FAAC6; --mark-focus: #4DC3C4; --mark-personal: #A39D90;
+  --ev-tomato: #F07A6E; --ev-flamingo: #F29A9B; --ev-tangerine: #F5A764; --ev-banana: #F0CB5C; --ev-sage: #5FD0B0; --ev-basil: #6CC48A; --ev-peacock: #5EC6DE; --ev-blueberry: #8CA6F0; --ev-lavender: #ADB0F2; --ev-grape: #C796E0; --ev-graphite: #B4B4BA;
   --shadow:     none;
   --shadow-pop: none;
   color-scheme: dark;
@@ -187,6 +201,7 @@
     --neutral-tint:  #212A2F;
   --mark-negative: #E4705A; --mark-warning: #D9A445; --mark-neutral: #A2B0B8;
   --mark-meeting: #8FAAC6; --mark-focus: #4DC3C4; --mark-personal: #A39D90;
+  --ev-tomato: #F07A6E; --ev-flamingo: #F29A9B; --ev-tangerine: #F5A764; --ev-banana: #F0CB5C; --ev-sage: #5FD0B0; --ev-basil: #6CC48A; --ev-peacock: #5EC6DE; --ev-blueberry: #8CA6F0; --ev-lavender: #ADB0F2; --ev-grape: #C796E0; --ev-graphite: #B4B4BA;
     --shadow:     none;
     --shadow-pop: none;
     color-scheme: dark;
@@ -2106,3 +2121,22 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .morning--clean .weekday__h { font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--ink); }
 .morning--clean .week__expand { border-color: transparent; background: none; font-size: 13px; font-weight: 500; border-radius: 6px; }
 .morning--clean .week__expand:hover { background: var(--row-hover); }
+
+/* ---- Google Calendar colors (2026-10-29) ----
+   An event's own Google color (else its calendar's) arrives as a family name in
+   `data-color`; each family is painted in this page's palette (`--ev-*`), not
+   Google's hex. It replaces the meeting/focus/personal color, never the text. */
+[data-color="tomato"] { --ev: var(--ev-tomato); }
+[data-color="flamingo"] { --ev: var(--ev-flamingo); }
+[data-color="tangerine"] { --ev: var(--ev-tangerine); }
+[data-color="banana"] { --ev: var(--ev-banana); }
+[data-color="sage"] { --ev: var(--ev-sage); }
+[data-color="basil"] { --ev: var(--ev-basil); }
+[data-color="peacock"] { --ev: var(--ev-peacock); }
+[data-color="blueberry"] { --ev: var(--ev-blueberry); }
+[data-color="lavender"] { --ev: var(--ev-lavender); }
+[data-color="grape"] { --ev: var(--ev-grape); }
+[data-color="graphite"] { --ev: var(--ev-graphite); }
+.morning.morning--clean .vcal__event[data-color] { --kind: var(--ev); }
+.morning:not(.morning--clean) .vcal__event[data-color] { background: color-mix(in srgb, var(--ev) 18%, var(--surface)); border-color: color-mix(in srgb, var(--ev) 55%, var(--surface)); }
+.morning :is(.week__event, .week__banner)[data-color] { background: color-mix(in srgb, var(--ev) 18%, var(--surface)); border-color: color-mix(in srgb, var(--ev) 55%, var(--surface)); }

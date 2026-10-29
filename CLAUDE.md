@@ -31,7 +31,13 @@
 - **Marker vs. text colors:** `--mark-*` tokens (negative/warning/neutral/
   meeting/focus/personal) are bright hues for non-text marks only — bars,
   dots, light tints. Text uses the darker readable tokens (`--negative`,
-  `--ink-soft`, …). Each light palette and dark sets its own `--mark-*`. 12/8/6px radii; no card shadow in dark,
+  `--ink-soft`, …). Each light palette and dark sets its own `--mark-*`.
+- **Google Calendar colors:** each event's own `colorId`, else its calendar's
+  `backgroundColor` (snapped by hue), becomes `AgendaEvent.color` — a family
+  name (`src/lib/event-colors.ts`), never Google's hex. Blocks carry it as
+  `data-color` and the page paints it with `--ev-<family>` (light and dark
+  sets in `globals.css`). It overrides the meeting/focus/personal color only;
+  `kind` still drives labels and "where" text. 12/8/6px radii; no card shadow in dark,
   two soft levels in light (`--shadow` cards, `--shadow-pop` popovers); light
   secondary text held to ~6–8:1 for daylight; selected chips carry a border +
   bold, not tint alone; a flat day-arc band, a global accent-colored focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →
@@ -181,7 +187,7 @@
   compatibility with the old first-party Vercel KV naming), else the
   gitignored `.data/google-tokens.json` file.
 - `getAgenda` (`src/lib/google/calendar.ts`) auto-discovers every calendar
-  the account can see via `calendarList` (`discoverCalendarIds`, min access
+  the account can see via `calendarList` (`discoverCalendars`, min access
   role `freeBusyReader`) — including one shared from another Google
   account, no extra OAuth scope needed — minus
   `config.google.calendarExcludeIds` (`GOOGLE_CALENDAR_EXCLUDE_IDS`,
@@ -237,7 +243,7 @@
   covers creating/deleting/sharing whole calendars). `AgendaEvent.id` is
   `<encodeURIComponent(calendarId)>:<eventId>` (`compositeId`/
   `parseCompositeId` in `calendar.ts`) — it used to be a positional
-  `calendarIndex`, which broke the moment `discoverCalendarIds()` returned
+  `calendarIndex`, which broke the moment `discoverCalendars()` returned
   calendars in a different order between requests; the real calendar id is
   the only thing safe to persist across a render. `deleteEvent`/
   `updateEvent` operate on a single occurrence (the list call already used

@@ -449,6 +449,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
               return (
                 <div
                   key={e.id ?? `${e.name}${i}`}
+                  data-color={e.color}
                   className={`vcal__event vcal__event--${e.kind} vcal__event--${state}${isSelected(e) ? " vcal__event--selected" : ""}${canEdit ? " vcal__event--editable" : ""}${dragging ? " vcal__event--dragging" : ""}`}
                   style={
                     {

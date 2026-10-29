@@ -1,3 +1,4 @@
+import type { EventColor } from "./event-colors";
 /**
  * Domain model for the Morning Dashboard.
  *
@@ -121,6 +122,8 @@ export interface AgendaEvent {
   start: number;
   end: number;
   kind: EventKind;
+  /** The event's Google color family (its own, else its calendar's); absent for sample data. */
+  color?: EventColor;
 
   /* ---- detail (shown in the click-to-expand card; optional) ---- */
   /** Physical location or room. */
@@ -172,7 +175,7 @@ export interface SourceStatus {
 }
 
 /** An event as the week's expanded view draws it. */
-export type WeekEvent = Pick<AgendaEvent, "id" | "name" | "start" | "end" | "kind">;
+export type WeekEvent = Pick<AgendaEvent, "id" | "name" | "start" | "end" | "kind" | "color">;
 
 /** A task due on a day of the week, for the expanded view. */
 export interface WeekTask {
