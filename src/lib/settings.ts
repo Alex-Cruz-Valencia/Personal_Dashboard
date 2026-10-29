@@ -9,8 +9,13 @@
 /** Cookie the SettingsPanel writes; read back in `page.tsx`. */
 export const PREFS_COOKIE = "dashboard_prefs";
 
-/** "system" follows the viewer's OS light/dark preference; the rest force it. */
+/** What the page renders: "system" follows the viewer's OS light/dark preference; the rest force it. */
 export type Theme = "light" | "dark" | "system";
+/**
+ * What the viewer picks. "timed" is light through the morning and dark from
+ * `darkFrom` on — resolve it with `shownTheme()` before rendering.
+ */
+export type ThemeChoice = Theme | "timed";
 export type TimeFormat = "12-hour" | "24-hour";
 export type Density = "comfortable" | "focused";
 /** "glass" = translucent frosted cards over an ambient backdrop; "solid" = the reference's opaque cards. */
@@ -27,7 +32,7 @@ export type TopRow = "classic" | "unified";
 export type NoteStyle = "timely" | "gentle" | "plain";
 
 export interface DashboardSettings {
-  theme: Theme;
+  theme: ThemeChoice;
   timeFormat: TimeFormat;
   density: Density;
   surface: Surface;
@@ -50,6 +55,8 @@ export interface DashboardSettings {
    * winding down and the Plan card stops suggesting tasks. 24 = never.
    */
   windDown: number;
+  /** With theme "timed": the hour the dark theme takes over (light from `LIGHT_FROM` until then). */
+  darkFrom: number;
 }
 
 /**
@@ -71,7 +78,20 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   dayEnd: 22,
   weatherStart: 6,
   windDown: 21,
+  darkFrom: 12,
 };
+
+/** Settings as rendered: the theme already resolved (see `shownTheme`). */
+export type ShownSettings = Omit<DashboardSettings, "theme"> & { theme: Theme };
+
+/** With theme "timed", the light theme starts here (before it, it's still night). */
+export const LIGHT_FROM = 5;
+
+/** The theme to render right now: "timed" becomes light or dark by the local hour. */
+export function shownTheme(theme: ThemeChoice, darkFrom: number, nowHour: number): Theme {
+  if (theme !== "timed") return theme;
+  return nowHour >= LIGHT_FROM && nowHour < darkFrom ? "light" : "dark";
+}
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -112,7 +132,7 @@ export function parseSettings(
       : [DEFAULT_SETTINGS.dayStart, DEFAULT_SETTINGS.dayEnd];
 
   return {
-    theme: pick(searchParams.theme, ["light", "dark", "system"], base.theme),
+    theme: pick(searchParams.theme, ["light", "dark", "system", "timed"], base.theme),
     timeFormat: pick(
       searchParams.timeFormat ?? searchParams.time,
       ["12-hour", "24-hour"],
@@ -136,6 +156,7 @@ export function parseSettings(
       safeEnd - 1,
     ),
     windDown: pickHour(searchParams.windDown, base.windDown),
+    darkFrom: pickHour(searchParams.darkFrom, base.darkFrom),
   };
 }
 
@@ -149,7 +170,7 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
     return {};
   }
   const out: Partial<DashboardSettings> = {};
-  if (obj.theme === "light" || obj.theme === "dark" || obj.theme === "system") {
+  if (obj.theme === "light" || obj.theme === "dark" || obj.theme === "system" || obj.theme === "timed") {
     out.theme = obj.theme;
   }
   if (obj.timeFormat === "12-hour" || obj.timeFormat === "24-hour") {
@@ -187,6 +208,9 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   }
   if (typeof obj.windDown === "number" && obj.windDown >= 0 && obj.windDown <= 24) {
     out.windDown = obj.windDown;
+  }
+  if (typeof obj.darkFrom === "number" && obj.darkFrom >= 0 && obj.darkFrom <= 24) {
+    out.darkFrom = obj.darkFrom;
   }
   return out;
 }

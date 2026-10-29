@@ -109,6 +109,12 @@
   `LocationSync`;
   `AutoRefresh` (60s `router.refresh()` while visible); `SettingsPanel`
   (writes the `dashboard_prefs` cookie, then `router.refresh()`).
+- **Theme "timed"** ("By time", 2026-10-29 experiment): light from `LIGHT_FROM`
+  (5) to `settings.darkFrom` (default 12), dark otherwise. `settings.theme` is a
+  `ThemeChoice`; `Dashboard` resolves it once with `shownTheme()` and passes
+  `ShownSettings` (theme is plain light/dark/system) down — anything that sets
+  `data-theme` must use the resolved theme, never the raw choice. Only
+  `SettingsPanel` sees the raw choice.
 - Settings precedence (`src/lib/settings.ts` → read in `page.tsx`): URL query
   → `dashboard_prefs` cookie → `DEFAULT_SETTINGS`. `dayStart`/`dayEnd`/
   `weatherStart` are the exception: `page.tsx` layers `config.arcFrom`/

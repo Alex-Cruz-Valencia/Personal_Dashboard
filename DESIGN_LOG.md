@@ -95,6 +95,42 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Experiment: the theme follows the day ("By time")
+
+**Problem / trigger** — The dashboard is opened first thing in the morning and
+again through the afternoon and evening. One fixed theme fits neither end well:
+the dark theme feels heavy at 8am in daylight, the light one glares at night.
+Alex wanted to try a light, airy page in the morning that hands over to the
+current dark theme once the afternoon starts.
+
+**Decision** — A fourth Appearance option, **By time** (`theme: "timed"`):
+light from 5am until a "Dark from" hour (default **noon**, editable in ⚙ right
+under the option), dark from then until 5am. The server resolves it per render
+from the viewer's local hour (`shownTheme()` in `settings.ts`), so every card,
+popover and the page background flip together, and the existing one-minute
+auto-refresh carries the switch over without a reload. Opt-in; System stays
+the default.
+
+**Reasoning** — Resolving on the server reuses the whole light/dark token
+system as it is — no third palette to keep in sync, no client clock that could
+disagree with the server's "now". The hour is the user's to set because
+"afternoon" is personal (noon for some, 3pm for others). `?now=9` / `?now=14`
+previews either side.
+
+**Alternatives considered** — *Switch at sunset* (data is already there): but
+the ask was specifically "afternoon", and sunset swings by ~3 hours across the
+year. *A gradual blend of the two palettes through the day*: prettier, but every
+token pair would need an in-between that still passes contrast — far more work
+for an experiment. *A brighter, separate "morning" palette*: possible next step
+if the existing light theme doesn't feel light enough.
+
+**Tradeoffs / open questions** — The flip is a hard cut at the minute
+boundary, not a fade. Before 5am it's dark, which assumes nobody wants a light
+page in the small hours. Worth living with for a few days before deciding
+whether it becomes the default.
+
+---
+
 ## 2026-10-29 — Bug hunt: edits that vanished, writes any site could trigger, and a DST blind spot
 
 **Problem / trigger** — A deliberate sweep of the whole app for things that

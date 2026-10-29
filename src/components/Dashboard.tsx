@@ -1,4 +1,4 @@
-import { use24Hour, type DashboardSettings } from "@/lib/settings";
+import { shownTheme, use24Hour, type DashboardSettings, type ShownSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
 import { MOCK_TODAY } from "@/lib/mock-data";
 import { AttentionStrip } from "./AttentionStrip";
@@ -25,7 +25,10 @@ interface DashboardProps {
  * The full morning view. Layout and class names mirror the Claude Design
  * source exactly — see `globals.css` for the ported stylesheet.
  */
-export function Dashboard({ data, settings }: DashboardProps) {
+export function Dashboard({ data, settings: chosen }: DashboardProps) {
+  // "timed" resolves to light or dark for this render; AutoRefresh's minute
+  // re-render flips it when the hour passes. The panel still sees the choice.
+  const settings: ShownSettings = { ...chosen, theme: shownTheme(chosen.theme, chosen.darkFrom, data.today.nowHour) };
   const frozen = data.today.iso === MOCK_TODAY.iso && data.today.nowHour === MOCK_TODAY.nowHour;
   const use24 = use24Hour(settings);
   // The weather scene across the whole page (cards turn frosted so it shows through).
@@ -118,7 +121,7 @@ export function Dashboard({ data, settings }: DashboardProps) {
 
           {data.week ? <WeekStrip days={data.week} use24={use24} /> : null}
 
-          <Footline agenda={data.agenda} today={data.today} settings={settings} />
+          <Footline agenda={data.agenda} today={data.today} settings={chosen} shownTheme={settings.theme} />
         </div>
       </TaskDetailProvider>
     </EventDetailProvider>

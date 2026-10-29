@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildTasks, taskCountLabel } from "@/lib/format";
-import { use24Hour, type DashboardSettings, type Theme } from "@/lib/settings";
+import { use24Hour, type ShownSettings, type Theme } from "@/lib/settings";
 import type { SliceSource, Task } from "@/lib/types";
 import { NewTaskForm } from "./NewTaskForm";
 import { Popover } from "./Popover";
@@ -12,7 +12,7 @@ import { useTaskDetail } from "./TaskDetail";
 
 interface TaskListProps {
   tasks: Task[];
-  settings: DashboardSettings;
+  settings: ShownSettings;
   source: SliceSource;
 }
 

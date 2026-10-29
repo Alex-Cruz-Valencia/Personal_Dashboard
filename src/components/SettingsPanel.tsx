@@ -4,6 +4,7 @@ import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { formatHour } from "@/lib/format";
 import {
+  LIGHT_FROM,
   PREFS_COOKIE,
   readStoredSettings,
   use24Hour,
@@ -16,6 +17,7 @@ import {
   type Motion,
   type Surface,
   type Theme,
+  type ThemeChoice,
   type TimeFormat,
 } from "@/lib/settings";
 import { Popover } from "./Popover";
@@ -37,7 +39,7 @@ function readCookie(name: string): string | undefined {
  * `dashboard_prefs` cookie and re-renders the server tree so the choice sticks
  * across visits (URL query params still win when present — see `settings.ts`).
  */
-export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
+export function SettingsPanel({ settings, shownTheme }: { settings: DashboardSettings; shownTheme: Theme }) {
   const router = useRouter();
   const btnRef = useRef<HTMLButtonElement>(null);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
@@ -82,21 +84,31 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
       {anchor ? (
         <Popover
           anchor={anchor}
-          theme={settings.theme}
+          theme={shownTheme}
           onClose={() => setAnchor(null)}
           className="settings"
           ariaLabel="Display settings"
         >
-          <Segmented<Theme>
+          <Segmented<ThemeChoice>
             label="Appearance"
             value={settings.theme}
             options={[
               ["light", "Light"],
               ["dark", "Dark"],
               ["system", "System"],
+              ["timed", "By time"],
             ]}
             onPick={(theme) => update({ theme })}
           />
+          {settings.theme === "timed" ? (
+            <HourField
+              label="Dark from"
+              value={settings.darkFrom}
+              min={LIGHT_FROM + 1}
+              use24={use24}
+              onCommit={(darkFrom) => update({ darkFrom })}
+            />
+          ) : null}
           <Segmented<Surface>
             label="Surfaces"
             value={settings.surface}
