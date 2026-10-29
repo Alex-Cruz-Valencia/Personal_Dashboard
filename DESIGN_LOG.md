@@ -95,6 +95,39 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — A warm light theme
+
+**Problem / trigger** — Trying "By time" put the light theme in front of Alex
+every morning, and it read harsh: a near-white page, near-black text, and on
+overcast days a cool grey-blue sky behind everything with grey calendar blocks.
+Not the warm, calm morning the experiment was for.
+
+**Decision** — Warm the light theme itself: cream canvas `#F3E6D3`, parchment
+cards `#FCF6EC`, espresso ink `#2B2118` with warm browns for secondary text.
+In light mode the page sky uses sunrise tones (apricot/peach) instead of
+grey-blue for clear, overcast and rainy weather, the drifting clouds are a warm
+sand instead of grey ink, and "personal" calendar blocks sit on the warm
+surface with a slate edge instead of a slate fill. Teal accent unchanged. Dark
+is untouched.
+
+**Reasoning** — One light palette, not a separate "morning" one: anyone on
+Light or on System in daylight gets the same warmth, and there's no third token
+set to keep in sync. The text tokens were picked by contrast first (ink 14.6:1,
+ink-soft 6.2:1, ink-faint ≥4.5:1 on the card surfaces), so warmer doesn't mean
+harder to read.
+
+**Alternatives considered** — *A morning-only palette for "By time"*: more
+distinctive, but two light themes to maintain and the plain Light option would
+stay harsh. *Recolor "personal" events to a warm hue*: the blue / amber / slate
+triad is chosen to stay apart for colorblind viewers; a warm clay sits too
+close to both amber and the red "negative" color, so the slate edge stays.
+
+**Tradeoffs / open questions** — Supersedes the 2026-10-27 canvas `#F4F1EA`.
+The weather card's own little scene and the glass surface layer weren't retuned;
+if Glass is turned on in the morning it may want the same pass.
+
+---
+
 ## 2026-10-29 — Experiment: the theme follows the day ("By time")
 
 **Problem / trigger** — The dashboard is opened first thing in the morning and

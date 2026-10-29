@@ -16,15 +16,17 @@
    Sans) instead of a Google Fonts <link>. Same typefaces, no external request.
    ========================================================================== */
 :root {
-  --canvas:     #F4F1EA;
-  --surface:    #FBFAF6;
-  --surface-2:  #EEEBE2;
-  --line:       #DDD8CB;
-  --ink:        #1D1B17;
-  --ink-soft:   #5F5B52;
-  --ink-faint:  #766F64;
+  /* Light is warm on purpose (2026-10-29): cream canvas, parchment cards,
+     espresso ink instead of near-black — see DESIGN_LOG "warm light". */
+  --canvas:     #F3E6D3;
+  --surface:    #FCF6EC;
+  --surface-2:  #F3E7D6;
+  --line:       #E6D6C0;
+  --ink:        #2B2118;
+  --ink-soft:   #6B5A47;
+  --ink-faint:  #75614B;
   --accent:     #0B6F75;
-  --accent-tint:#E0ECEA;
+  --accent-tint:#E2EDE6;
   /* CALENDAR KINDS — colorblind-safe blue / amber / slate triad.
      Deliberately NOT red-vs-green: those two read identically to a
      deuteranope, and a meeting is not a "bad" status. */
@@ -1811,3 +1813,23 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .tempcurve--refined .tempcurve__scale { font-size: 11px; letter-spacing: 0.02em; }
 @media (prefers-reduced-motion: reduce) { .tempcurve__halo { animation: none !important; opacity: 0; } }
 .morning--still .tempcurve__halo { animation: none; opacity: 0; }
+
+/* ---- warm light: the page sky in the light theme (sunrise tones, not grey-blue) ----
+   Dark keeps the cool night sky above. Light = an explicit data-theme="light"
+   (including "By time" before its dark hour), or no theme with the OS in light. */
+.morning[data-theme="light"] .scene--page.scene--day { --sky-a: rgba(255, 184, 112, 0.30); --sky-b: rgba(250, 210, 168, 0.34); }
+.morning[data-theme="light"] .scene--page:is(.scene--cloudy, .scene--fog) { --sky-a: rgba(238, 186, 140, 0.26); --sky-b: rgba(232, 208, 180, 0.32); }
+.morning[data-theme="light"] .scene--page:is(.scene--drizzle, .scene--rain, .scene--storm) { --sky-a: rgba(196, 160, 132, 0.26); --sky-b: rgba(178, 160, 146, 0.26); }
+.morning[data-theme="light"] .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 196, 120, 0.24), rgba(255, 186, 110, 0.08) 45%, transparent 70%); }
+.morning[data-theme="light"] .scene__cloud { background: #D9B996; opacity: 0.22; }
+.morning[data-theme="light"] :is(.vcal__event--personal, .week__ev--personal) { background: color-mix(in srgb, var(--cal-personal) 8%, var(--surface-2)); border-color: color-mix(in srgb, var(--cal-personal) 45%, var(--surface)); }
+.morning[data-theme="light"] .scene__mist { background: linear-gradient(to right, transparent, #D9B996, transparent); }
+@media (prefers-color-scheme: light) {
+  .morning:not([data-theme]) .scene--page.scene--day { --sky-a: rgba(255, 184, 112, 0.30); --sky-b: rgba(250, 210, 168, 0.34); }
+  .morning:not([data-theme]) .scene--page:is(.scene--cloudy, .scene--fog) { --sky-a: rgba(238, 186, 140, 0.26); --sky-b: rgba(232, 208, 180, 0.32); }
+  .morning:not([data-theme]) .scene--page:is(.scene--drizzle, .scene--rain, .scene--storm) { --sky-a: rgba(196, 160, 132, 0.26); --sky-b: rgba(178, 160, 146, 0.26); }
+  .morning:not([data-theme]) .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 196, 120, 0.24), rgba(255, 186, 110, 0.08) 45%, transparent 70%); }
+  .morning:not([data-theme]) .scene__cloud { background: #D9B996; opacity: 0.22; }
+  .morning:not([data-theme]) :is(.vcal__event--personal, .week__ev--personal) { background: color-mix(in srgb, var(--cal-personal) 8%, var(--surface-2)); border-color: color-mix(in srgb, var(--cal-personal) 45%, var(--surface)); }
+  .morning:not([data-theme]) .scene__mist { background: linear-gradient(to right, transparent, #D9B996, transparent); }
+}
