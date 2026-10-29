@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
 import { CALENDAR_TAG, deleteEvent, updateEvent, type EventPatch } from "@/lib/google/calendar";
 import { resolveLocation } from "@/lib/location";
+import { rejectCrossSite } from "@/lib/request-guard";
 
 function notConfigured() {
   return NextResponse.json(
@@ -10,6 +11,9 @@ function notConfigured() {
     { status: 400 },
   );
 }
+
+const DATE = /^\d{4}-\d{2}-\d{2}$/;
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 interface PatchBody {
   name?: string;
@@ -30,6 +34,8 @@ export async function PATCH(
   request: Request,
   ctx: RouteContext<"/api/events/[id]">,
 ) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   if (!features.google) return notConfigured();
   const { id } = await ctx.params;
 
@@ -40,8 +46,16 @@ export async function PATCH(
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
+  const text = (v: unknown, max: number) => v === undefined || (typeof v === "string" && v.length <= max);
+  if (!text(body.name, 1000) || !text(body.location, 1000) || !text(body.description, 8000)) {
+    return NextResponse.json({ error: "name, location and description must be short text" }, { status: 400 });
+  }
   const patch: EventPatch = {};
-  if (body.name !== undefined) patch.summary = body.name.trim();
+  if (body.name !== undefined) {
+    const name = body.name.trim();
+    if (!name) return NextResponse.json({ error: "The event needs a name" }, { status: 400 });
+    patch.summary = name;
+  }
   if (body.location !== undefined) patch.location = body.location.trim();
   if (body.description !== undefined) patch.description = body.description.trim();
 
@@ -49,6 +63,12 @@ export async function PATCH(
     if (!body.date || !body.startTime || !body.endTime) {
       return NextResponse.json(
         { error: "Rescheduling needs date, startTime and endTime together" },
+        { status: 400 },
+      );
+    }
+    if (!DATE.test(body.date) || !TIME.test(body.startTime) || !TIME.test(body.endTime)) {
+      return NextResponse.json(
+        { error: "date must be YYYY-MM-DD and times HH:MM" },
         { status: 400 },
       );
     }
@@ -70,9 +90,11 @@ export async function PATCH(
 }
 
 export async function DELETE(
-  _request: Request,
+  request: Request,
   ctx: RouteContext<"/api/events/[id]">,
 ) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   if (!features.google) return notConfigured();
   const { id } = await ctx.params;
 

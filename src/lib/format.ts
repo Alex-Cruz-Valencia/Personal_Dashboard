@@ -31,9 +31,10 @@ export const PRIORITY_LABEL: Record<Priority, string> = {
  * with noon's "12:00pm".
  */
 export function formatHour(h: number, use24: boolean): string {
-  const hh = Math.floor(h);
-  const mm = Math.round((h - hh) * 60);
-  const m = String(mm).padStart(2, "0");
+  // Round to the minute first, so 9:59:45 reads "10:00", never "9:60".
+  const total = Math.round(h * 60);
+  const hh = Math.floor(total / 60);
+  const m = String(total % 60).padStart(2, "0");
   if (use24) return `${String(hh % 24).padStart(2, "0")}:${m}`;
   const clock = hh % 24;
   const ampm = clock >= 12 ? "pm" : "am";
@@ -43,8 +44,9 @@ export function formatHour(h: number, use24: boolean): string {
 
 /** Decimal hour → "HH:MM" (24-hour, zero-padded) for an `<input type="time">`. */
 export function decimalHourToTimeInput(h: number): string {
-  const hh = Math.floor(h) % 24;
-  const mm = Math.round((h - Math.floor(h)) * 60);
+  const total = Math.round(h * 60);
+  const hh = Math.floor(total / 60) % 24;
+  const mm = total % 60;
   return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
 }
 
@@ -77,11 +79,13 @@ export interface TaskVM extends Task {
   cls: string;
 }
 
-export function buildTasks(tasks: Task[], density: Density): TaskVM[] {
+export function buildTasks(tasks: Task[], density: Density, use24?: boolean): TaskVM[] {
   return tasks
     .filter((t) => (density === "comfortable" ? true : t.priority < 3))
     .map((t) => ({
       ...t,
+      // A timed task's label is rendered 24-hour on the server; follow ⚙ Time here.
+      due: use24 !== undefined && t.dueHour != null ? formatHour(t.dueHour, use24) : t.due,
       priorityLabel: PRIORITY_LABEL[t.priority],
       tagCls: `task__tag task__tag--p${t.priority}`,
       cls: `task task--p${t.priority}`,

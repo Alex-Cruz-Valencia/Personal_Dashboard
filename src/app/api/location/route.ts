@@ -1,5 +1,6 @@
 import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
+import { rejectCrossSite } from "@/lib/request-guard";
 import {
   LOCATION_COOKIE,
   resolveLocation,
@@ -16,6 +17,8 @@ export async function GET() {
 
 /** Store the device's position (called by the `LocationSync` client component). */
 export async function POST(request: Request) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   let body: {
     latitude?: unknown;
     longitude?: unknown;
@@ -54,7 +57,9 @@ export async function POST(request: Request) {
 }
 
 /** Forget the stored device location (fall back to env / default). */
-export async function DELETE() {
+export async function DELETE(request: Request) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   (await cookies()).delete(LOCATION_COOKIE);
   return NextResponse.json({ ok: true });
 }

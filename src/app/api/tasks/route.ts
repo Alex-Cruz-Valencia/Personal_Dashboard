@@ -2,9 +2,12 @@ import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
 import { addTask, TODOIST_TAG, type NewTask } from "@/lib/tasks/todoist";
+import { rejectCrossSite } from "@/lib/request-guard";
 
 /** Create a task. Body: { content, projectId?, priority? (1–3), due?, dueDate?, labels?, deadline?, durationMinutes?, description? }. */
 export async function POST(request: Request) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   if (!features.todoist) {
     return NextResponse.json(
       { error: "Set TODOIST_API_TOKEN to add tasks." },

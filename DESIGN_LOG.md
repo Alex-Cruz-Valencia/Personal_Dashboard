@@ -95,6 +95,74 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Bug hunt: edits that vanished, writes any site could trigger, and a DST blind spot
+
+**Problem / trigger** — A deliberate sweep of the whole app for things that
+would bite in real use rather than in a demo. The ones that changed behavior
+(pure fixes are in git):
+- Typing a note or a new name in the task/event editor and then pressing Esc
+  or clicking outside **silently threw the edit away**: fields save on blur,
+  and closing removed the card before focus ever left the field. Confirmed by
+  turning the fix off and watching no save go out.
+- Every write route (add task, delete event, trash mail…) answered **any
+  website open in the same browser**. On `localhost:3000` nothing sits in
+  front of the app, so a page could post a form at it. Only the AI routes
+  checked the origin.
+- Changing an event's time in the editor sent a reschedule **per keystroke**
+  ("1", then "10" for 10:00) — racing PATCHes that could land out of order.
+- Deleting or completing from an editor **closed the card before the server
+  answered**, so a refusal (a read-only shared calendar) looked like success.
+- An event that started yesterday or runs past midnight is drawn clipped to
+  00:00/24:00; dragging it, or touching its times, would have **saved the
+  clipped times** and cut the real event short.
+- The settings panel saved the *resolved* settings, so visiting `/?theme=dark`
+  once and then changing density **froze "dark" into your saved prefs**; and a
+  "Day starts" after "Day ends" was saved and broke the calendar outright.
+- The settings card (and any popover taller than 400px) was placed too low and
+  **ran off the bottom of a short window**, with no way to reach its last
+  fields.
+- On a DST change day (this Sunday, Nov 1) the calendar's day window started at
+  1am, so a **midnight–1am event would have been missing**.
+- The never-send guard missed Gmail's upload-form send path and batch requests.
+
+**Decision** —
+- Closing a popover (outside click, Esc, ×) blurs the focused field first, so
+  an edit in progress is saved, never dropped.
+- One shared check (`rejectCrossSite`, `src/lib/request-guard.ts`) on every
+  write route: requests from another site get a 403. The disconnect link still
+  works when typed into the address bar, but not from a link elsewhere.
+- Reschedules wait until the date/time fields settle (~0.7s), then send once;
+  a pending one is still sent if the card closes.
+- Destructive actions (delete, complete) close the card only after the server
+  agrees; otherwise the error shows in place.
+- Clipped events can be opened and renamed but not dragged or re-timed, with a
+  line saying to change their times in Google Calendar.
+- The settings panel merges each change into what's already stored; the hour
+  fields bound each other, and a bad stored day window falls back to defaults.
+
+**Reasoning** — Every one of these is a case where the app said one thing and
+did another: it looked saved and wasn't, looked deleted and wasn't, or looked
+like *your* dashboard while answering anyone. For a tool that writes to your
+real calendar, tasks and inbox, quiet failure is worse than a visible error.
+Saving on close (rather than asking "discard changes?") matches how the editors
+already behave — every field auto-saves — so close is just one more way of
+leaving a field.
+
+**Alternatives considered** — A "Save" button on the editors (more explicit,
+but contradicts the auto-save pattern every other field follows); blocking
+cross-site requests with a CSRF token (stronger in theory, but the same-origin
+check already covers browsers and needs no state); making clipped events fully
+editable by fetching their real start/end (more code for a rare case — Google
+Calendar is one click away via "Open in Calendar").
+
+**Tradeoffs / open questions** — A script with no browser headers (curl) still
+passes the origin check by design; on the private deployment, Vercel's
+protection is what gates that. The Anthropic day note (when that key is set)
+is still regenerated on every 60-second refresh — fine on cost today because
+the key isn't set, but it should be cached before it is.
+
+---
+
 ## 2026-10-28 — Ambient motion: a weather scene and a live clock
 
 **Problem** — The dashboard is meant to sit on a second screen all day, but

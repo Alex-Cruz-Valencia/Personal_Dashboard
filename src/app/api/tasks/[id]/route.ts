@@ -1,6 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
+import { badId, rejectCrossSite, validTaskId } from "@/lib/request-guard";
 import {
   deleteTask,
   moveTask,
@@ -30,8 +31,11 @@ export async function PATCH(
   request: Request,
   ctx: RouteContext<"/api/tasks/[id]">,
 ) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   if (!features.todoist) return notConfigured();
   const { id } = await ctx.params;
+  if (!validTaskId(id)) return badId();
 
   let body: PatchBody;
   try {
@@ -47,7 +51,23 @@ export async function PATCH(
     );
   }
 
+  // Same limits as creating a task (POST /api/tasks), so a bad value is a
+  // clear 400 here rather than a vague Todoist error.
+  const isIso = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
+  const problem =
+    (body.content !== undefined && !(typeof body.content === "string" && body.content.trim() && body.content.length <= 500) && "content must be non-empty text") ||
+    (body.description !== undefined && !(typeof body.description === "string" && body.description.length <= 2000) && "description is too long") ||
+    (body.due !== undefined && body.due !== null && !(typeof body.due === "string" && body.due.length <= 100) && "due is too long") ||
+    (body.deadline !== undefined && body.deadline !== null && !isIso(body.deadline) && "deadline must be YYYY-MM-DD") ||
+    (body.durationMinutes !== undefined && body.durationMinutes !== null &&
+      !(Number.isInteger(body.durationMinutes) && body.durationMinutes > 0 && body.durationMinutes <= 1440) && "durationMinutes must be 1–1440") ||
+    (body.labels !== undefined &&
+      !(Array.isArray(body.labels) && body.labels.length <= 20 && body.labels.every((l) => typeof l === "string" && l.length <= 60)) && "labels must be a short list of names") ||
+    (body.projectId !== undefined && typeof body.projectId !== "string" && "projectId must be a string");
+  if (problem) return NextResponse.json({ error: problem }, { status: 400 });
+
   const { projectId, ...patch } = body;
+  if (patch.content !== undefined) patch.content = patch.content.trim();
 
   try {
     // Todoist keeps "move" separate from "update" — do the move first.
@@ -63,11 +83,14 @@ export async function PATCH(
 
 /** Delete a task. */
 export async function DELETE(
-  _request: Request,
+  request: Request,
   ctx: RouteContext<"/api/tasks/[id]">,
 ) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   if (!features.todoist) return notConfigured();
   const { id } = await ctx.params;
+  if (!validTaskId(id)) return badId();
 
   try {
     await deleteTask(id);

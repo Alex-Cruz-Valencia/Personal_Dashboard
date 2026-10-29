@@ -4,6 +4,12 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 
 const SENT_KEY = "gdash_loc_sent";
+/**
+ * Re-send an unchanged position this often anyway. The server's cookie lasts 90
+ * days and can be cleared on its own (it's httpOnly, so this can't check it);
+ * without a re-send the dashboard would quietly fall back to the env location.
+ */
+const RESEND_MS = 7 * 24 * 60 * 60 * 1000;
 
 /**
  * Renders nothing. On mount it asks the browser for the current position and,
@@ -33,7 +39,8 @@ export function LocationSync() {
         const key = `${lat},${lon},${tz}`;
 
         try {
-          if (localStorage.getItem(SENT_KEY) === key) return;
+          const sent = JSON.parse(localStorage.getItem(SENT_KEY) ?? "null") as { key?: string; at?: number } | null;
+          if (sent?.key === key && typeof sent.at === "number" && Date.now() - sent.at < RESEND_MS) return;
         } catch {
           /* private mode — just proceed */
         }
@@ -67,7 +74,7 @@ export function LocationSync() {
           .then((res) => {
             if (!res.ok || cancelled) return;
             try {
-              localStorage.setItem(SENT_KEY, key);
+              localStorage.setItem(SENT_KEY, JSON.stringify({ key, at: Date.now() }));
             } catch {
               /* ignore */
             }

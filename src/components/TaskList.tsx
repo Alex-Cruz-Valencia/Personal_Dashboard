@@ -3,7 +3,7 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildTasks, taskCountLabel } from "@/lib/format";
-import type { DashboardSettings, Theme } from "@/lib/settings";
+import { use24Hour, type DashboardSettings, type Theme } from "@/lib/settings";
 import type { SliceSource, Task } from "@/lib/types";
 import { NewTaskForm } from "./NewTaskForm";
 import { Popover } from "./Popover";
@@ -23,7 +23,9 @@ export function TaskList({ tasks, settings, source }: TaskListProps) {
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
-  const rows = buildTasks(tasks, settings.density);
+  // Sample tasks keep their reference labels ("EOD"); live ones follow ⚙ Time.
+  const use24 = use24Hour(settings); // a plain function, but named like a hook: call it unconditionally
+  const rows = buildTasks(tasks, settings.density, source === "live" ? use24 : undefined);
   const taskIds = new Set(tasks.map((t) => t.id));
   const doneVisible = new Set([...done].filter((id) => taskIds.has(id)));
 

@@ -10,6 +10,16 @@ import {
 import { createPortal } from "react-dom";
 import type { Theme } from "@/lib/settings";
 
+/**
+ * Blur whatever has focus, so a field that saves on blur saves now. For close
+ * buttons inside a card: Safari doesn't move focus to a clicked button, so the
+ * field being edited would otherwise unmount without its blur.
+ */
+export function flushFocus() {
+  const active = document.activeElement;
+  if (active instanceof HTMLElement) active.blur();
+}
+
 interface PopoverProps {
   /** Screen rect of the element the popover points at. */
   anchor: DOMRect;
@@ -59,7 +69,10 @@ export function Popover({
       Math.max(lo, Math.min(n, hi));
 
     const width = el.offsetWidth;
-    const height = el.offsetHeight;
+    // The card's full height, not its rendered one: the first measure happens
+    // under the initial maxHeight, which would cap a tall card (settings, the
+    // task editor) and place it too low, running off the bottom of the screen.
+    const height = el.scrollHeight + (el.offsetHeight - el.clientHeight);
     const gap = 8;
     const margin = 12;
 
@@ -90,12 +103,18 @@ export function Popover({
   /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+    // The editors save a field on blur. Closing unmounts the card before focus
+    // would leave it, so blur first: a typed name or note isn't silently lost.
+    const close = () => {
+      if (ref.current?.contains(document.activeElement)) flushFocus();
+      onClose();
     };
-    const onScrollOrResize = () => onClose();
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === "Escape") close();
+    };
+    const onScrollOrResize = () => close();
     const onDown = (e: PointerEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) onClose();
+      if (ref.current && !ref.current.contains(e.target as Node)) close();
     };
 
     window.addEventListener("keydown", onKey);

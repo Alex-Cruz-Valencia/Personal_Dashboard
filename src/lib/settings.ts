@@ -102,9 +102,14 @@ export function parseSettings(
   const dayEnd = pickHour(searchParams.dayEnd, base.dayEnd);
   // A day that doesn't run forward at least an hour breaks the arc's math
   // (division by a ~zero span) — fall back to the last-known-good pair
-  // rather than let a malformed pair through.
-  const [safeStart, safeEnd] =
-    dayEnd - dayStart >= 1 ? [dayStart, dayEnd] : [base.dayStart, base.dayEnd];
+  // rather than let a malformed pair through. The stored pair (cookie or env)
+  // can be malformed too, so the defaults are the last resort.
+  const valid = (s: number, e: number) => e - s >= 1;
+  const [safeStart, safeEnd] = valid(dayStart, dayEnd)
+    ? [dayStart, dayEnd]
+    : valid(base.dayStart, base.dayEnd)
+      ? [base.dayStart, base.dayEnd]
+      : [DEFAULT_SETTINGS.dayStart, DEFAULT_SETTINGS.dayEnd];
 
   return {
     theme: pick(searchParams.theme, ["light", "dark", "system"], base.theme),

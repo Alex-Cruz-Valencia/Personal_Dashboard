@@ -438,7 +438,9 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
               const dragging = drag && drag.id === e.id ? drag : null;
               const start = dragging ? dragging.start : e.start;
               const end = dragging ? dragging.end : e.end;
-              const canEdit = editable && Boolean(e.id);
+              // An event running past either end of today is drawn clipped; dragging it
+              // would save the clipped times and cut the real event short.
+              const canEdit = editable && Boolean(e.id) && e.start > 0 && e.end < 24;
               const top = y(start);
               const h = Math.max(20, y(end) - top - 2);
               const { lane, lanes: n } = lanes[i];

@@ -5,6 +5,7 @@ import { getDashboardData } from "@/lib/dashboard-data";
 import { deterministicDayNote, WIND_DOWN_HOUR } from "@/lib/day-note";
 import type { NoteStyle } from "@/lib/settings";
 import type { AgendaEvent, Task, Weather } from "@/lib/types";
+import { rejectCrossSite } from "@/lib/request-guard";
 
 /**
  * Phase 5 — the daily summary note.
@@ -36,6 +37,8 @@ interface SummaryBody {
 }
 
 export async function POST(request: Request) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   let body: SummaryBody;
   try {
     body = (await request.json()) as SummaryBody;
@@ -71,7 +74,7 @@ export async function POST(request: Request) {
   } catch (err) {
     return NextResponse.json(
       {
-        note: deterministicDayNote(body.nowHour, body.tasks, body.agenda ?? [], { style: body.style, dayEnd: body.dayEnd }),
+        note: deterministicDayNote(body.nowHour, body.tasks, body.agenda ?? [], { style: body.style, dayEnd: body.dayEnd, windDown: body.windDown }),
         source: "mock",
         error: (err as Error).message,
       },

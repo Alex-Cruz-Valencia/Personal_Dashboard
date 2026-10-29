@@ -299,12 +299,14 @@ function parseCompositeId(id: string): { calendarId: string; eventId: string } {
   const sep = id.indexOf(":");
   // encodeURIComponent always escapes ":", so the first one found is
   // necessarily the separator, not part of the encoded calendar id.
-  if (sep === -1) throw new Error(`Malformed event id: ${id}`);
+  if (sep <= 0 || sep === id.length - 1) throw new Error("Malformed event id");
   return { calendarId: decodeURIComponent(id.slice(0, sep)), eventId: id.slice(sep + 1) };
 }
 
 function eventUrl(calendarId: string, eventId: string): string {
-  return `${CAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${eventId}`;
+  // The id comes back from the browser, so it's encoded: a "/" or "?" in it
+  // must not be able to point the request at a different Google resource.
+  return `${CAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
 }
 
 /**

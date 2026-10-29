@@ -44,7 +44,8 @@ export async function reverseGeocode(
     url.searchParams.set("longitude", String(longitude));
     url.searchParams.set("localityLanguage", "en");
 
-    const res = await fetch(url, { next: { revalidate: 86_400 } });
+    // Only a label: never worth holding the page for.
+    const res = await fetch(url, { next: { revalidate: 86_400 }, signal: AbortSignal.timeout(4_000) });
     if (!res.ok) return null;
     return formatPlace((await res.json()) as BdcResponse);
   } catch {

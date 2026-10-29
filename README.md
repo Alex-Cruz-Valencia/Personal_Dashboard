@@ -209,11 +209,21 @@ Routes: `POST /api/replies/[id]/draft`, `POST /api/replies/[id]/draft/save`,
 | `PATCH /api/tasks/[id]` | edit `{ content?, priority? (1–3), due? (text / null), labels?, description?, deadline? (ISO / null), durationMinutes? (number / null), projectId? (move) }` |
 | `DELETE /api/tasks/[id]` | delete a task |
 | `GET /api/summary` | regenerate the day note from live data |
-| `POST /api/summary` | day note from an explicit `{ nowHour, weather, tasks, agenda, style?, dayEnd? }` body |
-| `POST /api/events` | create `{ name, date, startTime, endTime, taskId? }` on the primary calendar (Plan → Block) |
+| `POST /api/summary` | day note from an explicit `{ nowHour, weather, tasks, agenda, style?, dayEnd?, windDown? }` body |
+| `POST /api/events` | create `{ name, date, startTime, endTime, taskId? }` on the primary calendar |
+| `PATCH /api/events/[id]` | edit `{ name?, location?, description? }`, or reschedule with `{ date, startTime, endTime }` together (`HH:MM`, 24-hour) |
+| `DELETE /api/events/[id]` | delete one occurrence |
+| `GET /api/replies/meta` | Gmail labels for "Move…" |
+| `POST /api/replies/[id]/trash` · `.../move` | trash, or `{ label }` move out of the inbox |
 | `GET /api/auth/google` | start Google OAuth |
 | `GET /api/auth/google/callback` | OAuth redirect target |
-| `GET /api/auth/google/logout` | clear stored Google tokens |
+| `GET /api/auth/google/logout` | clear stored Google tokens (works typed into the address bar, not from a link on another site) |
+
+Every route that writes (`POST`/`PATCH`/`DELETE`, and the logout link) refuses
+requests coming from another website with a 403 (`rejectCrossSite`,
+[`src/lib/request-guard.ts`](src/lib/request-guard.ts)), so a page open in the
+same browser can't act on a running dashboard. Ids in the path are validated
+before they reach Todoist, Google or Gmail.
 
 ## Scripts
 

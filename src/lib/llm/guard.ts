@@ -1,6 +1,7 @@
 import "server-only";
 import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
+import { rejectCrossSite } from "@/lib/request-guard";
 
 const WINDOW_MS = 60 * 60 * 1000;
 const MAX_PER_WINDOW = 30;
@@ -21,11 +22,13 @@ export function guardAi(request: Request, opts: { spendsTokens: boolean }): Next
   if (!features.llm || !features.google) {
     return NextResponse.json({ error: "AI drafting isn't set up." }, { status: 400 });
   }
-  const origin = request.headers.get("origin");
-  const host = request.headers.get("host");
-  if (!origin || !host || new URL(origin).host !== host) {
+  // Stricter than the other write routes: a request with no Origin at all is
+  // refused too, since these spend tokens.
+  if (!request.headers.get("origin")) {
     return NextResponse.json({ error: "Not allowed." }, { status: 403 });
   }
+  const crossSite = rejectCrossSite(request);
+  if (crossSite) return crossSite;
   if (opts.spendsTokens) {
     const now = Date.now();
     while (hits.length && hits[0] < now - WINDOW_MS) hits.shift();

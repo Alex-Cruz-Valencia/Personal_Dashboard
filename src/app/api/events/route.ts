@@ -4,6 +4,7 @@ import { features } from "@/lib/config";
 import { CALENDAR_TAG, createEvent } from "@/lib/google/calendar";
 import { resolveLocation } from "@/lib/location";
 import { taskMarker } from "@/lib/plan";
+import { rejectCrossSite } from "@/lib/request-guard";
 
 interface PostBody {
   name?: string;
@@ -17,13 +18,15 @@ interface PostBody {
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
-const TIME = /^\d{2}:\d{2}$/;
+const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /**
  * Create an event on the primary calendar, in the viewer's own timezone.
  * Body: { name, date, startTime, endTime, taskId? }.
  */
 export async function POST(request: Request) {
+  const blocked = rejectCrossSite(request);
+  if (blocked) return blocked;
   if (!features.google) {
     return NextResponse.json(
       { error: "Connect Google to add calendar events from here." },
@@ -38,7 +41,8 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
 
-  const name = body.name?.trim();
+  const name = typeof body.name === "string" ? body.name.trim() : "";
+  if (name.length > 1000) return NextResponse.json({ error: "name is too long" }, { status: 400 });
   if (!name) return NextResponse.json({ error: "name is required" }, { status: 400 });
   if (!body.date || !DATE.test(body.date) || !body.startTime || !TIME.test(body.startTime) || !body.endTime || !TIME.test(body.endTime)) {
     return NextResponse.json(

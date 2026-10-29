@@ -124,7 +124,9 @@ export async function getReplies(): Promise<Reply[]> {
   if (ids.length === 0) return [];
 
   const now = new Date();
-  const messages = await Promise.all(
+  // One message that fails to load (deleted mid-request, a dropped connection)
+  // drops out on its own instead of turning the whole list into sample mail.
+  const settled = await Promise.allSettled(
     ids.map(async (id) => {
       const url = new URL(`${BASE}/messages/${id}`);
       url.searchParams.set("format", "metadata");
@@ -138,6 +140,8 @@ export async function getReplies(): Promise<Reply[]> {
       return (await res.json()) as GmailMessage;
     }),
   );
+  const messages = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
+  if (messages.length === 0) throw new Error("No Gmail message could be read");
 
   return messages
     .filter((msg) => !looksLikeBulk(msg))
