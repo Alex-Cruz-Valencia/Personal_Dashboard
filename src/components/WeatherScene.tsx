@@ -39,7 +39,18 @@ function Particles({ n, className }: { n: number; className: string }) {
  * the sun breathes. Purely decorative (aria-hidden, pointer-events none) and
  * pure CSS, so it costs no JS once rendered and stops under reduced motion.
  */
-export function WeatherScene({ sky, isDay, variant = "card" }: { sky: Sky; isDay: boolean; variant?: "card" | "page" }) {
+export function WeatherScene({
+  sky,
+  isDay,
+  variant = "card",
+  celestial = true,
+}: {
+  sky: Sky;
+  isDay: boolean;
+  variant?: "card" | "page";
+  /** Draw the sun / moon. Only the weather card does; other cards borrow the rest of the scene. */
+  celestial?: boolean;
+}) {
   const { kind, windMph } = sky;
   // The page-wide scene covers the whole viewport, so it needs more of everything.
   const k = variant === "page" ? 3 : 1;
@@ -52,7 +63,7 @@ export function WeatherScene({ sky, isDay, variant = "card" }: { sky: Sky; isDay
         <>
           <span className="scene__wash" />
           {/* The sun and the moon are the weather card's: the page behind never repeats them. */}
-          {variant === "card" ? (
+          {variant === "card" && celestial ? (
             <div className="scene__sun">
               <span className="scene__rays" />
               <span className="scene__orb" />
@@ -68,7 +79,7 @@ export function WeatherScene({ sky, isDay, variant = "card" }: { sky: Sky; isDay
       {kind === "clear" && !isDay ? (
         <>
           {variant === "page" ? <MeteorField /> : null}
-          {variant === "card" ? <span className="scene__moon" /> : null}
+          {variant === "card" && celestial ? <span className="scene__moon" /> : null}
           <Particles n={14 * (variant === "page" ? 5 : 1)} className="scene__star" />
         </>
       ) : null}

@@ -479,6 +479,13 @@ things that are atmosphere rather than a subject (stars, meteors, sunbeams,
 rain, snow, clouds, fog). Checked across weather and time of day: the moon
 appears only in the card on clear nights, the sun only in the card on clear days.
 
+**Second card** — The greeting card now gets a scene of its own as well, the
+same idea: stars on a clear night, clouds, rain, snow and wind in bad weather,
+a faint warm glow by day, and never the sun or moon (those stay the weather
+card's). Like the weather card it is nearly opaque in Scene mode so its picture
+is its own. Both cards read from one component with a "celestial" switch.
+Matrix checked for clear/cloudy/rain/snow by day and night on all three layers.
+
 **Tradeoffs** — Stars still appear twice on a clear night (a few in the page
 margins, a few inside the card), by design. The weather card is the one card you
 can't see the sky through. Morning and evening still use the same
