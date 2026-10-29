@@ -450,14 +450,14 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
-## 2026-10-30 — EXPERIMENT (branch, not shipped): two other shapes for the top row
+## 2026-10-30 — The top row becomes one card (Classic stays as a setting)
 
 **Problem** — The top row is lopsided. The greeting card is wide and nearly
 empty (a date, a greeting, a clock), while the weather card on the right carries
 a place, a big temperature, a condition, a chart and a footnote. At 1280px that
 is 854px of mostly air next to 350px of dense content, and the row is 251px tall.
 
-**Options built** (switch under ⚙ **Top row (experiment)**, or `?top=`):
+**Options built** (tried behind a ⚙ switch, or `?top=`):
 - **One card** (`unified`): greeting and clock across the top, the weather as one
   line under the greeting ("54° Partly cloudy · San Francisco · No rain expected
   · Wind 6 mph"), the day's temperature as a slim band across the full width, and
@@ -465,15 +465,15 @@ is 854px of mostly air next to 350px of dense content, and the row is 251px tall
 - **Three tiles** (`trio`): greeting, clock and a slim weather tile (temperature,
   condition, place, a sparkline) as three even tiles. 140px tall at 1280px. The
   weather footnote is dropped in this one.
-- **Classic**: today's layout, unchanged (default).
+- **Classic**: the layout it started as, unchanged (now a choice, not the default).
 
 **Why these** — Each moves weight to the left and shrinks the right. One card
 keeps everything in one place and gives the scene a stage; three tiles is the
 calmest and shortest, at the cost of three separate boxes.
 
 **How it was built** — The temperature chart became its own component in three
-sizes (full, a wide band, a sparkline), and the weather card now uses it too, so
-scrubbing works the same everywhere. On a phone the one-card version swaps the
+sizes (full, a wide band; a sparkline for the tiles was dropped with them), and the
+weather card now uses it too, so scrubbing works the same everywhere. On a phone the one-card version swaps the
 band for the normal chart, and the tiles stack.
 
 **Round two (One card chosen)** — Two notes: the temperature chart wasn't
@@ -488,11 +488,13 @@ rows, the moon and the sun moved clear of the clock. Roughly 277px tall at 1280p
 (classic 251px): taller on purpose. Added a preview-only `?now=14.5` to see the
 page at another hour, which is how daylight was finally checked.
 
-**Open questions** — Is the footnote worth keeping in three tiles? In one card the
-moon sits beside the clock; is a corner better? Neither version has been looked at
-in daylight, since it was night when they were built. If one wins, the others and
-the switch come out; if none does, the branch is dropped (the chart split is the
-only change worth keeping on its own).
+**Decision** — One card wins and is now the default top row. Classic stays as a
+choice under ⚙ **Top row (One card / Classic)**; Three tiles was dropped (its code,
+styles and the switch value are gone; a saved "trio" preference just falls back
+to One card). `?top=classic` and `?top=unified` still work for a quick look. The
+`?now=14.5` preview (which hour the page pretends it is) stays too, for checking
+how the scenes look at other times of day.
+
 
 ## 2026-10-30 — Two layers of scenery: the page behind, the weather card in front
 

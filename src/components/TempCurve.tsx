@@ -4,11 +4,10 @@ import { useId, useState, type PointerEvent as ReactPointerEvent } from "react";
 import { arcPct, formatHour } from "@/lib/format";
 import type { AgendaEvent, ArcWindow, HourlyTemp, Weather } from "@/lib/types";
 
-/** Chart geometry in viewBox units, per size: the weather card's full chart, a card-wide band, a slim sparkline. */
+/** Chart geometry in viewBox units, per size: the weather card's full chart, or a band across a wide card. */
 const SHAPES = {
   full: { cw: 300, ch: 66, pt: 12, pb: 16 },
   wide: { cw: 1200, ch: 62, pt: 9, pb: 13 },
-  spark: { cw: 300, ch: 38, pt: 7, pb: 7 },
 } as const;
 
 export type CurveSize = keyof typeof SHAPES;

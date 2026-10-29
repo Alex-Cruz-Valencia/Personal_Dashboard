@@ -120,12 +120,11 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
             onPick={(pastEvents) => update({ pastEvents })}
           />
           <Segmented<TopRow>
-            label="Top row (experiment)"
+            label="Top row"
             value={settings.topRow}
             options={[
-              ["classic", "Classic"],
               ["unified", "One card"],
-              ["trio", "Three tiles"],
+              ["classic", "Classic"],
             ]}
             onPick={(topRow) => update({ topRow })}
           />

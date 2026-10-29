@@ -11,7 +11,6 @@ import { Footline } from "./Footline";
 import { HelloCard } from "./HelloCard";
 import { TaskDetailProvider } from "./TaskDetail";
 import { TaskList } from "./TaskList";
-import { TopTrio } from "./TopTrio";
 import { TopUnified } from "./TopUnified";
 import { WeatherCard } from "./WeatherCard";
 import { WeatherScene } from "./WeatherScene";
@@ -61,8 +60,6 @@ export function Dashboard({ data, settings }: DashboardProps) {
           ) : null}
           {settings.topRow === "unified" ? (
             <TopUnified data={data} settings={settings} frozen={frozen} />
-          ) : settings.topRow === "trio" ? (
-            <TopTrio data={data} settings={settings} frozen={frozen} />
           ) : (
             <div className="topbar">
               <HelloCard

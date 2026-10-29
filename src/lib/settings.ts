@@ -21,8 +21,8 @@ export type Motion = "on" | "off";
 export type Background = "scene" | "plain";
 /** "hide": the calendar tucks away anything more than about an hour past (scroll up or tap to see it); "show": the whole day stays. */
 export type PastEvents = "hide" | "show";
-/** EXPERIMENT: how the greeting and the weather share the top row. */
-export type TopRow = "classic" | "unified" | "trio";
+/** The top row: "unified" is one scenic card (greeting, clock, weather and its curve); "classic" is the greeting card beside the weather card. */
+export type TopRow = "classic" | "unified";
 /** Voice of the "shape of the day" note — see src/lib/day-note.ts. */
 export type NoteStyle = "timely" | "gentle" | "plain";
 
@@ -65,7 +65,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   motion: "on",
   background: "scene",
   pastEvents: "hide",
-  topRow: "classic",
+  topRow: "unified",
   noteStyle: "timely",
   dayStart: 6,
   dayEnd: 22,
@@ -122,7 +122,7 @@ export function parseSettings(
     motion: pick(searchParams.motion, ["on", "off"], base.motion),
     background: pick(searchParams.background, ["scene", "plain"], base.background),
     pastEvents: pick(searchParams.past, ["hide", "show"], base.pastEvents),
-    topRow: pick(searchParams.top, ["classic", "unified", "trio"], base.topRow),
+    topRow: pick(searchParams.top, ["classic", "unified"], base.topRow),
     noteStyle: pick(searchParams.noteStyle, ["timely", "gentle", "plain"], base.noteStyle),
     dayStart: safeStart,
     dayEnd: safeEnd,
@@ -165,7 +165,7 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   if (obj.pastEvents === "hide" || obj.pastEvents === "show") {
     out.pastEvents = obj.pastEvents;
   }
-  if (obj.topRow === "classic" || obj.topRow === "unified" || obj.topRow === "trio") {
+  if (obj.topRow === "classic" || obj.topRow === "unified") {
     out.topRow = obj.topRow;
   }
   if (obj.noteStyle === "timely" || obj.noteStyle === "gentle" || obj.noteStyle === "plain") {

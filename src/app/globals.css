@@ -1765,7 +1765,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .hello { position: relative; overflow: hidden; }
 .hello > :not(.scene) { position: relative; z-index: 1; }
 
-/* ---- EXPERIMENT: top-row compositions (⚙ Top row) ---- */
+/* ---- top row: One card (default) or Classic (⚙ Top row) ---- */
 .card--scene { position: relative; overflow: hidden; }
 .card--scene > :not(.scene) { position: relative; z-index: 1; }
 .morning--scene:not(.morning--glass) .card--scene { background: color-mix(in srgb, var(--surface) 93%, transparent); }
@@ -1775,33 +1775,25 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .topuni__cond { font-size: 14px; font-weight: 600; }
 .topuni__place { font-size: 12.5px; font-weight: 500; color: var(--ink-soft); }
 
-/* one card */
-.topuni { padding: 22px 26px 16px; display: grid; gap: 10px; }
+/* one card (the default top row) */
+.topuni { padding: 30px 34px 20px; display: grid; gap: 12px; }
 .topuni__head { display: flex; align-items: flex-start; justify-content: space-between; gap: clamp(24px, 4vw, 48px); }
-.topuni__hello { display: grid; gap: 8px; min-width: 0; }
-.topuni__wx { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-top: 2px; }
+.topuni__hello { display: grid; gap: 10px; min-width: 0; }
+.topuni__wx { display: flex; align-items: baseline; flex-wrap: wrap; gap: 4px 12px; margin-top: 6px; }
 .topuni__wx .topuni__place::before { content: "·"; margin-right: 12px; color: var(--ink-faint); }
-.topuni .tempcurve { margin-top: 4px; }
-
-/* three tiles */
-.toptrio { display: grid; grid-template-columns: 1.35fr 0.75fr 1fr; gap: var(--gap); align-items: stretch; }
-.tile { padding: 18px 22px; display: flex; flex-direction: column; justify-content: center; gap: 8px; min-height: 140px; }
-.tile--hello .hello__greeting { font-size: clamp(26px, 3vw, 36px); }
-.tile--time { align-items: center; }
-.tile__wxhead { display: flex; align-items: center; gap: 14px; }
-.tile__wxtext { display: grid; gap: 2px; min-width: 0; }
-.tempcurve--spark .tempcurve__scale, .tempcurve--spark .tempcurve__statics { display: none; }
-@media (max-width: 1040px) { .toptrio { grid-template-columns: 1fr 1fr; } .tile--weather { grid-column: 1 / -1; } }
-@media (max-width: 640px) { .toptrio { grid-template-columns: 1fr; } .topuni__head { flex-direction: column; } }
+.topuni .tempcurve { margin-top: 14px; }
+/* the moon and the sun sit beside the clock, not behind it */
+.topuni .scene .scene__moon { right: 262px; top: 32px; }
+.topuni .scene .scene__sun { top: -125px; right: 110px; }
 .topuni__curve--narrow { display: none; }
 @media (max-width: 760px) {
+  .topuni { padding: 24px 22px 16px; }
   .topuni__curve--wide { display: none; }
   .topuni__curve--narrow { display: block; }
-  .topuni .scene .scene__moon { right: 20px; top: 18px; }
+  .topuni .scene .scene__moon { right: 20px; top: 22px; }
+  .topuni__head { flex-direction: column; }
   .topuni__head .hello__time { justify-items: start; text-align: left; }
 }
-.topuni { padding: 20px 26px 14px; gap: 6px; }
-.topuni .scene__moon { right: 262px; top: 24px; }
 
 /* ---- refined temperature chart (One card) ---- */
 .tempcurve--refined { gap: 8px; }
@@ -1819,12 +1811,3 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .tempcurve--refined .tempcurve__scale { font-size: 11px; letter-spacing: 0.02em; }
 @media (prefers-reduced-motion: reduce) { .tempcurve__halo { animation: none !important; opacity: 0; } }
 .morning--still .tempcurve__halo { animation: none; opacity: 0; }
-
-/* ---- One card: composition ---- */
-.topuni { padding: 30px 34px 20px; gap: 12px; }
-.topuni__hello { gap: 10px; }
-.topuni__wx { margin-top: 6px; }
-.topuni .tempcurve { margin-top: 14px; }
-.topuni .scene .scene__moon { top: 32px; }
-@media (max-width: 760px) { .topuni { padding: 24px 22px 16px; } .topuni .scene .scene__moon { top: 22px; } }
-.topuni .scene .scene__sun { top: -125px; right: 110px; }
