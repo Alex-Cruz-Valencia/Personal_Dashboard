@@ -1716,3 +1716,13 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .scene--page.scene--storm .scene__drop { height: 26px; }
 .scene--page .scene__flake { width: 5px; height: 5px; }
 .scene--page .scene__gust { height: 2px; opacity: 0.22; }
+
+/* ---- past events tucked away (⚙ Past events → Tuck away) ---- */
+.vcal__body { transition: margin-top 0.7s ease; }
+.vcal__body--snap { transition: none; }
+.vcal__earlier { position: sticky; top: 8px; z-index: 7; height: 0; overflow: visible; display: flex; justify-content: flex-end; padding-right: 22px; pointer-events: none; }
+.vcal__earlier button { pointer-events: auto; font: inherit; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--ink-soft); cursor: pointer; box-shadow: var(--shadow); animation: earlier-in 0.5s ease-out; }
+.vcal__earlier button:hover { color: var(--ink); border-color: var(--ink-faint); }
+@keyframes earlier-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) { .vcal__body { transition: none; } .vcal__earlier button { animation: none; } }
+.morning--still .vcal__body { transition: none; }

@@ -19,6 +19,8 @@ export type Surface = "glass" | "solid";
 export type Motion = "on" | "off";
 /** The weather scene (stars, sun, rain, clouds) across the whole page behind frosted cards, or none. Needs Motion on. */
 export type Background = "scene" | "plain";
+/** "hide": the calendar tucks away anything more than about an hour past (scroll up or tap to see it); "show": the whole day stays. */
+export type PastEvents = "hide" | "show";
 /** Voice of the "shape of the day" note — see src/lib/day-note.ts. */
 export type NoteStyle = "timely" | "gentle" | "plain";
 
@@ -29,6 +31,7 @@ export interface DashboardSettings {
   surface: Surface;
   motion: Motion;
   background: Background;
+  pastEvents: PastEvents;
   noteStyle: NoteStyle;
   /** Visible span of the day arc, in whole local hours. 24 = midnight (end of day). */
   dayStart: number;
@@ -58,6 +61,7 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   surface: "solid",
   motion: "on",
   background: "scene",
+  pastEvents: "hide",
   noteStyle: "timely",
   dayStart: 6,
   dayEnd: 22,
@@ -113,6 +117,7 @@ export function parseSettings(
     surface: pick(searchParams.surface, ["glass", "solid"], base.surface),
     motion: pick(searchParams.motion, ["on", "off"], base.motion),
     background: pick(searchParams.background, ["scene", "plain"], base.background),
+    pastEvents: pick(searchParams.past, ["hide", "show"], base.pastEvents),
     noteStyle: pick(searchParams.noteStyle, ["timely", "gentle", "plain"], base.noteStyle),
     dayStart: safeStart,
     dayEnd: safeEnd,
@@ -151,6 +156,9 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   }
   if (obj.background === "scene" || obj.background === "plain") {
     out.background = obj.background;
+  }
+  if (obj.pastEvents === "hide" || obj.pastEvents === "show") {
+    out.pastEvents = obj.pastEvents;
   }
   if (obj.noteStyle === "timely" || obj.noteStyle === "gentle" || obj.noteStyle === "plain") {
     out.noteStyle = obj.noteStyle;

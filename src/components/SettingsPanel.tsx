@@ -10,6 +10,7 @@ import {
   type DashboardSettings,
   type Density,
   type NoteStyle,
+  type PastEvents,
   type Motion,
   type Surface,
   type Theme,
@@ -107,6 +108,15 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
               ["plain", "Plain"],
             ]}
             onPick={(background) => update({ background })}
+          />
+          <Segmented<PastEvents>
+            label="Past events"
+            value={settings.pastEvents}
+            options={[
+              ["hide", "Tuck away"],
+              ["show", "Show"],
+            ]}
+            onPick={(pastEvents) => update({ pastEvents })}
           />
           <Segmented<NoteStyle>
             label="Day note"
