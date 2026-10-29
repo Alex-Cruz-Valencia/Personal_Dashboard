@@ -450,6 +450,29 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-29 — Calendar polish after a day of use: quieter, with a real "Now" button
+
+**Problem** — Using the previous round: the teal sheen sweeping across the clock
+digits was distracting; the breathing "Free · 1h" band wanted attention for
+information nobody asked for; the "Now" button only appeared after scrolling and
+its arrow pointed the wrong way (it showed where you were, not where it would
+take you); and late in the evening the now line sat in the bottom half of the
+calendar with nothing left to scroll.
+
+**Decision** — Removed the clock's glow and sheen (the seconds still tick in, the
+colon still pulses) and removed the Free band. "Now" is a permanent button in the
+calendar header; its arrow shows the direction of travel (↑ when the present is
+above, ↓ when below, none when you're there). Added scroll room below the last
+hour so the now line can always be brought to 40% down, even at 9pm.
+
+**Alternatives considered** — Keeping the band but fading it (still decorative);
+a floating button (hides content, easy to miss); top padding too, so the line
+could sit mid-view at 6am (blank hours before the day starts looked broken).
+
+**Tradeoffs** — A late evening shows a blank stretch under the last hour. At the
+very start of the day the line sits near the top. The ripple and glow on the now
+line stay: they're the one always-on signal that the page is live.
+
 ## 2026-10-28 — The calendar stays on "now" and is never still
 
 **Problem** — Five small frictions on a screen that is left up all day: the

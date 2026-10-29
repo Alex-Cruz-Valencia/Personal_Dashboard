@@ -114,11 +114,6 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
     };
   }, [measure, goNow]);
 
-  // Free time right now: from the now line to the next event (or the end of the day).
-  const gapEnd = next?.mode === "next" ? nowHour + next.minutes / 60 : next ? null : arc.to;
-  const gapMinutes = gapEnd == null ? 0 : Math.round((gapEnd - nowHour) * 60);
-  const showGap = nowVisible && gapEnd != null && gapMinutes >= 10;
-
   return (
     <section className="card vcal" aria-label="Today's calendar">
       <div className="vcal__head">
@@ -168,6 +163,14 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
             </button>
           </>
         )}
+        <button
+          type="button"
+          className="vcal__btn vcal__now-btn"
+          onClick={() => goNow(true)}
+          title="Scroll the calendar to the current time"
+        >
+          {away === "up" ? "↑ " : away === "down" ? "↓ " : ""}Now
+        </button>
       </div>
 
       <div className="vcal__wrap">
@@ -189,12 +192,6 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
             {hourMarks.map((h) => (
               <div key={h} className="vcal__line" style={{ top: y(h) }} />
             ))}
-
-            {showGap ? (
-              <div className="vcal__gap" style={{ top: nowY, height: Math.max(0, y(gapEnd!) - nowY) }} aria-hidden="true">
-                <span>{next ? `Free · ${minutesLabel(gapMinutes)}` : "Free"}</span>
-              </div>
-            ) : null}
 
             {focus.session ? (
               <div
@@ -266,11 +263,6 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
           </div>
         </div>
       </div>
-      {away ? (
-        <button type="button" className={`vcal__jump vcal__jump--${away === "up" ? "down" : "up"}`} onClick={() => goNow(true)}>
-          {away === "up" ? "↓ Now" : "↑ Now"}
-        </button>
-      ) : null}
       </div>
     </section>
   );
