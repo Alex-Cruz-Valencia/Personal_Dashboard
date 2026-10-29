@@ -450,6 +450,33 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-29 — The calendar becomes editable; the empty tail of the day becomes "That's the day"
+
+**Problem** — The calendar could only be read. Moving a meeting, stretching it or
+adding one meant opening Google Calendar. And the blank scroll room I'd added
+below the last hour (so "now" can sit mid-view at night) was dead space.
+
+**Decision** — Drag an event to move it, drag its bottom edge to resize it, or
+drag across an empty stretch (or just click it) to draw a new one and type a
+name. Everything snaps to 15 minutes, shows the new time while you drag, and
+saves only when you let go; a refused save snaps the event back and says why.
+The blank tail now holds a small night scene (a lit house under the moon) with
+"That's the day.", a line about tomorrow ("6 events · 1 task") and a "Plan
+tomorrow →" button that opens tomorrow's agenda and tasks in a card (the same
+view the week strip's day panel uses).
+
+**Alternatives considered** — Edit only through the existing detail card (slow,
+what we had); a "move to…" time picker (no direct manipulation); Plan tomorrow
+as a second calendar column (steals width from today); a streak or stats widget
+for the end-of-day space (needs data we don't track).
+
+**Tradeoffs** — Drag is mouse and pen only: on touch, tapping still opens the
+detail card, because capturing touch would break scrolling the calendar.
+Rescheduling a guest-invited event doesn't notify guests (the write uses
+Google's default), and an event on a calendar shared read-only can't be moved,
+so you get the error. Recurring events move one occurrence, as before. A drag
+onto an overlapping time is allowed; lanes recompute after the save.
+
 ## 2026-10-29 — Calendar polish after a day of use: quieter, with a real "Now" button
 
 **Problem** — Using the previous round: the teal sheen sweeping across the clock

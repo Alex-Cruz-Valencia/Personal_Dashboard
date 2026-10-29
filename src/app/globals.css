@@ -1662,4 +1662,34 @@ a:hover { color: var(--ink); text-decoration: underline; }
 /* Header "Now" button, and room below the last hour so the now line can sit mid-height at night. */
 .vcal__now-btn { margin-left: 0; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
 .vcal__now-btn:hover { background: var(--accent-tint); color: var(--accent); }
-.vcal__scroller::after { content: ""; display: block; height: 60%; }
+
+/* ---- calendar editing (drag / resize / draw) and the end-of-day scene ---- */
+.vcal__col--editable { cursor: crosshair; }
+.vcal__event--editable { cursor: grab; touch-action: pan-y; user-select: none; }
+.vcal__event--dragging { cursor: grabbing; z-index: 6; box-shadow: var(--shadow); opacity: 0.95; animation: none; }
+.vcal__event--dragging, .vcal__draft { transition: none; }
+.vcal__resize { position: absolute; left: 0; right: 0; bottom: 0; height: 8px; cursor: ns-resize; touch-action: none; }
+.vcal__resize::after { content: ""; position: absolute; left: 50%; bottom: 2px; width: 22px; height: 2px; margin-left: -11px; border-radius: 2px; background: var(--ink-faint); opacity: 0; transition: opacity 0.15s; }
+.vcal__event--editable:hover .vcal__resize::after, .vcal__event--dragging .vcal__resize::after { opacity: 0.7; }
+.vcal__event-chip { position: absolute; right: 6px; top: 3px; padding: 1px 6px; border-radius: 999px; font-size: 10.5px; font-weight: 700; background: var(--ink); color: var(--surface); white-space: nowrap; }
+.vcal__draft { z-index: 5; border: 1.5px dashed var(--accent); background: var(--accent-tint); color: var(--ink); }
+.vcal__draft-input { box-sizing: border-box; width: 100%; font: inherit; font-size: 12.5px; font-weight: 700; color: var(--ink); background: transparent; border: 0; outline: 0; padding: 0; }
+.vcal__draft-input::placeholder { color: var(--ink-faint); font-weight: 600; }
+.vcal__notice { margin: 0; flex-basis: 100%; order: 9; font-size: 12px; font-weight: 600; color: var(--negative); }
+
+.vcal__eod { height: 60%; min-height: 220px; box-sizing: border-box; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; padding: 16px 22px 28px; text-align: center; }
+.eod__art { width: min(260px, 70%); height: auto; margin-bottom: 8px; overflow: visible; }
+.eod__title { margin: 0; font-family: var(--font-display); font-size: 16px; font-weight: 600; color: var(--ink); }
+.eod__sub { margin: 0; font-size: 12.5px; color: var(--ink-soft); }
+.eod__plan { margin: 10px 0 0; color: var(--accent); border-color: color-mix(in srgb, var(--accent) 45%, var(--line)); }
+.eod__plan:hover { background: var(--accent-tint); color: var(--accent); }
+.eod__star { animation: scene-twinkle 4s ease-in-out infinite; }
+.eod__window { animation: eod-lamp 6s ease-in-out infinite; }
+.eod__z { animation: eod-float 5s ease-in-out infinite; opacity: 0; }
+.eod__z--b { animation-delay: 1.4s; }
+@keyframes eod-lamp { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+@keyframes eod-float { 0% { opacity: 0; transform: translate(0, 4px); } 30%, 70% { opacity: 0.85; } 100% { opacity: 0; transform: translate(4px, -6px); } }
+.plantomorrow { width: min(94vw, 640px); }
+.plantomorrow .weekday { margin: 0; animation: none; }
+@media (prefers-reduced-motion: reduce) { .eod__star, .eod__window, .eod__z { animation: none !important; } .eod__z { opacity: 0.6; } }
+.morning--still .eod__star, .morning--still .eod__window, .morning--still .eod__z { animation: none; opacity: 0.6; }

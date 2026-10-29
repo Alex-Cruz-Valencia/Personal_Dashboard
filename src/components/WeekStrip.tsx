@@ -209,7 +209,7 @@ const longDay = (d: WeekDay) =>
   new Date(`${d.iso}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
 
 /** One picked day, in full: its agenda beside its tasks. Informational, like the rest of the week. */
-function DayDetail({ day, use24, onClose }: { day: WeekDay; use24: boolean; onClose: () => void }) {
+export function DayDetail({ day, use24, onClose }: { day: WeekDay; use24: boolean; onClose: () => void }) {
   const events = [...(day.events ?? [])].sort((a, b) => a.start - b.start);
   const tasks = day.tasks ?? [];
   const summary = [
