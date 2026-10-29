@@ -450,6 +450,34 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-28 — The calendar stays on "now" and is never still
+
+**Problem** — Five small frictions on a screen that is left up all day: the
+calendar sometimes wasn't showing the present (you scroll, then it stays
+scrolled); with no event in progress the calendar did nothing at all; the thin
+progress bar under the current event read as a loading bar; the "sun is down /
+sunrise" line under the greeting told you nothing you act on; and the clock had
+a breathing effect so faint it was invisible.
+
+**Decision** — (1) The calendar lands on now (40% down), shows a "↑ / ↓ Now"
+button whenever the now line is off screen, and drifts back by itself after a
+quiet minute or when the tab returns. (2) The now line always glows and its dot
+sends out a slow ripple. (3) Free time now is drawn as a softly breathing band
+from the now line to the next event, labelled "Free · 1h 20m". (4) The progress
+bar is replaced by a faint shade over the elapsed part of the current event. (5)
+The sun line is removed. (6) The clock gets a soft glow, a teal sheen that
+sweeps across the digits every nine seconds, and a seconds digit that ticks in.
+
+**Alternatives considered** — Auto-scrolling the page itself to the calendar
+(jarring, steals scroll); following now continuously (the view would move while
+you read); keeping the bar but restyling it; a spinning/pulsing clock face.
+
+**Tradeoffs** — The free-time band is real information (how long you have), but
+it adds a colored area to a calm screen; it hides under 10 minutes. The calendar
+card can still sit below the fold on a short screen when the weather card stacks
+above it: that is a layout question, not fixed here. All motion respects
+reduced-motion and the ⚙ Motion "Still" setting.
+
 ## 2026-10-28 — Creating a task uses the same form as editing one
 
 **Problem** — Existing tasks had a full Todoist-style editor (priority, due,

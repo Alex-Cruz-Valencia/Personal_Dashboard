@@ -1,6 +1,6 @@
 "use client";
 
-import { useLayoutEffect, useRef, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
 import { upNext } from "@/lib/attention";
 import { dateLineFor, formatHour, layoutOverlaps } from "@/lib/format";
 import { minutesLabel } from "@/lib/plan";
@@ -16,6 +16,10 @@ const HOUR_PX = 56;
 /** Events shorter than this show only their title. */
 const TWO_LINE_PX = 40;
 const THREE_LINE_PX = 60;
+/** Where "now" sits in the view when the calendar centres on it (fraction of the height). */
+const NOW_AT = 0.4;
+/** Untouched this long (ms) and off-centre: drift back to now by itself. */
+const IDLE_RETURN_MS = 60_000;
 
 interface DayCalendarProps {
   agenda: AgendaEvent[];
@@ -52,16 +56,68 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
   const hourMarks: number[] = [];
   for (let h = Math.ceil(arc.from); h <= Math.floor(arc.to); h++) hourMarks.push(h);
 
-  // Land on the present, a third of the way down, so what's next is in view.
-  // Once per page load, not on every 60s refresh while someone is scrolled elsewhere.
-  useLayoutEffect(() => {
+  const nowY = y(nowHour);
+  const [away, setAway] = useState<"up" | "down" | null>(null);
+  const lastTouch = useRef(0);
+
+  /** Is the now line off screen (and which way), or well outside the comfortable middle? */
+  const measure = useCallback(() => {
     const el = scrollerRef.current;
-    if (!el || landed.current) return;
+    if (!el || !nowVisible) return { dir: null as "up" | "down" | null, off: false };
+    const rel = (nowY - el.scrollTop) / el.clientHeight;
+    return { dir: rel < 0 ? ("up" as const) : rel > 1 ? ("down" as const) : null, off: rel < 0.12 || rel > 0.75 };
+  }, [nowY, nowVisible]);
+
+  const goNow = useCallback(
+    (smooth: boolean) => {
+      const el = scrollerRef.current;
+      if (!el) return;
+      const anchor = nowVisible ? nowY : y(agenda[0]?.start ?? arc.from);
+      el.scrollTo({ top: Math.max(0, anchor - el.clientHeight * NOW_AT), behavior: smooth ? "smooth" : "auto" });
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [nowY, nowVisible, agenda, arc.from],
+  );
+
+  // Land on the present before first paint.
+  useLayoutEffect(() => {
+    if (landed.current) return;
     landed.current = true;
-    const anchor = nowVisible ? nowHour : (agenda[0]?.start ?? arc.from);
-    el.scrollTop = Math.max(0, y(anchor) - el.clientHeight / 3);
+    goNow(false);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  // A second screen gets scrolled, then left alone: drift back to now after a quiet minute,
+  // and snap there when the tab comes back into view.
+  useEffect(() => {
+    const el = scrollerRef.current;
+    if (!el) return;
+    const touch = () => {
+      lastTouch.current = Date.now();
+    };
+    const evs = ["wheel", "touchstart", "pointerdown", "keydown"] as const;
+    evs.forEach((n) => el.addEventListener(n, touch, { passive: true }));
+    const tick = () => {
+      const m = measure();
+      setAway(m.dir);
+      if (m.off && Date.now() - lastTouch.current > IDLE_RETURN_MS) goNow(true);
+    };
+    const id = setInterval(tick, 5000);
+    const onVisible = () => {
+      if (document.visibilityState === "visible" && Date.now() - lastTouch.current > IDLE_RETURN_MS) goNow(false);
+    };
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      evs.forEach((n) => el.removeEventListener(n, touch));
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [measure, goNow]);
+
+  // Free time right now: from the now line to the next event (or the end of the day).
+  const gapEnd = next?.mode === "next" ? nowHour + next.minutes / 60 : next ? null : arc.to;
+  const gapMinutes = gapEnd == null ? 0 : Math.round((gapEnd - nowHour) * 60);
+  const showGap = nowVisible && gapEnd != null && gapMinutes >= 10;
 
   return (
     <section className="card vcal" aria-label="Today's calendar">
@@ -114,7 +170,12 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
         )}
       </div>
 
-      <div className="vcal__scroller" ref={scrollerRef}>
+      <div className="vcal__wrap">
+      <div
+        className="vcal__scroller"
+        ref={scrollerRef}
+        onScroll={() => setAway(measure().dir)}
+      >
         <div className="vcal__body" style={{ height }}>
           <div className="vcal__gutter" aria-hidden="true">
             {hourMarks.map((h) => (
@@ -128,6 +189,12 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
             {hourMarks.map((h) => (
               <div key={h} className="vcal__line" style={{ top: y(h) }} />
             ))}
+
+            {showGap ? (
+              <div className="vcal__gap" style={{ top: nowY, height: Math.max(0, y(gapEnd!) - nowY) }} aria-hidden="true">
+                <span>{next ? `Free · ${minutesLabel(gapMinutes)}` : "Free"}</span>
+              </div>
+            ) : null}
 
             {focus.session ? (
               <div
@@ -185,7 +252,7 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
                     <div className="vcal__event-where">{e.location || e.where}</div>
                   ) : null}
                   {state === "now" ? (
-                    <i className="vcal__event-prog" style={{ width: `${(((nowHour - e.start) / (e.end - e.start)) * 100).toFixed(1)}%` }} />
+                    <i className="vcal__event-elapsed" style={{ height: `${Math.min(100, ((nowHour - e.start) / (e.end - e.start)) * 100).toFixed(1)}%` }} />
                   ) : null}
                 </div>
               );
@@ -198,6 +265,12 @@ export function DayCalendar({ agenda, arc, today, settings, frozen = false, focu
             ) : null}
           </div>
         </div>
+      </div>
+      {away ? (
+        <button type="button" className={`vcal__jump vcal__jump--${away === "up" ? "down" : "up"}`} onClick={() => goNow(true)}>
+          {away === "up" ? "↓ Now" : "↑ Now"}
+        </button>
+      ) : null}
       </div>
     </section>
   );

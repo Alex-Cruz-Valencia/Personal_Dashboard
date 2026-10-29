@@ -1491,7 +1491,6 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .clock { display: grid; gap: 8px; justify-items: stretch; }
 .clock__time { display: flex; align-items: flex-start; gap: 6px; font-variant-numeric: tabular-nums; }
 .clock__hm { font-family: var(--font-display); font-size: clamp(48px, 5.2vw, 60px); font-weight: 500; line-height: 0.95; letter-spacing: -0.035em; background: linear-gradient(180deg, var(--ink) 30%, color-mix(in srgb, var(--ink) 52%, transparent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.clock__hm { animation: clock-breathe 6s ease-in-out infinite; }
 .clock__colon { display: inline; margin: 0 1px; animation: clock-colon 2s ease-in-out infinite; }
 .clock__side { display: grid; gap: 3px; padding-top: 6px; font-size: 12px; font-weight: 600; line-height: 1.1; color: var(--ink-faint); }
 .clock__sec { font-variant-numeric: tabular-nums; }
@@ -1544,7 +1543,6 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .vcal__event--past { opacity: 0.55; filter: saturate(0.6); }
 .vcal__event--now { animation: vcal-breathe 5s ease-in-out infinite; }
 .vcal__event--soon { animation: vcal-soon 3.2s ease-in-out infinite; }
-.vcal__event-prog { position: absolute; left: 0; bottom: 0; height: 3px; border-radius: 0 3px 0 0; background: var(--accent); opacity: 0.7; transition: width 15s linear; }
 @keyframes vcal-breathe { 0%, 100% { box-shadow: 0 0 0 0 color-mix(in srgb, var(--accent) 0%, transparent); } 50% { box-shadow: 0 0 14px 1px color-mix(in srgb, var(--accent) 35%, transparent); } }
 @keyframes vcal-soon { 0%, 100% { box-shadow: 0 0 0 0 transparent; } 50% { box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent); } }
 
@@ -1562,17 +1560,12 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .morning[data-theme="dark"] .skytint__blob, :root:has(.morning[data-theme="dark"]) .skytint__blob { opacity: 0.32; }
 @media (prefers-reduced-motion: reduce) {
   .vcal__event--now, .vcal__event--soon, .footline__stamp, .footline__stamp i, .skytint__blob { animation: none !important; }
-  .vcal__now, .vcal__event-prog, .skytint__blob { transition: none !important; }
+  .vcal__now, .skytint__blob { transition: none !important; }
 }
 .morning--still .vcal__event--now, .morning--still .vcal__event--soon, .morning--still .footline__stamp, .morning--still .footline__stamp i { animation: none; }
 
 
-@keyframes clock-breathe { 0%, 100% { opacity: 0.8; filter: drop-shadow(0 0 0 transparent); } 50% { opacity: 1; filter: drop-shadow(0 0 14px color-mix(in srgb, var(--accent) 38%, transparent)); } }
-.hello__sun { display: flex; align-items: center; gap: 8px; margin-top: 2px; font-size: 13.5px; font-weight: 500; color: var(--ink-soft); }
-.hello__sun i { width: 8px; height: 8px; border-radius: 999px; flex: 0 0 auto; background: #F2B544; box-shadow: 0 0 10px 1px rgba(242, 181, 68, 0.5); animation: scene-breathe 7s ease-in-out infinite; }
-.hello__sun i[data-phase="night"] { background: #B9C6F2; box-shadow: 0 0 10px 1px rgba(185, 198, 242, 0.45); }
-@media (prefers-reduced-motion: reduce) { .clock__hm, .hello__sun i { animation: none !important; } }
-.morning--still .clock__hm, .morning--still .hello__sun i { animation: none; }
+
 /* =============================================================================
    EMAIL → TASK + EXPANDED WEEK (not in the static reference).
    ========================================================================== */
@@ -1648,3 +1641,31 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .taskedit__chip.is-on { color: var(--accent); background: var(--accent-tint); border-color: transparent; }
 .taskedit__done:disabled { opacity: 0.5; cursor: default; }
 .newtask--add { gap: 12px; }
+
+/* ---- calendar: always-alive now line, free-time band, elapsed shading; clock life ---- */
+.vcal__now { box-shadow: 0 0 8px color-mix(in srgb, var(--negative) 55%, transparent); animation: vcal-nowglow 4s ease-in-out infinite; }
+.vcal__now i::after { content: ""; position: absolute; inset: -2px; border-radius: 50%; border: 2px solid var(--negative); animation: vcal-ripple 3s ease-out infinite; }
+@keyframes vcal-nowglow { 0%, 100% { opacity: 0.75; } 50% { opacity: 1; } }
+@keyframes vcal-ripple { 0% { transform: scale(1); opacity: 0.7; } 80%, 100% { transform: scale(3.2); opacity: 0; } }
+.vcal__gap { position: absolute; left: 2px; right: 2px; z-index: 0; border-radius: 6px; pointer-events: none; overflow: hidden; background: linear-gradient(to bottom, color-mix(in srgb, var(--accent) 16%, transparent), color-mix(in srgb, var(--accent) 3%, transparent)); animation: vcal-gap 6s ease-in-out infinite; transition: top 15s linear, height 15s linear; }
+.vcal__gap span { display: block; padding: 7px 10px 0; font-size: 11px; font-weight: 700; letter-spacing: 0.06em; text-transform: uppercase; color: var(--accent); }
+@keyframes vcal-gap { 0%, 100% { opacity: 0.55; } 50% { opacity: 1; } }
+.vcal__event-elapsed { position: absolute; inset: 0 0 auto 0; background: color-mix(in srgb, var(--ink) 7%, transparent); pointer-events: none; transition: height 15s linear; }
+.vcal__event--now .vcal__event-title, .vcal__event--now .vcal__event-time, .vcal__event--now .vcal__event-where { position: relative; }
+.vcal__jump { position: absolute; right: 22px; z-index: 6; font: inherit; font-size: 12px; font-weight: 700; padding: 6px 12px; border-radius: 999px; border: 1px solid var(--accent); background: var(--surface); color: var(--accent); cursor: pointer; box-shadow: var(--shadow); }
+.vcal__jump--up { top: 10px; } .vcal__jump--down { bottom: 12px; }
+.vcal__jump:hover { background: var(--accent); color: var(--surface); }
+.vcal__wrap { position: relative; flex: 1; min-height: 0; display: flex; flex-direction: column; }
+
+.clock__time { position: relative; isolation: isolate; }
+.clock__time::before { content: ""; position: absolute; inset: -34% -22%; z-index: -1; pointer-events: none; background: radial-gradient(closest-side, color-mix(in srgb, var(--accent) 24%, transparent), transparent); animation: clock-glow 7s ease-in-out infinite; }
+.clock__hm { background-image: linear-gradient(100deg, transparent 38%, var(--accent) 50%, transparent 62%), linear-gradient(180deg, var(--ink) 30%, color-mix(in srgb, var(--ink) 52%, transparent)); background-size: 260% 100%, 100% 100%; background-repeat: no-repeat; animation: clock-sheen 9s ease-in-out infinite; }
+.clock__sec { display: inline-block; animation: clock-tick 0.45s ease-out; }
+@keyframes clock-glow { 0%, 100% { opacity: 0.35; transform: scale(0.94); } 50% { opacity: 1; transform: scale(1.06); } }
+@keyframes clock-sheen { 0%, 12% { background-position: 130% 0, 0 0; } 52%, 100% { background-position: -30% 0, 0 0; } }
+@keyframes clock-tick { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
+@media (prefers-reduced-motion: reduce) {
+  .vcal__now, .vcal__now i::after, .vcal__gap, .clock__time::before, .clock__hm, .clock__sec { animation: none !important; }
+  .vcal__gap, .vcal__event-elapsed { transition: none !important; }
+}
+.morning--still .vcal__now, .morning--still .vcal__now i::after, .morning--still .vcal__gap, .morning--still .clock__time::before, .morning--still .clock__hm, .morning--still .clock__sec { animation: none; }
