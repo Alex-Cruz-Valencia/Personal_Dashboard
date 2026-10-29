@@ -450,6 +450,38 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-30 — EXPERIMENT (branch, not shipped): two other shapes for the top row
+
+**Problem** — The top row is lopsided. The greeting card is wide and nearly
+empty (a date, a greeting, a clock), while the weather card on the right carries
+a place, a big temperature, a condition, a chart and a footnote. At 1280px that
+is 854px of mostly air next to 350px of dense content, and the row is 251px tall.
+
+**Options built** (switch under ⚙ **Top row (experiment)**, or `?top=`):
+- **One card** (`unified`): greeting and clock across the top, the weather as one
+  line under the greeting ("54° Partly cloudy · San Francisco · No rain expected
+  · Wind 6 mph"), the day's temperature as a slim band across the full width, and
+  a single scene behind it all with the sun or moon. 227px tall at 1280px.
+- **Three tiles** (`trio`): greeting, clock and a slim weather tile (temperature,
+  condition, place, a sparkline) as three even tiles. 140px tall at 1280px. The
+  weather footnote is dropped in this one.
+- **Classic**: today's layout, unchanged (default).
+
+**Why these** — Each moves weight to the left and shrinks the right. One card
+keeps everything in one place and gives the scene a stage; three tiles is the
+calmest and shortest, at the cost of three separate boxes.
+
+**How it was built** — The temperature chart became its own component in three
+sizes (full, a wide band, a sparkline), and the weather card now uses it too, so
+scrubbing works the same everywhere. On a phone the one-card version swaps the
+band for the normal chart, and the tiles stack.
+
+**Open questions** — Is the footnote worth keeping in three tiles? In one card the
+moon sits beside the clock; is a corner better? Neither version has been looked at
+in daylight, since it was night when they were built. If one wins, the others and
+the switch come out; if none does, the branch is dropped (the chart split is the
+only change worth keeping on its own).
+
 ## 2026-10-30 — Two layers of scenery: the page behind, the weather card in front
 
 **Problem** — Moving the weather scene to the whole page backdrop (the Scene

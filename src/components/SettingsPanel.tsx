@@ -11,6 +11,7 @@ import {
   type Density,
   type NoteStyle,
   type PastEvents,
+  type TopRow,
   type Motion,
   type Surface,
   type Theme,
@@ -117,6 +118,16 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
               ["show", "Show"],
             ]}
             onPick={(pastEvents) => update({ pastEvents })}
+          />
+          <Segmented<TopRow>
+            label="Top row (experiment)"
+            value={settings.topRow}
+            options={[
+              ["classic", "Classic"],
+              ["unified", "One card"],
+              ["trio", "Three tiles"],
+            ]}
+            onPick={(topRow) => update({ topRow })}
           />
           <Segmented<NoteStyle>
             label="Day note"

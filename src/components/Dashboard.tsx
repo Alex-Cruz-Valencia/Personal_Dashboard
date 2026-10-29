@@ -11,6 +11,8 @@ import { Footline } from "./Footline";
 import { HelloCard } from "./HelloCard";
 import { TaskDetailProvider } from "./TaskDetail";
 import { TaskList } from "./TaskList";
+import { TopTrio } from "./TopTrio";
+import { TopUnified } from "./TopUnified";
 import { WeatherCard } from "./WeatherCard";
 import { WeatherScene } from "./WeatherScene";
 import { WeekStrip } from "./WeekStrip";
@@ -57,34 +59,40 @@ export function Dashboard({ data, settings }: DashboardProps) {
           {settings.surface === "glass" && settings.motion === "on" ? (
             <SkyTint today={data.today} sunrise={data.weather.sunrise} sunset={data.weather.sunset} frozen={frozen} />
           ) : null}
-          <div className="topbar">
-            <HelloCard
-              user={data.user}
-              today={data.today}
-              scene={
-                settings.motion === "on" ? (
-                  <WeatherScene
-                    sky={data.weather.sky}
-                    isDay={data.today.nowHour >= data.weather.sunrise && data.today.nowHour < data.weather.sunset}
-                    celestial={false}
-                  />
-                ) : null
-              }
-            >
-              <ClockCard
+          {settings.topRow === "unified" ? (
+            <TopUnified data={data} settings={settings} frozen={frozen} />
+          ) : settings.topRow === "trio" ? (
+            <TopTrio data={data} settings={settings} frozen={frozen} />
+          ) : (
+            <div className="topbar">
+              <HelloCard
+                user={data.user}
                 today={data.today}
-                use24={use24Hour(settings)}
-                frozen={frozen}
+                scene={
+                  settings.motion === "on" ? (
+                    <WeatherScene
+                      sky={data.weather.sky}
+                      isDay={data.today.nowHour >= data.weather.sunrise && data.today.nowHour < data.weather.sunset}
+                      celestial={false}
+                    />
+                  ) : null
+                }
+              >
+                <ClockCard
+                  today={data.today}
+                  use24={use24}
+                  frozen={frozen}
+                />
+              </HelloCard>
+              <WeatherCard
+                weather={data.weather}
+                arc={data.weatherArc}
+                agenda={data.agenda}
+                nowHour={data.today.nowHour}
+                settings={settings}
               />
-            </HelloCard>
-            <WeatherCard
-              weather={data.weather}
-              arc={data.weatherArc}
-              agenda={data.agenda}
-              nowHour={data.today.nowHour}
-              settings={settings}
-            />
-          </div>
+            </div>
+          )}
 
           <AttentionStrip
             agenda={data.agenda}
