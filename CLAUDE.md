@@ -58,6 +58,11 @@
   sends; `gmail.modify` already covers drafts) and `POST /api/plan/suggest`
   (validated by `schedule-validate.ts`; each suggestion needs its own Block).
   `npm run llm:models` lists model ids.
+- **Top row (2026-10-30):** `settings.topRow` — "unified" (default, `TopUnified`: one
+  scenic card with greeting, clock, a one-line weather summary and the day's temperature
+  curve as a full-width band, sun/moon included) or "classic" (`HelloCard` + `WeatherCard`),
+  switchable under ⚙ **Top row**. The curve is `TempCurve` (sizes "full" and "wide",
+  `refined` = smooth curve, past dimmer than ahead). `?now=14.5` previews another hour.
 - **Current page layout (2026-10-28):** header + weather, `AttentionStrip`, then
   `DayCalendar` (vertical, Google-Calendar-style day view: `HOUR_PX`, side-by-side
   overlap lanes from `layoutOverlaps()`, a now line, lands near now; owns the

@@ -31,9 +31,12 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     windDown: settings.windDown,
   });
   const sky = parseSkyPreview(sp);
+  // Preview only: ?now=14.5 shows the page as if it were 2:30pm (greeting, scenes, curve). The live clock still runs.
+  const previewNow = Number(typeof sp.now === "string" ? sp.now : NaN);
+  const shown = Number.isFinite(previewNow) && previewNow >= 0 && previewNow < 24 ? { ...data, today: { ...data.today, nowHour: previewNow } } : data;
   return (
     <>
-      <Dashboard data={sky ? { ...data, weather: { ...data.weather, sky } } : data} settings={settings} />
+      <Dashboard data={sky ? { ...shown, weather: { ...shown.weather, sky } } : shown} settings={settings} />
       <LocationSync />
       <AutoRefresh />
     </>
