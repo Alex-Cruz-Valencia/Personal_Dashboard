@@ -7,7 +7,7 @@ import { config } from "@/lib/config";
 import { dayBoundsUtc, decimalHourForTimestamp } from "@/lib/time";
 import type { AgendaEvent, CalendarLegendItem, EventKind } from "@/lib/types";
 import { googleFetch } from "./tokens";
-import { colorFromHex, colorFromId, type EventColor } from "@/lib/event-colors";
+import { colorFromHex, colorFromId, isEventColor, type EventColor } from "@/lib/event-colors";
 
 const CAL_BASE = "https://www.googleapis.com/calendar/v3";
 
@@ -85,7 +85,12 @@ async function discoverCalendars(): Promise<{ id: string; color?: EventColor; la
   return (data.items ?? [])
     .filter((c) => !c.deleted && !excluded.has(c.id.toLowerCase()))
     .sort((a, b) => (ROLE_RANK[a.accessRole ?? ""] ?? 4) - (ROLE_RANK[b.accessRole ?? ""] ?? 4))
-    .map((c) => ({ id: c.id, color: colorFromHex(c.backgroundColor), label: calendarLabel(c) }));
+    .map((c) => {
+      const label = calendarLabel(c);
+      // A dashboard-only override (GOOGLE_CALENDAR_COLORS), by id or legend name, beats Google's color.
+      const override = config.google.calendarColors[c.id.toLowerCase()] ?? config.google.calendarColors[label.toLowerCase()];
+      return { id: c.id, label, color: isEventColor(override) ? override : colorFromHex(c.backgroundColor) };
+    });
 }
 
 /**

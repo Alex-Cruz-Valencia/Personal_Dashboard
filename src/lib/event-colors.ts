@@ -18,6 +18,14 @@ export type EventColor =
   | "grape"
   | "graphite";
 
+const FAMILIES: readonly EventColor[] = [
+  "tomato", "flamingo", "tangerine", "banana", "sage", "basil", "peacock", "blueberry", "lavender", "grape", "graphite",
+];
+
+export function isEventColor(v: string | undefined): v is EventColor {
+  return (FAMILIES as readonly string[]).includes(v ?? "");
+}
+
 /** An event's own `colorId` (Google's 11 event colors) → family. */
 const BY_COLOR_ID: Record<string, EventColor> = {
   "1": "lavender",

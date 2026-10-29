@@ -42,7 +42,10 @@
   more calendars only): names come from `calendarLabel()` — the viewer's rename,
   else primary → "Personal", another account → its domain ("Dartmouth",
   "DALI"), a shared calendar → its title minus "[TEAM]" tags; Google's built-in
-  holiday/birthday/week-number calendars are left out. 12/8/6px radii; no card shadow in dark,
+  holiday/birthday/week-number calendars are left out. `GOOGLE_CALENDAR_COLORS`
+  (`config.google.calendarColors`, "Name=family,…" by calendar id or legend
+  name) overrides a calendar's color on the dashboard only — the env keeps
+  the viewer's calendar names out of the repo. 12/8/6px radii; no card shadow in dark,
   two soft levels in light (`--shadow` cards, `--shadow-pop` popovers); light
   secondary text held to ~6–8:1 for daylight; selected chips carry a border +
   bold, not tint alone; a flat day-arc band, a global accent-colored focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →

@@ -74,6 +74,19 @@ export const config = {
         .map((id) => id.trim())
         .filter(Boolean) ?? [],
     /**
+     * Per-calendar color on the dashboard, overriding the calendar's own Google
+     * color: `GOOGLE_CALENDAR_COLORS="Personal=banana,Dartmouth=blueberry"`.
+     * Keys are a calendar id or its legend name (case-insensitive); values are
+     * a family from `src/lib/event-colors.ts`. Unknown families are ignored.
+     */
+    calendarColors: Object.fromEntries(
+      (str("GOOGLE_CALENDAR_COLORS") ?? "")
+        .split(",")
+        .map((pair) => pair.split("=").map((s) => s.trim()))
+        .filter(([k, v]) => k && v)
+        .map(([k, v]) => [k.toLowerCase(), v.toLowerCase()]),
+    ) as Record<string, string>,
+    /**
      * Gmail search for the "needs a reply" list. Deliberately broad (includes
      * read mail) — `gmail.ts` does the real curation from the message headers
      * and labels, then keeps unread + important + genuine threads.

@@ -132,7 +132,11 @@ calendar with its dot:
 - **Left out:** Google's holiday calendars.
 
 A rename in Google wins. A legend beats per-block account labels, since blocks are
-often too short to fit one.
+often too short to fit one. Alex then chose colors per account (Personal yellow, DALI teal,
+Evergreen green, classes blue). That's a dashboard-only override,
+`GOOGLE_CALENDAR_COLORS`, keyed by calendar id or legend name. It lives in env, not
+code, so personal calendar names stay out of the repo, and Google Calendar's own
+colors are left alone.
 
 **Tradeoffs / open questions** — Hue snapping can land a borderline calendar color on
 a neighboring family; for example `#16a765` reads as sage rather than basil.
