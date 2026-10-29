@@ -137,6 +137,12 @@ small marks. So light mode now splits **marker** colors from **text** colors:
   The earlier 7–8:1 overshot.
 - **Attention labels:** neutral grey, red only for a real problem.
 
+Calendar markers then went brighter still: muted taupe/plum/sage read dull,
+especially since most events are "personal". In light, both palettes now use
+Okabe–Ito hues, picked because they stay distinct for colorblind viewers: mint
+`#2FB38F` for personal, orchid `#CC6FB0` for meetings, and orange for focus. Block
+tints are 11% (16% for the event happening now).
+
 This walks back part of the "daylight standard" entry. Contrast still clears AA,
 but readable no longer means as dark as possible.
 

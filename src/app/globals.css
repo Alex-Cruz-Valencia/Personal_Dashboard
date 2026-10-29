@@ -49,9 +49,10 @@
   --mark-negative: #D1453B;
   --mark-warning:  #EB8909;
   --mark-neutral:  #A9ABAF;
-  --mark-meeting:  #A97CA3;
-  --mark-focus:    #6E9B7E;
-  --mark-personal: #A9A6A0;
+  /* calendar kinds: Okabe–Ito hues (colorblind-safe) — orchid / orange / mint */
+  --mark-meeting:  #CC6FB0;
+  --mark-focus:    #EE9A2E;
+  --mark-personal: #2FB38F;
 
   /* priority ramp — urgent / normal / someday (task list only) */
   /* text-on-tint pairs are kept at or above WCAG AA (4.5:1) */
@@ -1941,9 +1942,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
   --mark-negative: #C8463F;
   --mark-warning:  #E08A2C;
   --mark-neutral:  #B6AAA0;
-  --mark-meeting:  #B07AA6;
-  --mark-focus:    #D07A4E;
-  --mark-personal: #B3A79D;
+  --mark-meeting:  #CC6FB0;
+  --mark-focus:    #E8803F;
+  --mark-personal: #2FB38F;
   --p1:         #9E2A3A;
   --p1-tint:    #F6E1E3;
   --p2:         #805708;
@@ -1988,9 +1989,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
     --mark-negative: #C8463F;
     --mark-warning:  #E08A2C;
     --mark-neutral:  #B6AAA0;
-    --mark-meeting:  #B07AA6;
-    --mark-focus:    #D07A4E;
-    --mark-personal: #B3A79D;
+    --mark-meeting:  #CC6FB0;
+    --mark-focus:    #E8803F;
+    --mark-personal: #2FB38F;
     --p1:         #9E2A3A;
     --p1-tint:    #F6E1E3;
     --p2:         #805708;
@@ -2075,7 +2076,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
    `.morning.morning--clean` outranks the light theme's personal-event rule. */
 .morning.morning--clean .vcal__event {
   --kind: var(--mark-meeting);
-  background: color-mix(in srgb, var(--kind) 8%, var(--surface));
+  background: color-mix(in srgb, var(--kind) 11%, var(--surface));
   border: 0; border-radius: 4px; padding: 4px 8px 4px 12px;
 }
 .morning.morning--clean .vcal__event::before {
@@ -2083,10 +2084,10 @@ a:hover { color: var(--ink); text-decoration: underline; }
 }
 .morning.morning--clean .vcal__event--focus { --kind: var(--mark-focus); }
 .morning.morning--clean .vcal__event--personal { --kind: var(--mark-personal); }
-.morning.morning--clean .vcal__event--now { background: color-mix(in srgb, var(--kind) 12%, var(--surface)); }
-.morning.morning--clean .vcal__event:hover { filter: none; background: color-mix(in srgb, var(--kind) 15%, var(--surface)); }
+.morning.morning--clean .vcal__event--now { background: color-mix(in srgb, var(--kind) 16%, var(--surface)); }
+.morning.morning--clean .vcal__event:hover { filter: none; background: color-mix(in srgb, var(--kind) 20%, var(--surface)); }
 .morning--clean .vcal__event-title { font-size: 13px; font-weight: 500; color: var(--ink); }
-.morning--clean .vcal__event-elapsed { background: color-mix(in srgb, var(--kind) 10%, transparent); }
+.morning--clean .vcal__event-elapsed { background: color-mix(in srgb, var(--kind) 12%, transparent); }
 .morning--clean .vcal__event--past { opacity: 0.6; filter: none; }
 
 /* this week: plain columns split by hairlines; today in the accent, not a box */
