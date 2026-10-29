@@ -96,6 +96,9 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   // morning sits above the top edge, out of sight. Scrolling up (or the pill) brings it back.
   const [showPast, setShowPast] = useState(false);
   const [snap, setSnap] = useState(false);
+  // The card is only as tall as the day left needs; while the morning is open it keeps the height it had.
+  const [lockH, setLockH] = useState<number | null>(null);
+  const cardRef = useRef<HTMLElement>(null);
   const collapsed = settings.pastEvents === "hide" && !showPast;
   const viewFrom = collapsed ? Math.min(Math.max(Math.floor(nowHour - PAST_KEEP_H), arc.from), arc.to) : arc.from;
   const hiddenPx = (viewFrom - arc.from) * HOUR_PX;
@@ -109,6 +112,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   };
   const reveal = () => {
     shift.current = hiddenPx;
+    setLockH(cardRef.current?.offsetHeight ?? null);
     instant(() => setShowPast(true));
   };
   // Keep what was on screen where it was when the tucked-away hours come back above it.
@@ -132,7 +136,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
       if (!el) return;
       if (settings.pastEvents === "hide") {
         // The top of the calendar is already about an hour before now.
-        if (showPast) instant(() => setShowPast(false));
+        if (showPast) instant(() => { setShowPast(false); setLockH(null); });
         el.scrollTo({ top: 0, behavior: smooth && !showPast ? "smooth" : "auto" });
         return;
       }
@@ -264,7 +268,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   }, [measure, goNow]);
 
   return (
-    <section className="card vcal" aria-label="Today's calendar">
+    <section ref={cardRef} className={`card vcal${collapsed ? "" : " vcal--full"}`} style={lockH ? { height: lockH } : undefined} aria-label="Today's calendar">
       <div className="vcal__head">
         <h2 className="card__title">
           Today

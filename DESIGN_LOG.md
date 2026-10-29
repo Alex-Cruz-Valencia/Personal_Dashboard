@@ -450,6 +450,30 @@ button, not the capability).
 calls use `googleFetch`" (already a project rule). Someone could still edit the
 guard away; it is a seatbelt, not a lock against the owner.
 
+## 2026-10-29 — Calendar and tasks are only as tall as they need to be
+
+**Problem** — The calendar/tasks row was a fixed 78% of the window. With the past
+tucked away and four tasks, that left a large empty block under both cards.
+
+**Decision** — The row is as tall as its content needs, up to the old limit
+(78% of the window, 780px), and the two cards always match. In practice the
+calendar sets the height: the hours left in the day plus the end-of-day scene.
+Mid-afternoon it reaches the limit and scrolls; in the evening it shrinks (about
+470px at 8pm, 430px late) and the page below moves up. While the morning is
+opened the card keeps the height it had, so revealing it doesn't push the rest
+of the page down. Also fixed: the "Earlier today" pill's box collapsed to zero
+height, so its border and hover drew a thin line above the text.
+
+**Alternatives considered** — Making the tasks list fill the extra space (it
+would need filler content); a fixed shorter row (still wrong at both ends of the
+day); letting the card grow when the morning opens (the page jumped 250px).
+
+**Tradeoffs** — The page below shifts by about an hour of calendar (56px) each
+hour as the evening comes in, animated with the same slide. The scene sets a
+floor (about 240px) so a nearly-empty evening is still not tiny. If tasks are
+few the tasks card still has blank space at the bottom whenever the calendar is
+taller; the cards match, they aren't each filled.
+
 ## 2026-10-29 — The calendar tucks the past away
 
 **Problem** — By mid-afternoon the top half of the day view was meetings that

@@ -1420,8 +1420,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
    VERTICAL CALENDAR + TASKS (experiment; not in the static reference).
    Today as a Google-Calendar-style day view beside Today's tasks.
    ========================================================================== */
-.twocol { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--gap); align-items: stretch; height: min(78vh, 780px); min-height: 520px; }
-.twocol > .card { min-height: 0; display: flex; flex-direction: column; }
+.twocol { --twocol-cap: min(78vh, 780px); display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--gap); align-items: stretch; }
+.twocol > .card { min-height: 0; max-height: var(--twocol-cap); display: flex; flex-direction: column; }
 .twocol > .column--tasks .card__body { flex: 1; min-height: 0; overflow-y: auto; }
 
 .vcal__head { display: flex; align-items: center; gap: 12px; padding: 18px 22px 12px; flex-wrap: wrap; }
@@ -1464,7 +1464,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 
 @media (max-width: 900px) {
   .twocol { grid-template-columns: minmax(0, 1fr); height: auto; min-height: 0; }
-  .twocol > .vcal { height: 72vh; }
+  .twocol { --twocol-cap: 72vh; }
   .vcal__status { order: 3; flex-basis: 100%; }
   .vcal__btn { margin-left: auto; }
   .vcal__status .vcal__btn { margin-left: 0; }
@@ -1720,9 +1720,15 @@ a:hover { color: var(--ink); text-decoration: underline; }
 /* ---- past events tucked away (⚙ Past events → Tuck away) ---- */
 .vcal__body { transition: margin-top 0.7s ease; }
 .vcal__body--snap { transition: none; }
-.vcal__earlier { position: sticky; top: 8px; z-index: 7; height: 0; overflow: visible; display: flex; justify-content: flex-end; padding-right: 22px; pointer-events: none; }
-.vcal__earlier button { pointer-events: auto; font: inherit; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--ink-soft); cursor: pointer; box-shadow: var(--shadow); animation: earlier-in 0.5s ease-out; }
+.vcal__earlier { position: sticky; top: 8px; z-index: 7; height: 0; overflow: visible; display: flex; align-items: flex-start; justify-content: flex-end; padding-right: 22px; pointer-events: none; }
+.vcal__earlier button { pointer-events: auto; flex: 0 0 auto; line-height: 1.2; font: inherit; font-size: 11.5px; font-weight: 700; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: color-mix(in srgb, var(--surface) 92%, transparent); color: var(--ink-soft); cursor: pointer; box-shadow: var(--shadow); animation: earlier-in 0.5s ease-out; }
 .vcal__earlier button:hover { color: var(--ink); border-color: var(--ink-faint); }
 @keyframes earlier-in { from { opacity: 0; transform: translateY(-4px); } to { opacity: 1; transform: none; } }
 @media (prefers-reduced-motion: reduce) { .vcal__body { transition: none; } .vcal__earlier button { animation: none; } }
 .morning--still .vcal__body { transition: none; }
+
+/* ---- calendar + tasks are only as tall as their content needs (up to the cap), and match ---- */
+.twocol > .vcal { min-height: 360px; }
+.vcal__eod { height: auto; min-height: 240px; }
+/* whole day showing: leave room under the last hour so "now" can sit 40% down */
+.vcal--full .vcal__eod { min-height: calc(var(--twocol-cap, 780px) * 0.6 - 37px); }
