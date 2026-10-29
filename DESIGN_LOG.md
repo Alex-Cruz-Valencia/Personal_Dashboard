@@ -122,6 +122,16 @@ stay harsh. *Recolor "personal" events to a warm hue*: the blue / amber / slate
 triad is chosen to stay apart for colorblind viewers; a warm clay sits too
 close to both amber and the red "negative" color, so the slate edge stays.
 
+**Follow-up (same day): no blue in light.** On the cream, every blue still
+jumped out — the teal accent (date, Now, curve dot, week bars), the "someday"
+priority, the slate-blue "Waiting" label and meeting blocks. In light only:
+accent → moss `#4E6A2C`, someday priority → plum `#7A4E6E`, meetings → muted
+plum `#7A5A70`, neutral → warm grey `#665A4E`; all ≥4.8:1 on the warm surfaces.
+Dark keeps teal and its blues — they sit well on near-black. The calendar's
+colorblind spread holds: plum (meetings), moss (focus) and warm grey (personal)
+still differ in both hue and lightness. Teal stops being "the" brand color;
+each theme now has its own accent.
+
 **Tradeoffs / open questions** — Supersedes the 2026-10-27 canvas `#F4F1EA`.
 The weather card's own little scene and the glass surface layer weren't retuned;
 if Glass is turned on in the morning it may want the same pass.

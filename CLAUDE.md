@@ -74,9 +74,11 @@
   `/api/plan/suggest` still exists), and `EmailList` (replies are reachable only via
   the attention strip's `ReplyQueue` popover). The server still fetches mail and the
   week-ahead data. To bring one back, render it in `Dashboard.tsx`.
-- **Changed from the reference:** the accent is teal (`--accent`
-  #0B6F75 / #4DC3C4 dark, `--accent-tint`, and the note text) in every
-  mode, instead of the source's green.
+- **Changed from the reference:** the accent is teal in dark (`--accent`
+  #4DC3C4) and **moss in light** (#4E6A2C, since 2026-10-29), instead of the
+  source's green. Light mode has no blue at all: someday priority and meetings
+  are plum, the neutral status a warm grey (DESIGN_LOG "A warm light theme").
+  Don't reintroduce blue tokens in light.
 - **Day note** (`src/lib/day-note.ts`): three voices via `settings.noteStyle`
   (timely default / gentle / plain); the task name is wrapped `**…**` and
   `HelloCard` bolds it via `splitNote` (the AI prompt asks for the same
