@@ -17,7 +17,9 @@
   reference** (see `DESIGN_LOG.md`): warm neutral tokens (light is a warm cream
   since 2026-10-29: canvas `#F3E6D3`, surface `#FCF6EC`, espresso ink `#2B2118`;
   in light the page sky uses sunrise tones — the "warm light" block at the end of
-  `globals.css`), 12/8/6px radii, no card shadow, a flat day-arc band, a global teal
+  `globals.css`), 12/8/6px radii, no card shadow in dark (light has two soft warm levels since
+  2026-10-29: `--shadow` for cards, `--shadow-pop` for popovers; secondary text
+  held to ~6–8:1 for daylight; selected chips carry a border + bold, not tint alone), a flat day-arc band, a global teal
   focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →
   Surfaces). Function over polish: nothing decorative may push actionable content
   off the first screen. Don't "restore" the reference tokens.

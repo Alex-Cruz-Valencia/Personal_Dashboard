@@ -23,8 +23,10 @@
   --surface-2:  #F3E7D6;
   --line:       #E6D6C0;
   --ink:        #2B2118;
-  --ink-soft:   #6B5A47;
-  --ink-faint:  #75614B;
+  /* Secondary text is held to ~6–8:1, not just AA: bright rooms wash out
+     screen contrast, and the morning view is read in daylight. */
+  --ink-soft:   #594938;
+  --ink-faint:  #665441;
   /* Light's accent is moss, not teal: blue fought the warm cream (2026-10-29).
      Dark keeps teal. */
   --accent:     #4E6A2C;
@@ -59,7 +61,10 @@
   --radius-lg: 12px;
   --radius:    8px;
   --radius-sm: 6px;
-  --shadow:    none;
+  /* Two depth levels, light only: cards barely lift, popovers float. Warm
+     (umber), soft, no hard edges. Dark sets both back to none. */
+  --shadow:     0 1px 2px rgba(74, 48, 22, 0.05), 0 8px 20px -12px rgba(74, 48, 22, 0.14);
+  --shadow-pop: 0 2px 6px rgba(74, 48, 22, 0.08), 0 18px 40px -16px rgba(74, 48, 22, 0.28);
   --page-max:  1280px;
   --gutter:    28px;
   --gap:       18px;
@@ -91,6 +96,7 @@
   --neutral:       #A2B0B8;
   --neutral-tint:  #212A2F;
   --shadow:     none;
+  --shadow-pop: none;
   color-scheme: dark;
 }
 [data-theme="dark"] .arc__band {
@@ -138,6 +144,7 @@
   --neutral:       #A2B0B8;
   --neutral-tint:  #212A2F;
   --shadow:     none;
+  --shadow-pop: none;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -167,6 +174,7 @@
     --neutral:       #A2B0B8;
     --neutral-tint:  #212A2F;
     --shadow:     none;
+    --shadow-pop: none;
     color-scheme: dark;
   }
   /* literal (non-variable) colors, still scoped to .morning's own internals */
@@ -356,7 +364,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   position: fixed; z-index: 50; width: clamp(280px, 94vw, 360px);
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
-  border-radius: var(--radius); box-shadow: var(--shadow); padding: 15px 16px;
+  border-radius: var(--radius); box-shadow: var(--shadow-pop); padding: 15px 16px;
   font-family: var(--font-body);
 }
 .taskedit__head { display: flex; align-items: center; justify-content: space-between; }
@@ -379,9 +387,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
   font: inherit; font-size: 11.5px; font-weight: 600; padding: 6px 4px; cursor: pointer;
   border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink-soft);
 }
-.taskedit__seg-btn--p1.is-on { color: var(--p1); background: var(--p1-tint); border-color: transparent; }
-.taskedit__seg-btn--p2.is-on { color: var(--p2); background: var(--p2-tint); border-color: transparent; }
-.taskedit__seg-btn--p3.is-on { color: var(--p3); background: var(--p3-tint); border-color: transparent; }
+.taskedit__seg-btn--p1.is-on { color: var(--p1); background: var(--p1-tint); border-color: color-mix(in srgb, var(--p1) 50%, transparent); font-weight: 700; }
+.taskedit__seg-btn--p2.is-on { color: var(--p2); background: var(--p2-tint); border-color: color-mix(in srgb, var(--p2) 50%, transparent); font-weight: 700; }
+.taskedit__seg-btn--p3.is-on { color: var(--p3); background: var(--p3-tint); border-color: color-mix(in srgb, var(--p3) 50%, transparent); font-weight: 700; }
 .taskedit__chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .taskedit__chip {
   font: inherit; font-size: 11px; font-weight: 600; padding: 5px 9px; cursor: pointer;
@@ -452,7 +460,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   position: fixed; z-index: 50; width: clamp(280px, 94vw, 360px);
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
-  border-radius: var(--radius); box-shadow: var(--shadow); padding: 15px 16px;
+  border-radius: var(--radius); box-shadow: var(--shadow-pop); padding: 15px 16px;
   font-family: var(--font-body);
 }
 .eventedit__head { display: flex; align-items: center; justify-content: space-between; }
@@ -563,7 +571,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   position: fixed; z-index: 50; width: clamp(240px, 92vw, 288px);
   display: flex; flex-direction: column; gap: 13px; overflow-y: auto;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
-  border-radius: var(--radius); box-shadow: var(--shadow); padding: 15px 16px;
+  border-radius: var(--radius); box-shadow: var(--shadow-pop); padding: 15px 16px;
   font-family: var(--font-body);
 }
 .settings__field { display: grid; gap: 6px; }
@@ -610,7 +618,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   position: fixed; z-index: 50; width: clamp(220px, 90vw, 260px);
   display: flex; flex-direction: column; gap: 8px;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
-  border-radius: var(--radius); box-shadow: var(--shadow); padding: 13px 14px;
+  border-radius: var(--radius); box-shadow: var(--shadow-pop); padding: 13px 14px;
   font-family: var(--font-body);
 }
 .replymove__label {
@@ -943,8 +951,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
    never a colored text change. In glass it lifts as a frosted chip. The
    rows bleed 10px into the card's padding so their text stays aligned. */
 :root {
-  --row-hover: rgba(21, 24, 26, 0.045);
-  --row-active: rgba(21, 24, 26, 0.07);
+  /* warm and just visible on cream (a cool 4.5% grey vanished there) */
+  --row-hover: rgba(92, 62, 30, 0.065);
+  --row-active: rgba(92, 62, 30, 0.1);
   --row-lift: none;
 }
 [data-theme="dark"] {
@@ -1642,7 +1651,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 /* ---- New-task form (shared by "+ Add task" and the email "Make task") ---- */
 .newtask { display: flex; flex-direction: column; gap: 12px; }
 .newtask__actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
-.taskedit__chip.is-on { color: var(--accent); background: var(--accent-tint); border-color: transparent; }
+.taskedit__chip.is-on { color: var(--accent); background: var(--accent-tint); border-color: color-mix(in srgb, var(--accent) 50%, transparent); font-weight: 700; }
 .taskedit__done:disabled { opacity: 0.5; cursor: default; }
 .newtask--add { gap: 12px; }
 

@@ -95,6 +95,47 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Light theme, held to a daylight standard
+
+**Problem / trigger** — With the warm light theme in place, Alex shared a light-UI
+checklist (Focotik, "How I Design Light Theme UI") to check it against. We already
+met most of it: off-white base, semantic tokens, warm greys, no weights under 400.
+Three points didn't hold up:
+- **Contrast:** secondary and faint text was AA-compliant but near the floor, and
+  the article's own cautionary tale is gray text that passed WCAG yet was unreadable
+  in daylight.
+- **Depth:** cards were separated only by 1px outlines.
+- **States:** the row hover was a cool 4.5% grey that vanished on cream, and the
+  selected priority chip relied on a pale tint alone.
+
+**Decision** — Light only; dark is untouched.
+- **Daylight contrast:** `--ink-soft` to `#594938` (7–8:1) and `--ink-faint` to
+  `#665441` (about 6:1). That leaves headroom for the up-to-40% contrast loss of a
+  bright room.
+- **Two shadow levels:** `--shadow` (cards: a barely-there umber lift) and
+  `--shadow-pop` (the four popover shells, which float). Both are warm and soft, not
+  grey, and dark sets both to none.
+- **Visible states:** row hover is a warm 6.5% (10% when pressed). Selected chips
+  (priority, and the add-task due chips) get a soft border in their own color plus
+  bold text, so they still read with color removed. Checked with the article's
+  grayscale test.
+
+**Reasoning** — These fix what changes daily use: reading the page in a bright room,
+seeing what's hovered, telling what's selected. The rest of the checklist was already
+true, so nothing was added for its own sake.
+
+**Alternatives considered** — *Keep shadows off and darken the borders*: the article
+names harsh outlines as the thing to avoid, and darker lines on cream read busier
+than a soft lift. *Raise contrast in dark too*: dark isn't read in daylight, and its
+text tokens already sit well above AA.
+
+**Tradeoffs / open questions** — This reverses the 2026-10-27 "no card shadow" call,
+in light only. It's a deliberate split: depth by shadow in light, by tone in dark.
+Faint text is now closer to secondary text (6 vs 8:1), so hierarchy leans more on
+size and weight.
+
+---
+
 ## 2026-10-29 — A warm light theme
 
 **Problem / trigger** — Trying "By time" put the light theme in front of Alex
