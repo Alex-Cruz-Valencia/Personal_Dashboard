@@ -9,8 +9,13 @@
 /** Cookie the SettingsPanel writes; read back in `page.tsx`. */
 export const PREFS_COOKIE = "dashboard_prefs";
 
-/** "system" follows the viewer's OS light/dark preference; the rest force it. */
+/** What the page renders: "system" follows the viewer's OS light/dark preference; the rest force it. */
 export type Theme = "light" | "dark" | "system";
+/**
+ * What the viewer picks. "timed" follows the sun: light from sunrise, dark from
+ * sunset — resolve it with `shownTheme()` before rendering.
+ */
+export type ThemeChoice = Theme | "timed";
 export type TimeFormat = "12-hour" | "24-hour";
 export type Density = "comfortable" | "focused";
 /** "glass" = translucent frosted cards over an ambient backdrop; "solid" = the reference's opaque cards. */
@@ -23,11 +28,14 @@ export type Background = "scene" | "plain";
 export type PastEvents = "hide" | "show";
 /** The top row: "unified" is one scenic card (greeting, clock, weather and its curve); "classic" is the greeting card beside the weather card. */
 export type TopRow = "classic" | "unified";
+/** The light theme's palette: "daylight" (off-white, sage) or "clay" (sand, terracotta). Dark is unaffected. */
+export type LightPalette = "daylight" | "clay";
 /** Voice of the "shape of the day" note — see src/lib/day-note.ts. */
 export type NoteStyle = "timely" | "gentle" | "plain";
 
 export interface DashboardSettings {
-  theme: Theme;
+  theme: ThemeChoice;
+  lightPalette: LightPalette;
   timeFormat: TimeFormat;
   density: Density;
   surface: Surface;
@@ -59,6 +67,7 @@ export interface DashboardSettings {
  */
 export const DEFAULT_SETTINGS: DashboardSettings = {
   theme: "system",
+  lightPalette: "daylight",
   timeFormat: "12-hour",
   density: "comfortable",
   surface: "solid",
@@ -72,6 +81,15 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   weatherStart: 6,
   windDown: 21,
 };
+
+/** Settings as rendered: the theme already resolved (see `shownTheme`). */
+export type ShownSettings = Omit<DashboardSettings, "theme"> & { theme: Theme };
+
+/** The theme to render right now: "timed" is light between sunrise and sunset (local decimal hours). */
+export function shownTheme(theme: ThemeChoice, nowHour: number, sun: { sunrise: number; sunset: number }): Theme {
+  if (theme !== "timed") return theme;
+  return nowHour >= sun.sunrise && nowHour < sun.sunset ? "light" : "dark";
+}
 
 type SearchParams = Record<string, string | string[] | undefined>;
 
@@ -112,7 +130,8 @@ export function parseSettings(
       : [DEFAULT_SETTINGS.dayStart, DEFAULT_SETTINGS.dayEnd];
 
   return {
-    theme: pick(searchParams.theme, ["light", "dark", "system"], base.theme),
+    theme: pick(searchParams.theme, ["light", "dark", "system", "timed"], base.theme),
+    lightPalette: pick(searchParams.palette, ["daylight", "clay"], base.lightPalette),
     timeFormat: pick(
       searchParams.timeFormat ?? searchParams.time,
       ["12-hour", "24-hour"],
@@ -149,8 +168,11 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
     return {};
   }
   const out: Partial<DashboardSettings> = {};
-  if (obj.theme === "light" || obj.theme === "dark" || obj.theme === "system") {
+  if (obj.theme === "light" || obj.theme === "dark" || obj.theme === "system" || obj.theme === "timed") {
     out.theme = obj.theme;
+  }
+  if (obj.lightPalette === "daylight" || obj.lightPalette === "clay") {
+    out.lightPalette = obj.lightPalette;
   }
   if (obj.timeFormat === "12-hour" || obj.timeFormat === "24-hour") {
     out.timeFormat = obj.timeFormat;

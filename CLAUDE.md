@@ -14,9 +14,19 @@
   "Morning Dashboard v2.dc.html" (project `0e114d1c-17f4-4cf4-9af5-6e2d7e880dc0`)
   and its class names and stylesheet structure are still the base in
   `src/app/globals.css`. **Since 2026-10-27 it deliberately departs from the
-  reference** (see `DESIGN_LOG.md`): warm neutral tokens (canvas `#F4F1EA`, light
-  and dark), 12/8/6px radii, no card shadow, a flat day-arc band, a global teal
-  focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →
+  reference** (see `DESIGN_LOG.md`). Light and dark are **separate palettes**:
+  light is "Clean daylight" (2026-10-29: canvas `#F6F5F1`, surface `#FFFEFB`,
+  charcoal ink `#24262A`, sage accent, no blue; its page sky, clouds and
+  near-opaque cards are the "clean daylight" block at the end of `globals.css`),
+  dark is the warm near-black with teal. A second light palette, **Desert clay**
+  (sand, terracotta accent, wine-crimson urgent), is opt-in via
+  `settings.lightPalette` (⚙ Light palette, `?palette=clay`) → `data-palette` on
+  `.morning`; its block at the end of `globals.css` only matches while light is
+  showing and sets tokens on `:root` via `:has()` so popovers follow. Any new
+  light-only hardcoded color needs a clay counterpart there. 12/8/6px radii; no card shadow in dark,
+  two soft levels in light (`--shadow` cards, `--shadow-pop` popovers); light
+  secondary text held to ~6–8:1 for daylight; selected chips carry a border +
+  bold, not tint alone; a flat day-arc band, a global accent-colored focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →
   Surfaces). Function over polish: nothing decorative may push actionable content
   off the first screen. Don't "restore" the reference tokens.
 - Additions **not** in the static reference, kept token-only (see the marked
@@ -72,9 +82,12 @@
   `/api/plan/suggest` still exists), and `EmailList` (replies are reachable only via
   the attention strip's `ReplyQueue` popover). The server still fetches mail and the
   week-ahead data. To bring one back, render it in `Dashboard.tsx`.
-- **Changed from the reference:** the accent is teal (`--accent`
-  #0B6F75 / #4DC3C4 dark, `--accent-tint`, and the note text) in every
-  mode, instead of the source's green.
+- **Changed from the reference:** the accent is teal in dark (`--accent`
+  #4DC3C4) and **sage in light** (#4F725C, since 2026-10-29), instead of the
+  source's green. Light mode has no blue at all: someday priority and meetings
+  are plum, the neutral status a grey (DESIGN_LOG "Clean daylight").
+  Don't reintroduce blue tokens in light. (One exception: the task card's
+  Todoist P3 ring is Todoist's own blue — see List rows.)
 - **Day note** (`src/lib/day-note.ts`): three voices via `settings.noteStyle`
   (timely default / gentle / plain); the task name is wrapped `**…**` and
   `HelloCard` bolds it via `splitNote` (the AI prompt asks for the same
@@ -87,9 +100,16 @@
   sunbeams on clear days; `MeteorField` cuts every `.card`/`.attn` out of the
   meteor layer (clip-path, re-measured on scroll/resize) so meteors vanish
   behind sections.
-- **List rows**: tasks, replies and Plan suggestions share one row style
+- **List rows**: replies and Plan suggestions share one row style
   (`--row-hover` / `--row-lift`, no divider lines, neutral hover — never a
-  colored text change).
+  colored text change). **Tasks mirror the Todoist app** instead (2026-10-29,
+  "TODOIST-STYLE TASK ROWS" at the end of `globals.css`): a ring in Todoist's
+  P1–P4 colors (`--todo-p1..4`, from `Task.todoistPriority` — the 3-level
+  `priority` merges P2/P3 and stays for the editor/filters), "Project / Section"
+  right-aligned with the project's color on the `#` (`section`, `projectColor`;
+  `PROJECT_COLORS` in `todoist.ts` maps Todoist's color names), hairline dividers,
+  and no "Today" on each row — only a time, a late date or a deadline. Sorted
+  P1→P4 like the app.
 - **Removed from the reference:** the day arc's task-due ticks + legend
   entry (tasks aren't calendar events; they stay in the task card), and the
   agenda card (replaced by `PlanCard`).
@@ -109,6 +129,12 @@
   `LocationSync`;
   `AutoRefresh` (60s `router.refresh()` while visible); `SettingsPanel`
   (writes the `dashboard_prefs` cookie, then `router.refresh()`).
+- **Theme "timed"** ("Daylight" in ⚙, 2026-10-29 experiment): light from today's
+  sunrise to sunset (`data.weather`), dark otherwise. `settings.theme` is a
+  `ThemeChoice`; `Dashboard` resolves it once with `shownTheme()` and passes
+  `ShownSettings` (theme is plain light/dark/system) down — anything that sets
+  `data-theme` must use the resolved theme, never the raw choice. Only
+  `SettingsPanel` sees the raw choice.
 - Settings precedence (`src/lib/settings.ts` → read in `page.tsx`): URL query
   → `dashboard_prefs` cookie → `DEFAULT_SETTINGS`. `dayStart`/`dayEnd`/
   `weatherStart` are the exception: `page.tsx` layers `config.arcFrom`/

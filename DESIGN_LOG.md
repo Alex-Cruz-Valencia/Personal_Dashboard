@@ -95,6 +95,255 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — A choice of light palettes, and a lighter weather curve
+
+**Problem / trigger** — Two notes from using Clean daylight:
+- **The header looked "burnt".** The temperature curve's shading (an accent gradient
+  at 26%) and its full-charcoal 2px line read heavy on the off-white card.
+- **The sage/teal accent.** Alex wasn't sure about it, and wanted the earlier
+  "Desert clay" direction available as an option.
+
+**Decision**
+- **Curve (light only):** shading drops to 12% (`--curve-fill`), and the line ahead
+  of now uses the secondary ink at 1.75px, with the past half-faded.
+- **New setting:** ⚙ **Light palette** (`settings.lightPalette`): Clean daylight
+  (default) or **Desert clay**, which uses:
+  - sand canvas `#F4ECE2` and linen cards `#FCF8F3`;
+  - espresso ink, secondary text 7–8:1;
+  - terracotta accent `#A04A28`;
+  - wine-crimson urgent `#9E2A3A`, kept apart from the terracotta;
+  - olive "someday", plum meetings.
+- **Clay with Glass:** the sky tint turns apricot and meetings turn pastel plum, so
+  no blue survives. Glass with Clean daylight is unchanged; Alex liked it as is.
+- **Dark:** unaffected by either choice.
+
+**Reasoning** — The accent is the most personal part of a palette, and the decision
+wasn't converging. A setting lets Alex live with both instead of us flipping a global
+default back and forth. Clay is a scoped layer: tokens on `:root` via `:has()`, so
+popovers follow, and only while light is showing, so dark never changes.
+
+**Alternatives considered** — *Just swap the accent to terracotta in Clean
+daylight*: a terracotta accent on cool off-white looked pasted on; the palette needs
+warm neutrals around it. *An accent color picker*: open-ended colors break the
+contrast guarantees each palette was checked for.
+
+**Tradeoffs / open questions** — Two light palettes to maintain. Any new light-only
+hardcoded color needs a clay counterpart (noted in CLAUDE.md). Todoist rings keep
+Todoist's colors in both.
+
+---
+
+## 2026-10-29 — The task card looks like Todoist
+
+**Problem / trigger** — Side by side with the Todoist app's Today view, our task
+card read like a different list:
+- **Priority:** we showed "Urgent"/"Normal" pills. We also collapsed Todoist's four
+  priorities into three, so P2 and P3 tasks looked identical.
+- **Project:** shown as a chip.
+- **Dates:** "Today" was repeated on every row.
+
+Alex lives in Todoist, so the mismatch made the dashboard slower to read, not faster.
+
+**Decision** — Mirror the app's row:
+- **Priority:** a check ring in Todoist's own P1–P4 colors (red, orange, blue, grey;
+  Todoist's brighter set in dark), driven by a new `Task.todoistPriority`.
+- **Project:** "Project / Section" right-aligned, with the project's own color on the
+  `#`. Sections and project colors are now fetched, fail-soft.
+- **Dates and deadlines:** a deadline shows with a target icon in red. The due date
+  shows only when it says something today doesn't: a time, or a late date in red.
+- **Layout:** hairline dividers between rows, regular-weight names, and sorting
+  P1→P4 like the app.
+
+**Reasoning** — Recognition over invention: one glance should map a row here to the
+same row in Todoist. The priority pill duplicated what the ring color already says,
+so dropping it also removes noise.
+
+**Alternatives considered** — *Keep our pills, just recolor them*: still two
+encodings of one fact, and the P2/P3 merge would remain. *Restyle the whole
+dashboard like Todoist*: the calendar and attention strip aren't Todoist's, and
+copying one app's look everywhere isn't the goal.
+
+**Tradeoffs / open questions** — Two exceptions to house rules, both scoped to this
+card:
+- **Blue in light:** Todoist's P3 ring is blue. It's Todoist's meaning, not decoration.
+- **Divider lines:** the other list rows still have none.
+
+The editor still offers three priorities (Urgent/Normal/Someday), so it can't set P3
+directly. Subtask counts (Todoist's "0/1") aren't shown, since that needs a parent/child
+fetch.
+
+---
+
+## 2026-10-29 — Clean daylight: a new light palette, not a retint
+
+**Problem / trigger** — After three rounds of warming the old light palette (cream,
+espresso, moss), Alex still found it "odd". Each fix nudged the same family of
+colors, and the result read muddy rather than calm:
+- Cream cards sat on a cream canvas, and translucent cards let peach sky and cloud
+  blobs smudge through.
+- Contrast and shadow fixes were too subtle to see.
+- Separately, Daylight was going dark at noon on a bright afternoon (now sun-based;
+  see the "theme follows the day" entry).
+
+**Decision** — Replace the light palette outright. Alex chose "Clean daylight" from
+three previewed directions (the others were "Desert clay": sand and terracotta; and
+"Blush morning": blush and plum).
+- **Base:** soft off-white canvas `#F6F5F1` and cards `#FFFEFB` (never pure white).
+- **Text:** charcoal ink `#24262A`, with neutral greys for secondary (7.8:1) and
+  faint (6:1) text.
+- **Color:** a sage accent `#4F725C`; plum for meetings and "someday"; amber and red
+  stay as warning and urgent; no blue anywhere.
+- **Depth:** one neutral soft shadow for cards and a deeper one for popovers.
+- **Sky:** in light, the page sky is a faint sun glow with pale neutral clouds, and
+  cards are 94% opaque, so the weather never smudges through.
+- **Dark:** unchanged.
+
+**Reasoning** — The warm retints kept fighting the old palette's assumptions;
+starting over let light be designed for daylight on its own terms, which the
+light-UI checklist recommends: off-white base, grays tuned for legibility, color
+only where it carries meaning. Every text/background pair was contrast-checked
+before it went in.
+
+**Alternatives considered** — *Keep tuning the cream palette*: three rounds showed
+diminishing returns. *Desert clay*: warm and characterful, but terracotta sits close
+to the urgent red. *Blush morning*: soft, but pink-on-pink lowers hierarchy in a
+dense, data-heavy page.
+
+**Tradeoffs / open questions** — This supersedes the "warm light theme" entries
+below (canvas, accent and sky values), though their principles still apply:
+daylight-grade contrast, two shadow levels, visible states, no blue. Light and dark
+now share almost no colors; the dashboard has two palettes, not one with a dark
+variant.
+
+---
+
+## 2026-10-29 — Light theme, held to a daylight standard
+
+**Problem / trigger** — With the warm light theme in place, Alex shared a light-UI
+checklist (Focotik, "How I Design Light Theme UI") to check it against. We already
+met most of it: off-white base, semantic tokens, warm greys, no weights under 400.
+Three points didn't hold up:
+- **Contrast:** secondary and faint text was AA-compliant but near the floor, and
+  the article's own cautionary tale is gray text that passed WCAG yet was unreadable
+  in daylight.
+- **Depth:** cards were separated only by 1px outlines.
+- **States:** the row hover was a cool 4.5% grey that vanished on cream, and the
+  selected priority chip relied on a pale tint alone.
+
+**Decision** — Light only; dark is untouched.
+- **Daylight contrast:** `--ink-soft` to `#594938` (7–8:1) and `--ink-faint` to
+  `#665441` (about 6:1). That leaves headroom for the up-to-40% contrast loss of a
+  bright room.
+- **Two shadow levels:** `--shadow` (cards: a barely-there umber lift) and
+  `--shadow-pop` (the four popover shells, which float). Both are warm and soft, not
+  grey, and dark sets both to none.
+- **Visible states:** row hover is a warm 6.5% (10% when pressed). Selected chips
+  (priority, and the add-task due chips) get a soft border in their own color plus
+  bold text, so they still read with color removed. Checked with the article's
+  grayscale test.
+
+**Reasoning** — These fix what changes daily use: reading the page in a bright room,
+seeing what's hovered, telling what's selected. The rest of the checklist was already
+true, so nothing was added for its own sake.
+
+**Alternatives considered** — *Keep shadows off and darken the borders*: the article
+names harsh outlines as the thing to avoid, and darker lines on cream read busier
+than a soft lift. *Raise contrast in dark too*: dark isn't read in daylight, and its
+text tokens already sit well above AA.
+
+**Tradeoffs / open questions** — This reverses the 2026-10-27 "no card shadow" call,
+in light only. It's a deliberate split: depth by shadow in light, by tone in dark.
+Faint text is now closer to secondary text (6 vs 8:1), so hierarchy leans more on
+size and weight.
+
+---
+
+## 2026-10-29 — A warm light theme
+
+**Problem / trigger** — Trying "By time" put the light theme in front of Alex
+every morning, and it read harsh: a near-white page, near-black text, and on
+overcast days a cool grey-blue sky behind everything with grey calendar blocks.
+Not the warm, calm morning the experiment was for.
+
+**Decision** — Warm the light theme itself: cream canvas `#F3E6D3`, parchment
+cards `#FCF6EC`, espresso ink `#2B2118` with warm browns for secondary text.
+In light mode the page sky uses sunrise tones (apricot/peach) instead of
+grey-blue for clear, overcast and rainy weather, the drifting clouds are a warm
+sand instead of grey ink, and "personal" calendar blocks sit on the warm
+surface with a slate edge instead of a slate fill. Teal accent unchanged. Dark
+is untouched.
+
+**Reasoning** — One light palette, not a separate "morning" one: anyone on
+Light or on System in daylight gets the same warmth, and there's no third token
+set to keep in sync. The text tokens were picked by contrast first (ink 14.6:1,
+ink-soft 6.2:1, ink-faint ≥4.5:1 on the card surfaces), so warmer doesn't mean
+harder to read.
+
+**Alternatives considered** — *A morning-only palette for "By time"*: more
+distinctive, but two light themes to maintain and the plain Light option would
+stay harsh. *Recolor "personal" events to a warm hue*: the blue / amber / slate
+triad is chosen to stay apart for colorblind viewers; a warm clay sits too
+close to both amber and the red "negative" color, so the slate edge stays.
+
+**Follow-up (same day): no blue in light.** On the cream, every blue still
+jumped out — the teal accent (date, Now, curve dot, week bars), the "someday"
+priority, the slate-blue "Waiting" label and meeting blocks. In light only:
+accent → moss `#4E6A2C`, someday priority → plum `#7A4E6E`, meetings → muted
+plum `#7A5A70`, neutral → warm grey `#665A4E`; all ≥4.8:1 on the warm surfaces.
+Dark keeps teal and its blues — they sit well on near-black. The calendar's
+colorblind spread holds: plum (meetings), moss (focus) and warm grey (personal)
+still differ in both hue and lightness. Teal stops being "the" brand color;
+each theme now has its own accent.
+
+**Tradeoffs / open questions** — Supersedes the 2026-10-27 canvas `#F4F1EA`.
+The weather card's own little scene and the glass surface layer weren't retuned;
+if Glass is turned on in the morning it may want the same pass.
+
+---
+
+## 2026-10-29 — Experiment: the theme follows the day ("By time")
+
+**Problem / trigger** — The dashboard is opened first thing in the morning and
+again through the afternoon and evening. One fixed theme fits neither end well:
+the dark theme feels heavy at 8am in daylight, the light one glares at night.
+Alex wanted to try a light, airy page in the morning that hands over to the
+current dark theme once the afternoon starts.
+
+**Decision** — A fourth Appearance option, **By time** (`theme: "timed"`):
+light from 5am until a "Dark from" hour (default **noon**, editable in ⚙ right
+under the option), dark from then until 5am. The server resolves it per render
+from the viewer's local hour (`shownTheme()` in `settings.ts`), so every card,
+popover and the page background flip together, and the existing one-minute
+auto-refresh carries the switch over without a reload. Opt-in; System stays
+the default.
+
+**Reasoning** — Resolving on the server reuses the whole light/dark token
+system as it is — no third palette to keep in sync, no client clock that could
+disagree with the server's "now". The hour is the user's to set because
+"afternoon" is personal (noon for some, 3pm for others). `?now=9` / `?now=14`
+previews either side.
+
+**Alternatives considered** — *Switch at sunset* (data is already there): but
+the ask was specifically "afternoon", and sunset swings by ~3 hours across the
+year. *A gradual blend of the two palettes through the day*: prettier, but every
+token pair would need an in-between that still passes contrast — far more work
+for an experiment. *A brighter, separate "morning" palette*: possible next step
+if the existing light theme doesn't feel light enough.
+
+**Update (same day): follow the sun, not the clock.** In use, noon was wrong —
+the page went dark at 12:35 on a bright afternoon (Alex's real location is on
+Eastern time). "Dark when it's dark out" is what was meant, so the option is
+now **Daylight**: light from today's sunrise to today's sunset for the viewer's
+location (the weather slice already has both), dark otherwise. The "Dark from"
+hour is gone — the sun replaces it, and it tracks the seasons for free.
+
+**Tradeoffs / open questions** — The flip is a hard cut at the minute
+boundary, not a fade. Before 5am it's dark, which assumes nobody wants a light
+page in the small hours. Worth living with for a few days before deciding
+whether it becomes the default.
+
+---
+
 ## 2026-10-29 — Bug hunt: edits that vanished, writes any site could trigger, and a DST blind spot
 
 **Problem / trigger** — A deliberate sweep of the whole app for things that

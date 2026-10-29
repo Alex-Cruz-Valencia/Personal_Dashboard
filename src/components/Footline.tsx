@@ -1,5 +1,5 @@
 import { footLeft, footRight } from "@/lib/format";
-import type { DashboardSettings } from "@/lib/settings";
+import type { DashboardSettings, Theme } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
 import Link from "next/link";
 import type { AgendaEvent, TodayInfo } from "@/lib/types";
@@ -9,9 +9,11 @@ interface FootlineProps {
   agenda: AgendaEvent[];
   today: TodayInfo;
   settings: DashboardSettings;
+  /** The theme actually rendered (settings.theme may be "timed"). */
+  shownTheme: Theme;
 }
 
-export function Footline({ agenda, today, settings }: FootlineProps) {
+export function Footline({ agenda, today, settings, shownTheme }: FootlineProps) {
   return (
     <footer className="footline">
       <div>{footLeft(agenda, today.nowHour)}</div>
@@ -25,7 +27,7 @@ export function Footline({ agenda, today, settings }: FootlineProps) {
           <i aria-hidden />
           {footRight(today.nowHour, use24Hour(settings))}
         </span>
-        <SettingsPanel settings={settings} />
+        <SettingsPanel settings={settings} shownTheme={shownTheme} />
       </div>
     </footer>
   );

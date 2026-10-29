@@ -46,7 +46,10 @@ param wins over the cookie, which wins over `DASHBOARD_ARC_FROM`/`ARC_TO`
 (this deployment's own env-configured default), which wins over a final
 hardcoded fallback. `theme` defaults to `system` — it follows the viewer's OS
 light/dark setting via `prefers-color-scheme` — and `light`/`dark` force one
-regardless of the OS. `noteStyle` (`timely` · `gentle` · `plain`) picks the
+regardless of the OS. `palette` (`daylight` · `clay`) picks the light theme's palette — Clean
+daylight or Desert clay; dark is the same either way. `timed` ("Daylight") is
+light from sunrise to sunset and dark otherwise, using the
+day's sunrise/sunset for the viewer's location. `noteStyle` (`timely` · `gentle` · `plain`) picks the
 voice of the shape-of-the-day note. `windDown` (hour, default `21`;
 `24` = never) is when the dashboard stops pointing at work: the note just
 suggests winding down, and the Plan card stops suggesting tasks (before it,

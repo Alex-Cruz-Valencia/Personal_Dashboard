@@ -8,6 +8,7 @@ import {
   readStoredSettings,
   use24Hour,
   type Background,
+  type LightPalette,
   type DashboardSettings,
   type Density,
   type NoteStyle,
@@ -16,6 +17,7 @@ import {
   type Motion,
   type Surface,
   type Theme,
+  type ThemeChoice,
   type TimeFormat,
 } from "@/lib/settings";
 import { Popover } from "./Popover";
@@ -37,7 +39,7 @@ function readCookie(name: string): string | undefined {
  * `dashboard_prefs` cookie and re-renders the server tree so the choice sticks
  * across visits (URL query params still win when present — see `settings.ts`).
  */
-export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
+export function SettingsPanel({ settings, shownTheme }: { settings: DashboardSettings; shownTheme: Theme }) {
   const router = useRouter();
   const btnRef = useRef<HTMLButtonElement>(null);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
@@ -82,20 +84,30 @@ export function SettingsPanel({ settings }: { settings: DashboardSettings }) {
       {anchor ? (
         <Popover
           anchor={anchor}
-          theme={settings.theme}
+          theme={shownTheme}
           onClose={() => setAnchor(null)}
           className="settings"
           ariaLabel="Display settings"
         >
-          <Segmented<Theme>
+          <Segmented<ThemeChoice>
             label="Appearance"
             value={settings.theme}
             options={[
               ["light", "Light"],
               ["dark", "Dark"],
               ["system", "System"],
+              ["timed", "Daylight"],
             ]}
             onPick={(theme) => update({ theme })}
+          />
+          <Segmented<LightPalette>
+            label="Light palette"
+            value={settings.lightPalette}
+            options={[
+              ["daylight", "Clean daylight"],
+              ["clay", "Desert clay"],
+            ]}
+            onPick={(lightPalette) => update({ lightPalette })}
           />
           <Segmented<Surface>
             label="Surfaces"

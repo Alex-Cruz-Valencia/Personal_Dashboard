@@ -9,45 +9,49 @@
    UI, but the dashboard itself is driven by these class names so it matches
    the reference pixel-for-pixel.
 
-   Changes vs. the source: the accent is teal (#0B6F75 / #4DC3C4 dark, and
-   the matching deep note text) instead of the source's green — a product
-   decision, see DESIGN_LOG.md 2026-09-30. And --font-display / --font-body now point at the
+   Changes vs. the source: the accent is teal in dark (#4DC3C4; DESIGN_LOG
+   2026-09-30) and sage in light (#4F725C, "Clean daylight", DESIGN_LOG
+   2026-10-29), each with a matching deep note text, instead of the source's green. And --font-display / --font-body now point at the
    next/font CSS variables (self-hosted Bricolage Grotesque + Plus Jakarta
    Sans) instead of a Google Fonts <link>. Same typefaces, no external request.
    ========================================================================== */
 :root {
-  --canvas:     #F4F1EA;
-  --surface:    #FBFAF6;
-  --surface-2:  #EEEBE2;
-  --line:       #DDD8CB;
-  --ink:        #1D1B17;
-  --ink-soft:   #5F5B52;
-  --ink-faint:  #766F64;
-  --accent:     #0B6F75;
-  --accent-tint:#E0ECEA;
-  /* CALENDAR KINDS — colorblind-safe blue / amber / slate triad.
-     Deliberately NOT red-vs-green: those two read identically to a
-     deuteranope, and a meeting is not a "bad" status. */
-  --cal-meeting:  #2E6899;
-  --cal-focus:    #8F5A0E;
-  --cal-personal: #6B7A82;
+  /* LIGHT = "Clean daylight" (2026-10-29; DESIGN_LOG). Soft off-white, never
+     #FFF; charcoal ink; sage accent; no blue anywhere. Secondary text is held
+     to 6–8:1, not just AA — the light theme is read in daylight. Dark (below)
+     is a separate palette and keeps its teal. */
+  --canvas:     #F6F5F1;
+  --surface:    #FFFEFB;
+  --surface-2:  #F1EFEA;
+  --line:       #E4E1DA;
+  --ink:        #24262A;
+  --ink-soft:   #4E5257;
+  --ink-faint:  #5F6368;
+  --accent:     #4F725C;
+  --accent-tint:#E6EEE8;
+  /* CALENDAR KINDS — plum / amber / grey in light (the Solid layout below
+     swaps focus to the accent). Distinct in hue AND lightness so they hold
+     for colorblind viewers; never red-vs-green, a meeting isn't "bad". */
+  --cal-meeting:  #76587A;
+  --cal-focus:    #855A0C;
+  --cal-personal: #6E6C66;
 
   /* SEMANTIC STATUS — meaning first, hue second. Text pairs pass AA on their tint. */
-  --negative:      #B93A22;
-  --negative-tint: #FBEAE5;
-  --warning:       #8A5E0D;
-  --warning-tint:  #FAF2DF;
-  --neutral:       #55636B;
-  --neutral-tint:  #EDF0F2;
+  --negative:      #B0362B;
+  --negative-tint: #F9E7E3;
+  --warning:       #855A0C;
+  --warning-tint:  #F8EEDB;
+  --neutral:       #55595E;
+  --neutral-tint:  #EEEDEA;
 
   /* priority ramp — urgent / normal / someday (task list only) */
   /* text-on-tint pairs are kept at or above WCAG AA (4.5:1) */
-  --p1:         #B93A22;
-  --p1-tint:    #FBEAE5;
-  --p2:         #8A5E0D;
-  --p2-tint:    #FAF2DF;
-  --p3:         #3D6497;
-  --p3-tint:    #EAF0F8;
+  --p1:         #B0362B;
+  --p1-tint:    #F9E7E3;
+  --p2:         #855A0C;
+  --p2-tint:    #F8EEDB;
+  --p3:         #74567A;
+  --p3-tint:    #F1E9F2;
 
   --font-display: var(--font-bricolage), "Plus Jakarta Sans", sans-serif;
   --font-body:    var(--font-jakarta), Helvetica, Arial, sans-serif;
@@ -55,7 +59,10 @@
   --radius-lg: 12px;
   --radius:    8px;
   --radius-sm: 6px;
-  --shadow:    none;
+  /* Two depth levels, light only: cards lift a little, popovers float. Soft,
+     neutral, no hard edges. Dark sets both back to none. */
+  --shadow:     0 1px 2px rgba(30, 32, 28, 0.06), 0 6px 18px -8px rgba(30, 32, 28, 0.12);
+  --shadow-pop: 0 2px 6px rgba(30, 32, 28, 0.08), 0 18px 40px -14px rgba(30, 32, 28, 0.24);
   --page-max:  1280px;
   --gutter:    28px;
   --gap:       18px;
@@ -87,6 +94,7 @@
   --neutral:       #A2B0B8;
   --neutral-tint:  #212A2F;
   --shadow:     none;
+  --shadow-pop: none;
   color-scheme: dark;
 }
 [data-theme="dark"] .arc__band {
@@ -134,6 +142,7 @@
   --neutral:       #A2B0B8;
   --neutral-tint:  #212A2F;
   --shadow:     none;
+  --shadow-pop: none;
   color-scheme: dark;
 }
 @media (prefers-color-scheme: dark) {
@@ -163,6 +172,7 @@
     --neutral:       #A2B0B8;
     --neutral-tint:  #212A2F;
     --shadow:     none;
+    --shadow-pop: none;
     color-scheme: dark;
   }
   /* literal (non-variable) colors, still scoped to .morning's own internals */
@@ -203,7 +213,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .hello__greeting { font-family: var(--font-display); font-size: clamp(30px, 4vw, 44px); font-weight: 600; letter-spacing: -0.025em; line-height: 1.02; margin: 0; }
 .hello__note { display: flex; align-items: flex-start; gap: 10px; margin-top: 4px; background: var(--accent-tint); border-radius: var(--radius); padding: 12px 14px; max-width: 62ch; }
 .hello__note-tag { font-size: 10px; font-weight: 700; letter-spacing: 0.1em; text-transform: uppercase; color: var(--accent); white-space: nowrap; padding-top: 3px; }
-.hello__note-text { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 500; color: #0E3B3E; }
+.hello__note-text { margin: 0; font-size: 15px; line-height: 1.4; font-weight: 500; color: #2E4A38; }
 
 /* ---------- weather ---------- */
 .weather { padding: 20px 24px; display: grid; gap: 13px; min-width: 300px; align-content: center; }
@@ -352,7 +362,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   position: fixed; z-index: 50; width: clamp(280px, 94vw, 360px);
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
-  border-radius: var(--radius); box-shadow: var(--shadow); padding: 15px 16px;
+  border-radius: var(--radius); box-shadow: var(--shadow-pop); padding: 15px 16px;
   font-family: var(--font-body);
 }
 .taskedit__head { display: flex; align-items: center; justify-content: space-between; }
@@ -375,9 +385,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
   font: inherit; font-size: 11.5px; font-weight: 600; padding: 6px 4px; cursor: pointer;
   border: 1px solid var(--line); border-radius: var(--radius-sm); background: var(--surface-2); color: var(--ink-soft);
 }
-.taskedit__seg-btn--p1.is-on { color: var(--p1); background: var(--p1-tint); border-color: transparent; }
-.taskedit__seg-btn--p2.is-on { color: var(--p2); background: var(--p2-tint); border-color: transparent; }
-.taskedit__seg-btn--p3.is-on { color: var(--p3); background: var(--p3-tint); border-color: transparent; }
+.taskedit__seg-btn--p1.is-on { color: var(--p1); background: var(--p1-tint); border-color: color-mix(in srgb, var(--p1) 50%, transparent); font-weight: 700; }
+.taskedit__seg-btn--p2.is-on { color: var(--p2); background: var(--p2-tint); border-color: color-mix(in srgb, var(--p2) 50%, transparent); font-weight: 700; }
+.taskedit__seg-btn--p3.is-on { color: var(--p3); background: var(--p3-tint); border-color: color-mix(in srgb, var(--p3) 50%, transparent); font-weight: 700; }
 .taskedit__chips { display: flex; flex-wrap: wrap; gap: 5px; }
 .taskedit__chip {
   font: inherit; font-size: 11px; font-weight: 600; padding: 5px 9px; cursor: pointer;
@@ -448,7 +458,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   position: fixed; z-index: 50; width: clamp(280px, 94vw, 360px);
   display: flex; flex-direction: column; gap: 12px; overflow-y: auto;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
-  border-radius: var(--radius); box-shadow: var(--shadow); padding: 15px 16px;
+  border-radius: var(--radius); box-shadow: var(--shadow-pop); padding: 15px 16px;
   font-family: var(--font-body);
 }
 .eventedit__head { display: flex; align-items: center; justify-content: space-between; }
@@ -559,7 +569,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   position: fixed; z-index: 50; width: clamp(240px, 92vw, 288px);
   display: flex; flex-direction: column; gap: 13px; overflow-y: auto;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
-  border-radius: var(--radius); box-shadow: var(--shadow); padding: 15px 16px;
+  border-radius: var(--radius); box-shadow: var(--shadow-pop); padding: 15px 16px;
   font-family: var(--font-body);
 }
 .settings__field { display: grid; gap: 6px; }
@@ -606,7 +616,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   position: fixed; z-index: 50; width: clamp(220px, 90vw, 260px);
   display: flex; flex-direction: column; gap: 8px;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line);
-  border-radius: var(--radius); box-shadow: var(--shadow); padding: 13px 14px;
+  border-radius: var(--radius); box-shadow: var(--shadow-pop); padding: 13px 14px;
   font-family: var(--font-body);
 }
 .replymove__label {
@@ -939,8 +949,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
    never a colored text change. In glass it lifts as a frosted chip. The
    rows bleed 10px into the card's padding so their text stays aligned. */
 :root {
-  --row-hover: rgba(21, 24, 26, 0.045);
-  --row-active: rgba(21, 24, 26, 0.07);
+  /* just visible on off-white (4.5% vanished) */
+  --row-hover: rgba(36, 38, 42, 0.055);
+  --row-active: rgba(36, 38, 42, 0.09);
   --row-lift: none;
 }
 [data-theme="dark"] {
@@ -1266,9 +1277,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
    the reference card layout.
    ========================================================================== */
 .morning:not(.morning--glass) {
-  --cal-meeting:  #55708D;
+  --cal-meeting:  #76587A; /* plum in light — no blue in the light palette */
   --cal-focus:    var(--accent);
-  --cal-personal: #7C766A;
+  --cal-personal: #6E6C66;
   --gap: 20px;
 }
 :root:has(.morning[data-theme="dark"]) .morning:not(.morning--glass),
@@ -1638,7 +1649,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 /* ---- New-task form (shared by "+ Add task" and the email "Make task") ---- */
 .newtask { display: flex; flex-direction: column; gap: 12px; }
 .newtask__actions { display: flex; align-items: center; justify-content: flex-end; gap: 12px; padding-top: 10px; border-top: 1px solid var(--line); }
-.taskedit__chip.is-on { color: var(--accent); background: var(--accent-tint); border-color: transparent; }
+.taskedit__chip.is-on { color: var(--accent); background: var(--accent-tint); border-color: color-mix(in srgb, var(--accent) 50%, transparent); font-weight: 700; }
 .taskedit__done:disabled { opacity: 0.5; cursor: default; }
 .newtask--add { gap: 12px; }
 
@@ -1811,3 +1822,167 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .tempcurve--refined .tempcurve__scale { font-size: 11px; letter-spacing: 0.02em; }
 @media (prefers-reduced-motion: reduce) { .tempcurve__halo { animation: none !important; opacity: 0; } }
 .morning--still .tempcurve__halo { animation: none; opacity: 0; }
+
+/* ---- clean daylight: the page sky and cards in the light theme ----
+   Light = an explicit data-theme="light" (including Daylight before sunset), or
+   no theme with the OS in light. The sky is a faint sun glow, no blue; clouds
+   are a pale neutral; and cards stay nearly opaque so nothing smudges through
+   them (the dark theme keeps its translucent cards over the night scene). */
+.morning[data-theme="light"] .scene--page { --sky-a: rgba(255, 220, 160, 0.16); --sky-b: rgba(236, 233, 224, 0.4); }
+.morning[data-theme="light"] .scene--page:is(.scene--drizzle, .scene--rain, .scene--storm) { --sky-a: rgba(200, 198, 190, 0.22); --sky-b: rgba(214, 211, 202, 0.32); }
+.morning[data-theme="light"] .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 214, 150, 0.16), transparent 65%); }
+.morning[data-theme="light"] .scene__cloud { background: #CFCBC2; opacity: 0.14; }
+.morning[data-theme="light"] .tempcurve--refined { --curve-fill: 0.12; }
+.morning[data-theme="light"] .tempcurve--refined .tempcurve__line--ahead { stroke: var(--ink-soft); stroke-width: 1.75; }
+.morning[data-theme="light"] .tempcurve--refined .tempcurve__line--past { stroke: var(--ink-faint); opacity: 0.45; }
+.morning[data-theme="light"] .card--scene .scene__cloud { opacity: 0.07; }
+.morning[data-theme="light"] .scene__mist { background: linear-gradient(to right, transparent, #CFCBC2, transparent); }
+.morning[data-theme="light"]:not(.morning--glass) :is(.card, .attn) { background: color-mix(in srgb, var(--surface) 94%, transparent); }
+.morning[data-theme="light"] :is(.vcal__event--personal, .week__ev--personal) { background: color-mix(in srgb, var(--cal-personal) 7%, var(--surface)); border-color: color-mix(in srgb, var(--cal-personal) 35%, var(--surface)); }
+@media (prefers-color-scheme: light) {
+  .morning:not([data-theme]) .scene--page { --sky-a: rgba(255, 220, 160, 0.16); --sky-b: rgba(236, 233, 224, 0.4); }
+  .morning:not([data-theme]) .scene--page:is(.scene--drizzle, .scene--rain, .scene--storm) { --sky-a: rgba(200, 198, 190, 0.22); --sky-b: rgba(214, 211, 202, 0.32); }
+  .morning:not([data-theme]) .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(255, 214, 150, 0.16), transparent 65%); }
+  .morning:not([data-theme]) .scene__cloud { background: #CFCBC2; opacity: 0.14; }
+  .morning:not([data-theme]) .tempcurve--refined { --curve-fill: 0.12; }
+  .morning:not([data-theme]) .tempcurve--refined .tempcurve__line--ahead { stroke: var(--ink-soft); stroke-width: 1.75; }
+  .morning:not([data-theme]) .tempcurve--refined .tempcurve__line--past { stroke: var(--ink-faint); opacity: 0.45; }
+  .morning:not([data-theme]) .card--scene .scene__cloud { opacity: 0.07; }
+  .morning:not([data-theme]) .scene__mist { background: linear-gradient(to right, transparent, #CFCBC2, transparent); }
+  .morning:not([data-theme]):not(.morning--glass) :is(.card, .attn) { background: color-mix(in srgb, var(--surface) 94%, transparent); }
+  .morning:not([data-theme]) :is(.vcal__event--personal, .week__ev--personal) { background: color-mix(in srgb, var(--cal-personal) 7%, var(--surface)); border-color: color-mix(in srgb, var(--cal-personal) 35%, var(--surface)); }
+}
+
+/* =============================================================================
+   TODOIST-STYLE TASK ROWS (2026-10-29) — the task card mirrors the Todoist
+   app's Today view, so the same list reads the same in both places: a ring in
+   Todoist's own P1–P4 colors (the one place blue is allowed in light — it's
+   Todoist's P3, not decoration), "Project / Section #" on the right with the
+   project's color on the #, a hairline between rows, and no "Today" repeated
+   on every row. Overrides the shared list-row style above for .task only.
+   ========================================================================== */
+.morning { --todo-p1: #D1453B; --todo-p2: #EB8909; --todo-p3: #246FE0; --todo-p4: #808080; }
+.morning[data-theme="dark"] { --todo-p1: #FF7066; --todo-p2: #FF9A14; --todo-p3: #5297FF; --todo-p4: #9A9A9A; }
+@media (prefers-color-scheme: dark) {
+  .morning:not([data-theme]) { --todo-p1: #FF7066; --todo-p2: #FF9A14; --todo-p3: #5297FF; --todo-p4: #9A9A9A; }
+}
+.task--P1 { --todo-c: var(--todo-p1); }
+.task--P2 { --todo-c: var(--todo-p2); }
+.task--P3 { --todo-c: var(--todo-p3); }
+.task--P4 { --todo-c: var(--todo-p4); }
+
+.tasks { gap: 0; }
+.tasks .task {
+  grid-template-columns: 18px minmax(0, 1fr); gap: 12px;
+  margin: 0; padding: 11px 4px 10px; border-radius: 0;
+  border-top: 0; border-bottom: 1px solid var(--line);
+}
+.tasks .task:last-child { border-bottom: 0; }
+.tasks .task:hover, .tasks .task--selected { background: var(--row-hover); box-shadow: none; }
+.tasks .task__check {
+  width: 18px; height: 18px; margin-top: 1px; border-radius: 50%;
+  border: 2px solid var(--todo-c); background: color-mix(in srgb, var(--todo-c) 10%, var(--surface));
+}
+.tasks .task--P4 .task__check { background: transparent; }
+.tasks .task__check:hover { border-color: var(--todo-c); background: color-mix(in srgb, var(--todo-c) 22%, var(--surface)); }
+.tasks .task__name, .tasks .task--P1 .task__name { font-size: 14.5px; font-weight: 400; line-height: 1.4; color: var(--ink); }
+.tasks .task__meta { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-top: 3px; font-size: 12.5px; color: var(--ink-soft); }
+.tasks .task__when { font-weight: 500; }
+.tasks .task--late .task__when { color: var(--todo-p1); }
+.tasks .task__deadline { display: inline-flex; align-items: center; gap: 4px; color: var(--todo-p1); font-weight: 500; }
+.tasks .task__place { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; text-align: right; min-width: 0; }
+.tasks .task__hash { font-weight: 600; font-size: 14px; color: var(--ink-faint); }
+.tasks .task--done .task__check { border-color: var(--todo-c); background: var(--todo-c); }
+
+/* =============================================================================
+   DESERT CLAY — the alternative light palette (⚙ Light palette → Desert clay;
+   `settings.lightPalette`, `data-palette` on .morning). Light only: every rule
+   requires the light theme to be showing, so dark is untouched. Tokens land on
+   :root (via :has) so the portalled popovers follow. Sand and linen, terracotta
+   accent, wine-crimson urgent (kept apart from the terracotta), olive "someday";
+   every text pair checked at ≥4.8:1 (secondary 7–8:1). Task rings keep Todoist's
+   own colors in either palette.
+   ========================================================================== */
+/* explicit light (incl. Daylight before sunset) */
+:root:has(.morning[data-palette="clay"][data-theme="light"]) {
+  --canvas:     #F4ECE2;
+  --surface:    #FCF8F3;
+  --surface-2:  #F3EAE0;
+  --line:       #E6D8C7;
+  --ink:        #2F2520;
+  --ink-soft:   #59473C;
+  --ink-faint:  #6A5649;
+  --accent:     #A04A28;
+  --accent-tint:#F5E3D8;
+  --cal-meeting:  #7A5274;
+  --cal-focus:    #805708;
+  --cal-personal: #6E6259;
+  --negative:      #9E2A3A;
+  --negative-tint: #F6E1E3;
+  --warning:       #805708;
+  --warning-tint:  #F6EBD6;
+  --neutral:       #5E544C;
+  --neutral-tint:  #EFE8E0;
+  --p1:         #9E2A3A;
+  --p1-tint:    #F6E1E3;
+  --p2:         #805708;
+  --p2-tint:    #F6EBD6;
+  --p3:         #5F6B2A;
+  --p3-tint:    #ECEED9;
+  --shadow:     0 1px 2px rgba(90, 50, 20, 0.06), 0 6px 18px -8px rgba(90, 50, 20, 0.14);
+  --shadow-pop: 0 2px 6px rgba(90, 50, 20, 0.09), 0 18px 40px -14px rgba(90, 50, 20, 0.26);
+  --row-hover:  rgba(90, 50, 20, 0.06);
+  --row-active: rgba(90, 50, 20, 0.1);
+}
+.morning[data-palette="clay"][data-theme="light"]:not(.morning--glass) { --cal-meeting: #7A5274; --cal-focus: var(--accent); --cal-personal: #6E6259; }
+.morning[data-palette="clay"][data-theme="light"] .hello__note-text { color: #6E2F17; }
+.morning[data-palette="clay"][data-theme="light"] .scene--page { --sky-a: rgba(240, 178, 124, 0.2); --sky-b: rgba(236, 218, 196, 0.42); }
+.morning[data-palette="clay"][data-theme="light"] .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(250, 190, 120, 0.2), transparent 65%); }
+.morning[data-palette="clay"][data-theme="light"] .scene__cloud { background: #D8C3AC; }
+.morning[data-palette="clay"][data-theme="light"] .scene__mist { background: linear-gradient(to right, transparent, #D8C3AC, transparent); }
+/* Glass keeps its frosted material but drops its blues: a warm sky tint, plum meetings */
+.morning[data-palette="clay"][data-theme="light"] .skytint__blob--a { background: radial-gradient(circle, rgb(244, 196, 150), transparent 68%); }
+.morning[data-palette="clay"][data-theme="light"] .skytint__blob--b { background: radial-gradient(circle, rgb(236, 208, 180), transparent 68%); }
+.morning[data-palette="clay"][data-theme="light"].morning--glass, :root:has(.morning[data-palette="clay"][data-theme="light"].morning--glass) .eventedit { --cal-meeting: #B07AA6; }
+@media (prefers-color-scheme: light) {
+  :root:has(.morning[data-palette="clay"]:not([data-theme])) {
+    --canvas:     #F4ECE2;
+    --surface:    #FCF8F3;
+    --surface-2:  #F3EAE0;
+    --line:       #E6D8C7;
+    --ink:        #2F2520;
+    --ink-soft:   #59473C;
+    --ink-faint:  #6A5649;
+    --accent:     #A04A28;
+    --accent-tint:#F5E3D8;
+    --cal-meeting:  #7A5274;
+    --cal-focus:    #805708;
+    --cal-personal: #6E6259;
+    --negative:      #9E2A3A;
+    --negative-tint: #F6E1E3;
+    --warning:       #805708;
+    --warning-tint:  #F6EBD6;
+    --neutral:       #5E544C;
+    --neutral-tint:  #EFE8E0;
+    --p1:         #9E2A3A;
+    --p1-tint:    #F6E1E3;
+    --p2:         #805708;
+    --p2-tint:    #F6EBD6;
+    --p3:         #5F6B2A;
+    --p3-tint:    #ECEED9;
+    --shadow:     0 1px 2px rgba(90, 50, 20, 0.06), 0 6px 18px -8px rgba(90, 50, 20, 0.14);
+    --shadow-pop: 0 2px 6px rgba(90, 50, 20, 0.09), 0 18px 40px -14px rgba(90, 50, 20, 0.26);
+    --row-hover:  rgba(90, 50, 20, 0.06);
+    --row-active: rgba(90, 50, 20, 0.1);
+  }
+  .morning[data-palette="clay"]:not([data-theme]):not(.morning--glass) { --cal-meeting: #7A5274; --cal-focus: var(--accent); --cal-personal: #6E6259; }
+  .morning[data-palette="clay"]:not([data-theme]) .hello__note-text { color: #6E2F17; }
+  .morning[data-palette="clay"]:not([data-theme]) .scene--page { --sky-a: rgba(240, 178, 124, 0.2); --sky-b: rgba(236, 218, 196, 0.42); }
+  .morning[data-palette="clay"]:not([data-theme]) .scene--page .scene__wash { background: radial-gradient(ellipse 80% 90% at 100% 0%, rgba(250, 190, 120, 0.2), transparent 65%); }
+  .morning[data-palette="clay"]:not([data-theme]) .scene__cloud { background: #D8C3AC; }
+  .morning[data-palette="clay"]:not([data-theme]) .scene__mist { background: linear-gradient(to right, transparent, #D8C3AC, transparent); }
+  /* Glass keeps its frosted material but drops its blues: a warm sky tint, plum meetings */
+  .morning[data-palette="clay"]:not([data-theme]) .skytint__blob--a { background: radial-gradient(circle, rgb(244, 196, 150), transparent 68%); }
+  .morning[data-palette="clay"]:not([data-theme]) .skytint__blob--b { background: radial-gradient(circle, rgb(236, 208, 180), transparent 68%); }
+  .morning[data-palette="clay"]:not([data-theme]).morning--glass, :root:has(.morning[data-palette="clay"]:not([data-theme]).morning--glass) .eventedit { --cal-meeting: #B07AA6; }
+}

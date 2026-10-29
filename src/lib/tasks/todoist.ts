@@ -38,6 +38,7 @@ interface TodoistTask {
   /** 4 = P1 (urgent) … 1 = P4 (no priority). */
   priority: 1 | 2 | 3 | 4;
   project_id: string;
+  section_id: string | null;
   labels: string[];
   due: TodoistDue | null;
   deadline: { date: string } | null;
@@ -47,8 +48,24 @@ interface TodoistTask {
 interface TodoistProject {
   id: string;
   name: string;
+  /** Todoist color name, e.g. "berry_red" — see PROJECT_COLORS. */
+  color?: string;
   is_archived?: boolean;
 }
+
+interface TodoistSection {
+  id: string;
+  name: string;
+}
+
+/** Todoist's named project colors → the hex the Todoist app paints them. */
+const PROJECT_COLORS: Record<string, string> = {
+  berry_red: "#B8255F", red: "#DC4C3E", orange: "#C77100", yellow: "#B29104",
+  olive_green: "#949C31", lime_green: "#65A33A", green: "#369307", mint_green: "#42A393",
+  teal: "#148FAD", sky_blue: "#319DC0", light_blue: "#6988A4", blue: "#4180FF",
+  grape: "#692EC2", violet: "#CA3FEE", lavender: "#A4698C", magenta: "#E05095",
+  salmon: "#C9766F", charcoal: "#808080", grey: "#999999", taupe: "#8F7A69",
+};
 
 interface TodoistLabel {
   id: string;
@@ -151,23 +168,30 @@ export async function getTasks(
 ): Promise<Task[]> {
   if (!config.todoist.token) throw new Error("Todoist not configured");
 
-  const [tasks, projects] = await Promise.all([
+  const [tasks, projects, sections] = await Promise.all([
     todoistGet<TodoistTask>(
       `/tasks/filter?query=${encodeURIComponent(config.todoist.filter)}&limit=200`,
     ),
     todoistGet<TodoistProject>("/projects?limit=200").catch(
       () => ({ results: [], next_cursor: null }) as Page<TodoistProject>,
     ),
+    todoistGet<TodoistSection>("/sections?limit=200").catch(
+      () => ({ results: [], next_cursor: null }) as Page<TodoistSection>,
+    ),
   ]);
 
-  const projectName = new Map(projects.results.map((p) => [p.id, p.name]));
+  const projectById = new Map(projects.results.map((p) => [p.id, p]));
+  const sectionName = new Map(sections.results.map((s) => [s.id, s.name]));
 
   return tasks.results
     .map<Task>((t) => ({
       id: t.id,
       name: t.content,
       priority: mapPriority(t.priority),
-      meta: projectName.get(t.project_id) ?? t.labels[0] ?? "Task",
+      meta: projectById.get(t.project_id)?.name ?? t.labels[0] ?? "Task",
+      todoistPriority: (5 - t.priority) as 1 | 2 | 3 | 4,
+      section: (t.section_id && sectionName.get(t.section_id)) || undefined,
+      projectColor: PROJECT_COLORS[projectById.get(t.project_id)?.color ?? ""],
       due: dueLabel(t.due, todayIso, timezone),
       dueHour: dueHourOf(t.due, todayIso, timezone),
       overdueDays: overdueDaysOf(t.due, todayIso, timezone) || undefined,
@@ -180,8 +204,9 @@ export async function getTasks(
       durationMinutes: durationToMinutes(t.duration),
     }))
     .sort(
+      // Todoist's own order: P1, P2, P3, P4 (the 3-level `priority` would merge P2 and P3).
       (a, b) =>
-        a.priority - b.priority ||
+        (a.todoistPriority ?? 4) - (b.todoistPriority ?? 4) ||
         (a.dueHour ?? 99) - (b.dueHour ?? 99) ||
         a.name.localeCompare(b.name),
     );

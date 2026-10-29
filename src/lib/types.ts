@@ -96,6 +96,14 @@ export interface Task {
   deadline?: string | null;
   /** Planned working time in minutes, or null. */
   durationMinutes?: number | null;
+
+  /* ---- as Todoist shows it (the task row mirrors the Todoist app) ---- */
+  /** Todoist's own P1–P4 (1 = red/urgent … 4 = none); `priority` collapses P2/P3. */
+  todoistPriority?: 1 | 2 | 3 | 4;
+  /** Section name within the project, shown as "Project / Section". */
+  section?: string;
+  /** The project's color as hex, for the "#" mark. */
+  projectColor?: string;
 }
 
 /** A Todoist project, for the task editor's "move to" control. */

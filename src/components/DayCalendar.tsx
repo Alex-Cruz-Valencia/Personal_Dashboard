@@ -5,7 +5,7 @@ import { useRouter } from "next/navigation";
 import { upNext } from "@/lib/attention";
 import { dateLineFor, decimalHourToTimeInput, formatHour, layoutOverlaps } from "@/lib/format";
 import { minutesLabel } from "@/lib/plan";
-import type { DashboardSettings } from "@/lib/settings";
+import type { ShownSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
 import type { AgendaEvent, ArcWindow, TodayInfo, WeekDay } from "@/lib/types";
 import { useNowSeconds } from "@/lib/use-now";
@@ -42,7 +42,7 @@ interface DayCalendarProps {
   agenda: AgendaEvent[];
   arc: ArcWindow;
   today: TodayInfo;
-  settings: DashboardSettings;
+  settings: ShownSettings;
   /** Demo mode: "now" stays at the sample time. */
   frozen?: boolean;
   /** The task the Focus button starts on. */

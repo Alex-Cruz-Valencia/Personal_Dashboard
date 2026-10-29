@@ -140,7 +140,7 @@ export function TempCurve({
           <svg className="tempcurve__chart" viewBox={`0 0 ${CW} ${CH}`} role="img" aria-label="Temperature through the day">
             <defs>
               <linearGradient id={`fill-${uid}`} x1="0" y1="0" x2="0" y2="1">
-                <stop offset="0" style={{ stopColor: "var(--accent)", stopOpacity: 0.26 }} />
+                <stop offset="0" style={{ stopColor: "var(--accent)", stopOpacity: "var(--curve-fill, 0.26)" }} />
                 <stop offset="1" style={{ stopColor: "var(--accent)", stopOpacity: 0 }} />
               </linearGradient>
               <clipPath id={`ahead-${uid}`}>
