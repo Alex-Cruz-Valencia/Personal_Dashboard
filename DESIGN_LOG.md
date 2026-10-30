@@ -95,6 +95,78 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-30 — AI email triage that learned how I handle mail
+
+**Problem / trigger** — The reply queue showed each email with a row of
+buttons, but the actual work was deciding which one to press, email after
+email. Most of those calls repeat: an application receipt always goes to
+"Jobs", a sign-in alert I caused always goes to Trash.
+
+**Decision** — Each email in the queue now shows one suggested action with a
+one-line reason ("Suggested: **File to Jobs** · application receipt, nothing
+to do") and a button that runs it through the existing actions. There are
+five actions: Trash, Make a task (opens the task form, already filled from
+the email), Reply (opens the AI drafter, then offers "File to <label>" once
+the draft is saved), File to a label, and Leave it (hide for a day). One
+model call covers the whole queue (`POST /api/replies/triage`). Suggestions
+load when the queue opens and are cached for the page load. The model gets a
+short, private "how I handle email" profile as few-shot guidance.
+
+**How the profile was built** — A read-only pass over my past Gmail
+(`npm run email:profile mine`) sorted about 150 emails by what I'd actually
+done: replied in the thread, trashed, filed under a label, archived, left in
+the inbox, or turned into a Todoist task. Then I answered eleven questions
+about representative or ambiguous cases, shown as sender, subject and
+snippet: recruiter scheduling, "complete your application" nudges,
+application receipts, rejections, bank alerts, security notices, chat
+digests, a person sending a doc. That became about a dozen rules and a dozen
+anonymised examples ("Recruiter at a company I'm interviewing with", never a
+name). The profile is stored in the same Redis as the Google tokens, or in
+the gitignored `.data/` folder. It is never in the repo, and the public demo
+has neither store, so it never sees one.
+
+**Reasoning**
+- *Suggest, never act.* Trash and Move go through Gmail, and a wrong guess
+  costs more than the click saves. One click per email keeps a person in
+  the loop and is still far faster than deciding from scratch.
+- *A fifth action, File.* The brief said four, but the mail history showed
+  that filing into labels (Reference files, Jobs, @@TO-DO, Waiting On) was
+  my most common habit after Trash. Without File, triage would have
+  suggested "Leave it" for half my mail. I agreed to add it during the Q&A.
+- *Reply can carry a follow-up label.* What I described was "reply, then
+  file": Waiting On when I expect an answer back, Reference files when I
+  don't. So the reply suggestion can name a label, offered as a button only
+  after the draft is saved.
+- *Asking beat inferring.* The history alone was misleading: "Reference
+  files" held receipts, replies and legal notices alike, and the only email
+  I'd ever turned into a task looked like ones I'd filed. Eleven quick
+  answers settled what months of labels couldn't.
+- *Validated on the server.* The model may only answer with an index we gave
+  it, an action from the fixed list, and a label that exists in my Gmail
+  (checked against the live label list). Anything else gets no suggestion.
+  Emails sit inside `<email>` tags and are marked untrusted. The worst a
+  prompt injection can do is a wrong suggestion that still needs my click.
+
+**Alternatives considered**
+- *Auto-apply high-confidence suggestions.* Rejected: nothing here writes
+  without a click (the same rule as drafts and Task Assist).
+- *One model call per email.* Simpler, but six times the calls against an
+  hourly cap of 30. One batched call takes about 3s for eight emails. Each
+  email's body is trimmed to whatever is left of the 12k input cap after the
+  prompt and profile (up to 1,100 characters each).
+- *Learning continuously from every click.* Appealing, but it would quietly
+  store a log of my mail decisions. A small profile I can read, and rebuild
+  on purpose, is easier to trust.
+
+**Tradeoffs / open questions** — The profile is a snapshot: new kinds of
+mail fall back to the general rules until I re-run the Q&A. Suggestions load
+when the queue opens, which spends one model call per page load (when there
+is mail). The first test missed a founder's sales email written like a
+personal note (it suggested Reply); one added rule fixed it. Expect more
+misses like that, and treat them as profile edits, not code changes.
+
+---
+
 ## 2026-10-29 — Task Assist, on our own AI model
 
 **Problem** — Todoist's menu has "Task Assist", its AI helper for a stuck task.

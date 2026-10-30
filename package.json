@@ -8,7 +8,8 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint && node scripts/check-no-send.mjs",
-    "llm:models": "node --env-file=.env.local scripts/list-llm-models.mjs"
+    "llm:models": "node --env-file=.env.local scripts/list-llm-models.mjs",
+    "email:profile": "node --env-file=.env.local scripts/email-profile.mjs"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.122.0",

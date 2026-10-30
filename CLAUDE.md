@@ -92,6 +92,13 @@
   `POST /api/tasks/[id]/assist` (Task Assist in the task menu, `lib/llm/assist.ts`:
   actionable title / subtasks / tips, validated by `parseAssist`; applying one is
   a normal task write — PATCH content/description, or POST /api/tasks with `parentId`).
+  `POST /api/replies/triage` (AI triage in `ReplyQueue`, `lib/llm/triage.ts`: one call for the
+  queue, one suggestion per email: trash / task / reply / file / leave + a reason, validated by
+  `parseTriage`, labels checked against the live Gmail list; applying one is the existing
+  trash/move route, task form (auto-filled) or drafter). Its few-shot "how I handle email"
+  profile (`lib/llm/email-profile.ts`) lives in Redis (`dashboard:email-profile`) or the
+  gitignored `.data/email-profile.json`, **never** in the repo; `npm run email:profile
+  mine|push|show` rebuilds it (mining is Gmail GETs only).
   `npm run llm:models` lists model ids.
 - **Top row (2026-10-30):** `settings.topRow` — "unified" (default, `TopUnified`: one
   scenic card with greeting, clock, a one-line weather summary and the day's temperature
