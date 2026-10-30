@@ -12,6 +12,7 @@ import {
   type Look,
   type DashboardSettings,
   type Density,
+  type CalLook,
   type NoteStyle,
   type PastEvents,
   type TopRow,
@@ -118,6 +119,15 @@ export function SettingsPanel({ settings, shownTheme }: { settings: DashboardSet
               ["clean", "Clean"],
             ]}
             onPick={(look) => update({ look })}
+          />
+          <Segmented<CalLook>
+            label="Calendar"
+            value={settings.calLook}
+            options={[
+              ["dashboard", "Dashboard"],
+              ["google", "Google"],
+            ]}
+            onPick={(calLook) => update({ calLook })}
           />
           <Segmented<Surface>
             label="Surfaces"

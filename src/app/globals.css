@@ -2470,3 +2470,37 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .gevent__row-actions .gevent__icon { margin: 0; }
 .gevent__fold svg { transition: transform 0.15s ease; }
 .gevent__fold.is-open svg { transform: rotate(180deg); }
+
+/* ===================== GOOGLE CALENDAR LOOK (⚙ Calendar → Google, .morning--gcal) =====================
+   Solid blocks with dark text, a surface-colored gap between them, a cascade for overlaps, a plain
+   red now line, and the weekday over a circled date. Text stays dark on the blocks in both themes,
+   as Google's does. Layout (cascade, "8 AM", one-line short blocks) is `lib/gcal-look.ts`. */
+.morning--gcal { --gcal-red: #D93025; --gcal-text: #1F1F1F; --gcal-mix: 74%; }
+.morning--gcal[data-theme="dark"] { --gcal-red: #F28B82; --gcal-mix: 100%; }
+@media (prefers-color-scheme: dark) { .morning--gcal:not([data-theme]) { --gcal-red: #F28B82; --gcal-mix: 100%; } }
+.morning--gcal .vcal__date { display: none; }
+.morning--gcal .vcal__scroller { border-top: 0; }
+.gcal__dayhead { display: grid; justify-items: center; width: 44px; gap: 2px; margin: 0 0 6px 62px; }
+.gcal__dow { font-size: 11px; font-weight: 600; letter-spacing: 0.06em; color: var(--gcal-red); }
+.gcal__date { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 50%; background: var(--gcal-red); color: #fff; font-size: 19px; font-weight: 500; }
+.morning--gcal[data-theme="dark"] .gcal__date { color: #1F1F1F; }
+.morning--gcal .vcal__hour-label, .morning--gcal .week__hour { font-size: 10.5px; letter-spacing: 0.02em; }
+.morning--gcal .vcal__line { background: color-mix(in srgb, var(--line) 75%, transparent); }
+
+.morning.morning--gcal .vcal__event[data-color], .morning.morning--gcal .vcal__event,
+.morning.morning--gcal :is(.week__event, .week__banner)[data-color] {
+  background: color-mix(in srgb, var(--ev, var(--mark-neutral)) var(--gcal-mix), #fff);
+  border: 1px solid var(--surface); border-radius: 8px; box-shadow: none; color: var(--gcal-text); animation: none; padding: 3px 8px;
+}
+.morning.morning--gcal .vcal__event::before { display: none; }
+.morning.morning--gcal :is(.vcal__event-title, .week__event-title) { font-size: 12.5px; font-weight: 500; color: var(--gcal-text); }
+.morning.morning--gcal :is(.vcal__event-time, .vcal__event-where, .week__event-time) { font-size: 12px; color: var(--gcal-text); opacity: 0.86; }
+.morning--gcal .vcal__event:hover { filter: brightness(0.96); }
+.morning--gcal .vcal__event--past { opacity: 0.6; filter: none; }
+.morning--gcal .vcal__event-elapsed { display: none; }
+.morning--gcal .vcal__event--selected { outline: none; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.28); z-index: 9 !important; }
+.morning--gcal .vcal__now { height: 2px; background: var(--gcal-red); box-shadow: none; animation: none; }
+.morning--gcal .vcal__now i { background: var(--gcal-red); width: 12px; height: 12px; top: -5px; left: -6px; }
+.morning--gcal .vcal__now i::after { display: none; }
+.morning.morning--gcal .week__event[data-color] { padding: 1px 6px; }
+.morning.morning--gcal :is(.week__event-title, .week__event-time) { font-size: 11.5px; line-height: 1.25; }
