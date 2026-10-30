@@ -36,7 +36,8 @@ export interface TodayInfo {
 
 /** What the sky is doing right now; drives the weather card's ambient scene. */
 export interface Sky {
-  kind: "clear" | "cloudy" | "fog" | "drizzle" | "rain" | "storm" | "snow";
+  /** "partly": some cloud, but the stars (or sun) still show. "cloudy" is overcast. */
+  kind: "clear" | "partly" | "cloudy" | "fog" | "drizzle" | "rain" | "storm" | "snow";
   /** Current wind, mph. */
   windMph: number;
 }

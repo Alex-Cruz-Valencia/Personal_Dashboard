@@ -167,6 +167,23 @@ misses like that, and treat them as profile edits, not code changes.
 
 ---
 
+## 2026-10-30 — Partly cloudy keeps the stars
+
+**Problem** — The night scene (stars, meteors, moon) seemed to disappear. The
+scene had one "cloudy" sky for both partly cloudy (WMO code 2) and overcast
+(code 3), and "cloudy" draws no stars at all. So a partly cloudy night, common
+here, showed a plain dark page: the effect looked broken when it was really
+being too literal about the weather.
+
+**Decision** — A new `partly` sky kind (code 2). It keeps everything the clear
+sky draws (sun and drifting sunbeams by day; stars, meteors and the moon by
+night) with two soft clouds passing over. Overcast (code 3), fog, rain and snow
+are unchanged. `?sky=partly` previews it.
+
+**Alternatives considered** — Always drawing stars at night whatever the
+weather (then the scene stops saying anything about the sky); treating code 2
+as clear (loses the hint of cloud).
+
 ## 2026-10-29 — Task Assist, on our own AI model
 
 **Problem** — Todoist's menu has "Task Assist", its AI helper for a stuck task.
