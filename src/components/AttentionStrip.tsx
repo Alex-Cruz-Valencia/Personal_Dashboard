@@ -139,6 +139,7 @@ function ConflictCard({
     <Popover anchor={anchor} theme={theme} onClose={onClose} ariaLabel={`Resolve: ${item.title}`} className="resolve">
       <p className="resolve__title">{item.kind === "conflict" ? "These overlap" : "Tight turnaround"}</p>
       <p className="resolve__detail">{item.detail}</p>
+      {events.length === 2 ? <OverlapSnippet a={events[0]} b={events[1]} use24={use24} /> : null}
       <ul className="resolve__events">
         {events.map((e) => (
           <li key={e.id ?? e.name}>
@@ -185,5 +186,46 @@ function ConflictCard({
         </button>
       </div>
     </Popover>
+  );
+}
+
+/** The snippet's height stays about this tall however long the events run. */
+const SNIPPET_PX = 104;
+
+/**
+ * The two events as the day calendar draws them: side by side on a small time scale, sized by
+ * duration, with the stretch they share banded across both. Shows at a glance whether it's five
+ * minutes or the whole meeting.
+ */
+function OverlapSnippet({ a, b, use24 }: { a: AgendaEvent; b: AgendaEvent; use24: boolean }) {
+  // Half-hour padding around both, snapped to half hours so the ticks land on clock times.
+  const from = Math.max(0, Math.floor(Math.min(a.start, b.start) * 2) / 2 - 0.5);
+  const to = Math.min(24, Math.ceil(Math.max(a.end, b.end) * 2) / 2 + 0.5);
+  const px = SNIPPET_PX / (to - from);
+  const y = (h: number) => (h - from) * px;
+  const ticks: number[] = [];
+  // Every half hour on a short span, every hour or two on a long one.
+  const step = to - from <= 3 ? 0.5 : to - from <= 7 ? 1 : 2;
+  for (let h = Math.ceil(from / step) * step; h <= to; h += step) ticks.push(h);
+  const shared = { start: Math.max(a.start, b.start), end: Math.min(a.end, b.end) };
+  return (
+    <div className="resolve__snip" style={{ height: SNIPPET_PX }} aria-hidden="true">
+      {ticks.map((h) => (
+        <div key={h} className="resolve__tick" style={{ top: y(h) }}>
+          <span>{formatHour(h, use24)}</span>
+        </div>
+      ))}
+      {[a, b].map((e, i) => (
+        <div
+          key={e.id ?? e.name}
+          className="resolve__block"
+          data-color={e.color}
+          style={{ top: y(e.start), height: Math.max(14, (e.end - e.start) * px - 1), left: i === 0 ? 3 : "calc(50% + 2px)", width: "calc(50% - 5px)" }}
+        >
+          {e.name}
+        </div>
+      ))}
+      {shared.end > shared.start ? <div className="resolve__band" style={{ top: y(shared.start), height: (shared.end - shared.start) * px }} /> : null}
+    </div>
   );
 }

@@ -167,6 +167,24 @@ misses like that, and treat them as profile edits, not code changes.
 
 ---
 
+## 2026-10-30 — The conflict card shows the overlap, not just says it
+
+**Problem** — The card listed two events and "50 min of overlap". Whether that's
+a sliver or the whole meeting takes a mental sum from two time ranges.
+
+**Decision** — A small calendar snippet in the card: the two events side by side
+on a short time scale, as the day calendar draws them, sized by duration and in
+their calendar colors, with the shared stretch striped across both. It shows a
+tight turnaround the same way, without the stripes. The event rows below went to
+one line each, so "It's fine" stays on screen.
+
+**Alternatives considered** — A horizontal bar (shorter, but unlike the vertical
+calendar it stands in for); replacing the event rows with the snippet (the rows
+are where Edit lives, and they carry the full times).
+
+**Also fixed** — The card's color bars were always grey: its own fallback
+overrode the color each event carries.
+
 ## 2026-10-30 — Ramble, our own: talk, get tasks back
 
 **Problem** — The user likes Todoist's Ramble (talk, and it becomes structured
