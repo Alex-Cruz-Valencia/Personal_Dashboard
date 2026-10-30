@@ -1823,7 +1823,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 /* ---- top row: One card (default) or Classic (⚙ Top row) ---- */
 .card--scene { position: relative; overflow: hidden; }
 .card--scene > :not(.scene) { position: relative; z-index: 1; }
-.morning--scene:not(.morning--glass) .card--scene { background: color-mix(in srgb, var(--surface) 93%, transparent); }
+.morning--scene:not(.morning--glass) .card--scene { background: color-mix(in srgb, var(--surface) 93%, transparent); -webkit-backdrop-filter: none; backdrop-filter: none; }
 
 .topuni__temp { font-family: var(--font-display); font-size: 30px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; }
 .topuni__temp sup { font-size: 0.45em; vertical-align: super; color: var(--ink-faint); }

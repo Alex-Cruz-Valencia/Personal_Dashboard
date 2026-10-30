@@ -64,7 +64,7 @@ export function WeatherScene({
   const wet = kind === "drizzle" || kind === "rain" || kind === "storm";
   const windy = windMph >= BREEZY_MPH;
   // Partly cloudy keeps the clear sky (sun, beams) with a couple of clouds passing. At night the
-  // stars, meteors and moon always show, whatever the weather; clouds and rain drift over them.
+  // stars, meteors and moon always show, whatever the weather, with no clouds; rain and snow still fall.
   const open = kind === "clear" || kind === "partly";
 
   return (
@@ -102,14 +102,15 @@ export function WeatherScene({
           <Particles n={14 * (variant === "page" ? 5 : 1)} className="scene__star" />
         </>
       ) : null}
-      {kind === "partly" || kind === "cloudy" || kind === "fog" || wet || kind === "snow" ? (
+      {/* Clouds and mist are soft blurred blobs: by day only. Nights stay a clean starry sky. */}
+      {isDay && (kind === "partly" || kind === "cloudy" || kind === "fog" || wet || kind === "snow") ? (
         <>
           <span className="scene__cloud scene__cloud--a" />
           <span className="scene__cloud scene__cloud--b" />
           {kind === "cloudy" || kind === "fog" ? <span className="scene__cloud scene__cloud--c" /> : null}
         </>
       ) : null}
-      {kind === "fog" ? (
+      {kind === "fog" && isDay ? (
         <>
           <span className="scene__mist scene__mist--a" />
           <span className="scene__mist scene__mist--b" />

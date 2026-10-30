@@ -199,6 +199,13 @@ for nights: the user wants the night sky itself, and the weather layer on top
 still tells you what's happening. Reduced motion and ⚙ Motion → Still keep it
 still.
 
+**Then: no clouds at night.** The clouds (and fog mist) are soft, heavily
+blurred blobs. Over a night sky they read as a smudge on the greeting card, not
+as weather. At night they're no longer drawn; rain, snow and storm flashes
+still are. By day the clouds stay. The top card also loses the frosted-glass
+filter the other cards use over the page scene: it's ~93% opaque, so the blur
+only smeared the faint stars behind it.
+
 ## 2026-10-29 — Task Assist, on our own AI model
 
 **Problem** — Todoist's menu has "Task Assist", its AI helper for a stuck task.
