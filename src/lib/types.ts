@@ -189,7 +189,9 @@ export interface EventDetails {
   reminders: string[];
   /** The calendar it's on. */
   calendar: string;
-  /** You can change it here (not a read-only shared calendar). */
+  /** You can answer it here (not a read-only shared calendar). */
+  canWrite: boolean;
+  /** You can also change its details: you organize it, it's the calendar's own, or guests may edit. */
   canEdit: boolean;
   /** Your own answer, when you're on the guest list. */
   rsvp: RsvpStatus | null;

@@ -185,8 +185,12 @@ The pencil opens the existing form, with a Back.
   from `GET /api/events/[id]` when the card opens, so guest emails aren't in the
   page's data on every 60-second refresh. It costs a moment of "Loading
   details…".
-- **Actions follow what's allowed.** Edit and delete only show on calendars you
-  can write to; Dartmouth's is read-only here.
+- **Actions follow what's allowed.** Two separate rules: "Going?" needs write
+  access to the calendar, and edit and delete also need you to be the organizer
+  (or the event to be the calendar's own, or guests allowed to edit). A team
+  meeting someone else organized can be answered but not changed here; ⋮ opens it
+  in Google. Delete is held back on those on purpose: what it does for the other
+  guests isn't confirmed, so it isn't offered on someone else's event.
 - **Going?** writes your answer for this occurrence with `sendUpdates=none`, so
   no email goes out from it. Your answer shows at once, and goes back if Google
   refuses. Google's "all events" option is left out.

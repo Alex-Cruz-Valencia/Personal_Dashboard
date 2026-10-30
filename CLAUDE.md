@@ -282,7 +282,7 @@
   untouched — no "this vs. all" chooser needed. `EventDetail` opens as a
   Google-style read view (`EventRead.tsx`, `gevent__*`), filled by
   `GET /api/events/[id]` (`getEventDetails`: repeat text from `lib/recurrence.ts`,
-  guests + answers, reminders, calendar, `canEdit`) when it opens. "Going?" is PATCH
+  guests + answers, reminders, calendar, `canWrite` for "Going?", `canEdit` for edit/delete: organizer, the calendar's own event, or `guestsCanModify`) when it opens. "Going?" is PATCH
   `rsvp` → `setRsvp` (this occurrence, `sendUpdates=none`). The pencil opens the
   edit form (`eventedit__*` in globals.css, mirroring `taskedit__*`), which covers name,
   date/start/end, location, description, and delete; guests, reminders and

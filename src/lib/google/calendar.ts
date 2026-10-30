@@ -39,6 +39,7 @@ interface GCalEvent {
   recurringEventId?: string;
   /** On the series: "RRULE:FREQ=WEEKLY;BYDAY=MO", among others. */
   recurrence?: string[];
+  guestsCanModify?: boolean;
   reminders?: { useDefault?: boolean; overrides?: { minutes?: number }[] };
   eventType?: string;
   /** Set only when the event has its own color ("1"–"11"); otherwise it shows its calendar's. */
@@ -404,6 +405,7 @@ export async function getEventDetails(id: string): Promise<EventDetails> {
   const series = e.recurringEventId ? await getEvent(calendarId, e.recurringEventId).catch(() => null) : e;
   const rule = series?.recurrence?.find((r) => r.startsWith("RRULE:"));
   const cal = calendars.find((c) => c.id === calendarId);
+  const canWrite = cal ? cal.role === "owner" || cal.role === "writer" : true;
 
   const guests: EventGuest[] = (e.attendees ?? [])
     .map((a) => ({
@@ -424,7 +426,11 @@ export async function getEventDetails(id: string): Promise<EventDetails> {
     guests,
     reminders: [...minutes].sort((a, b) => a - b).map(reminderLabel),
     calendar: cal?.label ?? "Calendar",
-    canEdit: cal ? cal.role === "owner" || cal.role === "writer" : true,
+    canWrite,
+    // Write access isn't enough: Google keeps the details to the organizer unless guests may edit.
+    canEdit:
+      canWrite &&
+      (Boolean(e.organizer?.self) || Boolean(e.guestsCanModify) || e.organizer?.email?.toLowerCase() === calendarId.toLowerCase()),
     rsvp: guests.find((g) => g.self)?.status ?? null,
     description: toPlainText(e.description, 6000),
   };

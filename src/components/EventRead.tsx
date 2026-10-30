@@ -100,6 +100,7 @@ export function EventRead({
   const guests = details?.guests ?? [];
   const emails = guests.flatMap((g) => (g.email && !g.self ? [g.email] : []));
   const canEdit = details?.canEdit ?? false;
+  const canWrite = details?.canWrite ?? false;
 
   const copyGuests = async () => {
     try {
@@ -222,7 +223,7 @@ export function EventRead({
       {error ? <p className="gevent__error" role="alert">{error}</p> : null}
 
       {/* A read-only calendar is one Google won't take an answer through, so don't offer the buttons. */}
-      {rsvp && !canEdit && details ? (
+      {rsvp && !canWrite && details ? (
         <div className="gevent__going">
           <span>{RSVP_LABEL[rsvp]}</span>
           {event.htmlLink ? (
@@ -233,7 +234,7 @@ export function EventRead({
         </div>
       ) : null}
 
-      {rsvp && canEdit ? (
+      {rsvp && canWrite ? (
         <div className="gevent__going">
           <span>Going?</span>
           <span className="gevent__answers" role="group" aria-label="Going?">
