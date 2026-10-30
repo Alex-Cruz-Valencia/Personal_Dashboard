@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type TouchEvent, type WheelEvent } from "react";
 import { useRouter } from "next/navigation";
 import { upNext } from "@/lib/attention";
 import { dateLineFor, decimalHourToTimeInput, formatHour, layoutOverlaps } from "@/lib/format";
@@ -26,6 +26,14 @@ const NOW_AT = 0.4;
 const IDLE_RETURN_MS = 60_000;
 /** With past events tucked away, the calendar starts this many hours before now (to the hour above). */
 const PAST_KEEP_H = 1;
+/** Upward scroll (px of wheel delta) past the top it takes to bring the tucked-away hours back. */
+const PULL_WHEEL_PX = 450;
+/** The same for a touch drag down from the top. */
+const PULL_TOUCH_PX = 120;
+/** A pause this long (ms) between wheel events ends a pull, and the calendar springs back. */
+const PULL_GAP_MS = 220;
+/** How far (px) the hours give way under a full pull. */
+const PULL_GIVE_PX = 36;
 /** Dragging and drawing snap to this many hours (15 minutes). */
 const SNAP = 0.25;
 /** A pointer that moves less than this many px is a click, not a drag. */
@@ -129,6 +137,57 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
     setLockH(cardRef.current?.offsetHeight ?? null);
     instant(() => setShowPast(true));
   };
+  // Scrolling up past the top meets resistance: the hours give a little, "Earlier today" fades
+  // in, and only a firm, continued pull brings the morning back. Momentum from scrolling up to
+  // the top doesn't count: a pull starts with a fresh gesture made while already at the top.
+  const [pull, setPull] = useState(0);
+  const pullRef = useRef({ acc: 0, last: 0, armed: false, touchY: null as number | null });
+  const pullTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const endPull = () => {
+    pullRef.current.acc = 0;
+    setPull(0);
+  };
+  const onPullWheel = (ev: WheelEvent<HTMLDivElement>) => {
+    const p = pullRef.current;
+    const now = Date.now();
+    const gap = now - p.last;
+    p.last = now;
+    if (!collapsed || ev.currentTarget.scrollTop > 0 || ev.deltaY >= 0) {
+      if (p.acc) endPull();
+      return;
+    }
+    if (!p.armed) {
+      // Still the tail of the scroll that got here: wait for it to stop.
+      if (gap < PULL_GAP_MS) return;
+      p.armed = true;
+    }
+    if (gap >= PULL_GAP_MS) p.acc = 0;
+    const px = ev.deltaMode === 1 ? -ev.deltaY * 16 : -ev.deltaY;
+    p.acc += Math.min(px, 120);
+    if (pullTimer.current) clearTimeout(pullTimer.current);
+    if (p.acc >= PULL_WHEEL_PX) {
+      endPull();
+      reveal();
+      return;
+    }
+    setPull(p.acc / PULL_WHEEL_PX);
+    pullTimer.current = setTimeout(endPull, PULL_GAP_MS);
+  };
+  const onPullTouchStart = (ev: TouchEvent<HTMLDivElement>) => {
+    pullRef.current.touchY = collapsed && ev.currentTarget.scrollTop <= 0 ? ev.touches[0].clientY : null;
+  };
+  const onPullTouchMove = (ev: TouchEvent<HTMLDivElement>) => {
+    const y0 = pullRef.current.touchY;
+    if (y0 == null) return;
+    setPull(Math.min(Math.max((ev.touches[0].clientY - y0) / PULL_TOUCH_PX, 0), 1));
+  };
+  const onPullTouchEnd = () => {
+    if (pullRef.current.touchY == null) return;
+    pullRef.current.touchY = null;
+    if (pull >= 1) reveal();
+    endPull();
+  };
+
   // Keep what was on screen where it was when the tucked-away hours come back above it.
   useLayoutEffect(() => {
     const el = scrollerRef.current;
@@ -369,19 +428,28 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
         className="vcal__scroller"
         ref={scrollerRef}
         style={viewH ? ({ "--view-h": `${viewH}px` } as CSSProperties) : undefined}
-        onScroll={() => setAway(measure().dir)}
-        onWheel={(ev) => {
-          if (collapsed && ev.currentTarget.scrollTop <= 0 && ev.deltaY < 0) reveal();
+        onScroll={(ev) => {
+          setAway(measure().dir);
+          if (ev.currentTarget.scrollTop > 0) pullRef.current.armed = false;
         }}
+        onWheel={onPullWheel}
+        onTouchStart={onPullTouchStart}
+        onTouchMove={onPullTouchMove}
+        onTouchEnd={onPullTouchEnd}
+        onTouchCancel={endPull}
       >
-        {collapsed && hiddenCount > 0 ? (
-          <div className="vcal__earlier">
+        {collapsed && hiddenPx > 0 ? (
+          // Shows only while pulling (or focused, so the keyboard still has a way in).
+          <div className="vcal__earlier" style={{ "--pull": pull } as CSSProperties}>
             <button type="button" onClick={reveal}>
-              ↑ Earlier today · {hiddenCount} {hiddenCount === 1 ? "event" : "events"}
+              ↑ Earlier today{hiddenCount > 0 ? ` · ${hiddenCount} ${hiddenCount === 1 ? "event" : "events"}` : ""}
             </button>
           </div>
         ) : null}
-        <div className={`vcal__body${snap ? " vcal__body--snap" : ""}`} style={{ height, marginTop: -hiddenPx }}>
+        <div
+          className={`vcal__body${snap ? " vcal__body--snap" : ""}${pull > 0 ? " vcal__body--pulling" : ""}`}
+          style={{ height, marginTop: -hiddenPx, transform: pull > 0 ? `translateY(${pull * PULL_GIVE_PX}px)` : undefined }}
+        >
           <div className="vcal__gutter" aria-hidden="true">
             {hourMarks.map((h) => (
               <span key={h} className="vcal__hour-label" style={{ top: y(h) }}>
