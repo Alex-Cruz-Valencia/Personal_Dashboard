@@ -100,6 +100,13 @@
   gitignored `.data/email-profile.json`, **never** in the repo; `npm run email:profile
   mine|push|show` rebuilds it (mining is Gmail GETs only).
   `npm run llm:models` lists model ids.
+- **Top row "simple" / "brief" (2026-10-30):** the same `TopUnified` card without the curve
+  (`topuni--simple|brief`). Simple: now, high/low, one rain-or-wind line (`simpleOutlook`). Brief:
+  up to four lines from `briefLines()` (`src/lib/weather-brief.ts`): rain window against a meeting,
+  wind, UV, sunset/light left, tomorrow after 5pm. Fed by optional `Weather` fields (`high`, `low`,
+  `feelsLike`, `rainWindow`, `windPeak`, `uvPeak`, `tomorrow`) from `restOfToday()` in `open-meteo.ts`.
+- **Ambient** (`Ambient.tsx`): a full-screen clock over the sky (`WeatherScene` page variant with
+  `fenced={false}` so meteors aren't cut out), opened from under the clock; any key/click exits.
 - **Top row (2026-10-30):** `settings.topRow` — "unified" (default, `TopUnified`: one
   scenic card with greeting, clock, a one-line weather summary and the day's temperature
   curve as a full-width band, sun/moon included) or "classic" (`HelloCard` + `WeatherCard`),

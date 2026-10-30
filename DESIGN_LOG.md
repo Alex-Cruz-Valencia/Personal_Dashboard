@@ -167,6 +167,53 @@ misses like that, and treat them as profile edits, not code changes.
 
 ---
 
+## 2026-10-30 — A batch: click-for-menu, clickable week, resolvable conflicts, Ambient, two greeting cards
+
+**Tasks: a click opens the Todoist menu too.** Right-click and left-click now do
+the same thing, as the user asked. The menu's Edit (or E) still opens the full
+editor, so nothing is lost. Enter or Space on a focused task opens the menu
+under it.
+
+**The week view's events are clickable.** In the expanded week (the grid, the
+all-day banners, and a picked day's agenda), a click opens the same event card
+as today's calendar, with that day's date filled in. `WeekEvent` now carries the
+full event, so the card has location, link and notes.
+
+**Conflicts and tight turnarounds can be resolved.** Before, they only warned.
+Clicking one opens a small card listing both events:
+- **Edit** on either opens it to move, shorten or delete it.
+- **Show on calendar** scrolls there, as before.
+- **It's fine** dismisses the warning. It's remembered in this browser, keyed by
+  both events *and their exact times*, so it comes back if either one moves.
+  Nothing is written to Google.
+
+**Ambient.** A button under the clock (or in the footer with the classic top
+row) opens a full-screen, non-functional screen to leave up: a large, light
+clock and the date over the day's sky. At night that's a deep gradient with
+stars, meteors and a crescent moon; by day, a soft sky and a warm sun. The
+cursor hides when idle, the display is kept awake where the browser allows,
+and any key or click goes back. It's named Ambient rather than Focus because
+"Focus 25" is already the calendar's timer.
+
+**Two greeting cards to try** (⚙ Top row: Curve / Simple / Brief / Classic; the
+default is unchanged). The user found the day's temperature curve unhelpful.
+- **Simple:** now, high/low, feels-like (when it differs by 3° or more), and one
+  rain-or-wind line. No curve.
+- **Brief:** the same, plus up to four short lines that change plans:
+  - when rain starts and stops, named against a meeting it lands on ("during
+    Career & Life Design");
+  - wind and strong UV, only when they're notable;
+  - sunset, with the light left once it's under 3 hours;
+  - tomorrow's high/low and rain, from late afternoon.
+- New data: the daily high and low, the current feels-like, and the rest of
+  today's rain window, wind peak and UV peak, plus tomorrow (Open-Meteo, now
+  two forecast days).
+
+**Alternatives considered** — For the greeting card: hourly icons (still a chart
+to read); an AI-written weather sentence (slower, and less exact than computed
+lines). For Ambient: a dimmed dashboard (still functional, which it's meant not
+to be).
+
 ## 2026-10-30 — Partly cloudy keeps the stars
 
 **Problem** — The night scene (stars, meteors, moon) seemed to disappear. The

@@ -2344,3 +2344,16 @@ a:hover { color: var(--ink); text-decoration: underline; }
 }
 .ambient--idle .ambient__hint { opacity: 0; }
 @media (prefers-reduced-motion: reduce) { .ambient__orb, .ambient__colon { animation: none; } }
+
+/* Top row "simple" and "brief": the same card without the curve. Simple keeps one weather line;
+   brief adds a few short lines that change plans (rain over a meeting, wind, light left, tomorrow). */
+.topuni--simple, .topuni--brief { padding-bottom: 26px; }
+.topuni__hl { font-weight: 600; color: var(--ink); }
+.topuni__brief { list-style: none; margin: 6px 0 0; padding: 14px 0 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 24px; }
+.brief { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: 13.5px; }
+.brief__icon { flex: 0 0 auto; align-self: center; color: var(--ink-soft); }
+.brief__text { font-weight: 600; white-space: nowrap; }
+.brief__note { color: var(--ink-soft); font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brief--rain .brief__icon { color: var(--mark-meeting, var(--accent)); }
+.brief--wind .brief__icon, .brief--sun .brief__icon { color: var(--mark-warning, var(--warning)); }
+.brief--tomorrow .brief__icon { color: var(--accent); }

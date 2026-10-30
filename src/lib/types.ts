@@ -67,6 +67,23 @@ export interface Weather {
   sky: Sky;
   /** Hourly temps across the day-arc window; drives the temperature curve. */
   hourly: HourlyTemp[];
+
+  /* ---- for the simpler / briefing greeting cards (absent in older sample data) ---- */
+  /** Today's high and low, °F. */
+  high?: number;
+  low?: number;
+  /** "Feels like" right now, °F. */
+  feelsLike?: number;
+  /** Today's best chance of rain, %. */
+  rainChance?: number;
+  /** Rest of today: the next stretch with a real chance of rain (decimal hours), if any. */
+  rainWindow?: { start: number; end: number; chance: number } | null;
+  /** Rest of today: the strongest wind, mph, and when. */
+  windPeak?: { mph: number; at: number };
+  /** Rest of today: the peak UV index, when it's worth a mention (6+). */
+  uvPeak?: { index: number; at: number } | null;
+  /** Tomorrow at a glance. */
+  tomorrow?: { high: number; low: number; condition: string; rainChance: number };
 }
 
 export interface Task {

@@ -63,7 +63,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
           {settings.surface === "glass" && settings.motion === "on" ? (
             <SkyTint today={data.today} sunrise={data.weather.sunrise} sunset={data.weather.sunset} frozen={frozen} />
           ) : null}
-          {settings.topRow === "unified" ? (
+          {settings.topRow !== "classic" ? (
             <TopUnified data={data} settings={settings} theme={settings.theme} frozen={frozen} />
           ) : (
             <div className="topbar">
@@ -131,7 +131,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
             settings={chosen}
             shownTheme={settings.theme}
             ambient={
-              settings.topRow === "unified" ? null : (
+              settings.topRow !== "classic" ? null : (
                 <AmbientButton today={data.today} weather={data.weather} use24={use24} theme={settings.theme} frozen={frozen} />
               )
             }
