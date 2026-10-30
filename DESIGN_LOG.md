@@ -112,6 +112,12 @@ Momentum that carries a scroll up to the top doesn't count, so a pull has to be
 a fresh gesture made while already at the top. The hint stays a real button, so
 it shows when focused and the keyboard still has a way in.
 
+Hard to get out, easy to get back: once the morning is open, scrolling back down
+to where the tucked view started tucks it away again. When "That's the day" has
+the whole calendar, that point is the bottom. There's no extra resistance going
+back, and the view doesn't jump. Before this, the only ways back were "Now" or a
+quiet minute, so the scene you had scrolled away from seemed stuck off.
+
 **Reasoning** — Same idea as pull-to-refresh: the extra effort is a signal of
 intent, and the give plus the fading hint tell you something is there and how
 far along you are. That answers "is there more above?" without a permanent pill.

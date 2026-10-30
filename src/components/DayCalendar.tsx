@@ -103,7 +103,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   const lastTouch = useRef(0);
 
   // Past events: by default the calendar starts about an hour before now and the rest of the
-  // morning sits above the top edge, out of sight. Scrolling up (or the pill) brings it back.
+  // morning sits above the top edge, out of sight. A firm pull up past the top brings it back; scrolling back down tucks it away again.
   const [showPast, setShowPast] = useState(false);
   const [snap, setSnap] = useState(false);
   // The card is only as tall as the day left needs; while the morning is open it keeps the height it had.
@@ -113,16 +113,14 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   const [viewH, setViewH] = useState<number | null>(null);
   const collapsed = settings.pastEvents === "hide" && !showPast;
   // Nothing left today (events all over, or an empty day that has run out): the hours slide
-  // away and "That's the day" takes the whole calendar. The pill or a scroll up brings them back.
+  // away and "That's the day" takes the whole calendar. A firm pull up brings them back.
   // "That's the day" belongs to the evening: it appears from the wind-down hour (⚙ Wind down at,
   // 9pm by default), not as soon as the last meeting ends.
   const sceneOn = nowHour >= settings.windDown;
   const dayDone = sceneOn && next === null && (agenda.length > 0 || nowHour >= arc.to);
-  const viewFrom = collapsed
-    ? dayDone
-      ? arc.to
-      : Math.min(Math.max(Math.floor(nowHour - PAST_KEEP_H), arc.from), arc.to)
-    : arc.from;
+  /** Where the calendar starts while the past is tucked away. */
+  const tuckFrom = dayDone ? arc.to : Math.min(Math.max(Math.floor(nowHour - PAST_KEEP_H), arc.from), arc.to);
+  const viewFrom = collapsed ? tuckFrom : arc.from;
   const hiddenPx = (viewFrom - arc.from) * HOUR_PX;
   const hiddenCount = collapsed ? agenda.filter((e) => e.end <= viewFrom).length : 0;
   const shift = useRef(0);
@@ -188,11 +186,29 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
     endPull();
   };
 
-  // Keep what was on screen where it was when the tucked-away hours come back above it.
+  // Easy back in: once the morning is open, scrolling down to where the tucked view started
+  // (or to the bottom, when "That's the day" has the whole calendar) tucks it away again.
+  const lastTop = useRef(0);
+  const retuck = (el: HTMLDivElement) => {
+    const top = el.scrollTop;
+    const was = lastTop.current;
+    lastTop.current = top;
+    if (!showPast || settings.pastEvents !== "hide" || top <= was) return;
+    const tuckPx = (tuckFrom - arc.from) * HOUR_PX;
+    const line = Math.min(tuckPx, el.scrollHeight - el.clientHeight - 2);
+    if (line <= 0 || was >= line || top < line) return;
+    shift.current = -tuckPx;
+    instant(() => {
+      setShowPast(false);
+      setLockH(null);
+    });
+  };
+  // Keep what was on screen where it was when the tucked-away hours come back above it (or leave).
   useLayoutEffect(() => {
     const el = scrollerRef.current;
-    if (showPast && el && shift.current) el.scrollTop += shift.current;
+    if (el && shift.current) el.scrollTop = Math.max(0, el.scrollTop + shift.current);
     shift.current = 0;
+    if (el) lastTop.current = el.scrollTop;
   }, [showPast]);
 
   /** Is the now line off screen (and which way), or well outside the comfortable middle? */
@@ -431,6 +447,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
         onScroll={(ev) => {
           setAway(measure().dir);
           if (ev.currentTarget.scrollTop > 0) pullRef.current.armed = false;
+          retuck(ev.currentTarget);
         }}
         onWheel={onPullWheel}
         onTouchStart={onPullTouchStart}
