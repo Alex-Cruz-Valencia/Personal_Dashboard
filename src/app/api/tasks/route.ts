@@ -2,9 +2,9 @@ import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
 import { addTask, TODOIST_TAG, type NewTask } from "@/lib/tasks/todoist";
-import { rejectCrossSite } from "@/lib/request-guard";
+import { rejectCrossSite, validTaskId } from "@/lib/request-guard";
 
-/** Create a task. Body: { content, projectId?, priority? (1–3), due?, dueDate?, labels?, deadline?, durationMinutes?, description? }. */
+/** Create a task. Body: { content, projectId?, parentId? (a subtask), priority? (1–3), due?, dueDate?, labels?, deadline?, durationMinutes?, description? }. */
 export async function POST(request: Request) {
   const blocked = rejectCrossSite(request);
   if (blocked) return blocked;
@@ -54,6 +54,9 @@ export async function POST(request: Request) {
     !(Array.isArray(body.labels) && body.labels.length <= 20 && body.labels.every((l) => typeof l === "string" && l.length <= 60))
   ) {
     return NextResponse.json({ error: "labels must be a short list of names" }, { status: 400 });
+  }
+  if (body.parentId !== undefined && !(typeof body.parentId === "string" && validTaskId(body.parentId))) {
+    return NextResponse.json({ error: "parentId must be a task id" }, { status: 400 });
   }
   if (body.projectId !== undefined && typeof body.projectId !== "string") {
     return NextResponse.json({ error: "projectId must be a string" }, { status: 400 });

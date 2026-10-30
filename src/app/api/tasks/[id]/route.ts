@@ -2,9 +2,11 @@ import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
 import { badId, rejectCrossSite, validTaskId } from "@/lib/request-guard";
+import { resolveLocation } from "@/lib/location";
 import {
   deleteTask,
   moveTask,
+  rescheduleTask,
   TODOIST_TAG,
   updateTask,
   type TaskPatch,
@@ -20,12 +22,20 @@ function notConfigured() {
 interface PatchBody extends TaskPatch {
   /** Move the task to this project. */
   projectId?: string;
+  /** Move the task to this section (its project comes with it). */
+  sectionId?: string;
+  /**
+   * Move the task to this day ("YYYY-MM-DD"), keeping its time and repeat, or null for no
+   * date. The task menu's date shortcuts use this; `due` replaces the whole due instead.
+   */
+  date?: string | null;
 }
 
 /**
  * Edit a task. Accepts any of: content, description, priority (1–3),
  * due (natural language / null), labels, deadline (ISO date / null),
- * durationMinutes (number / null), projectId (move).
+ * durationMinutes (number / null), projectId / sectionId (move),
+ * todoistPriority (1–4), date (reschedule, ISO date / null).
  */
 export async function PATCH(
   request: Request,
@@ -63,15 +73,19 @@ export async function PATCH(
       !(Number.isInteger(body.durationMinutes) && body.durationMinutes > 0 && body.durationMinutes <= 1440) && "durationMinutes must be 1–1440") ||
     (body.labels !== undefined &&
       !(Array.isArray(body.labels) && body.labels.length <= 20 && body.labels.every((l) => typeof l === "string" && l.length <= 60)) && "labels must be a short list of names") ||
-    (body.projectId !== undefined && typeof body.projectId !== "string" && "projectId must be a string");
+    (body.projectId !== undefined && typeof body.projectId !== "string" && "projectId must be a string") ||
+    (body.sectionId !== undefined && !(typeof body.sectionId === "string" && validTaskId(body.sectionId)) && "sectionId must be an id") ||
+    (body.todoistPriority !== undefined && ![1, 2, 3, 4].includes(body.todoistPriority) && "todoistPriority must be 1–4") ||
+    (body.date !== undefined && body.date !== null && !isIso(body.date) && "date must be YYYY-MM-DD");
   if (problem) return NextResponse.json({ error: problem }, { status: 400 });
 
-  const { projectId, ...patch } = body;
+  const { projectId, sectionId, date, ...patch } = body;
   if (patch.content !== undefined) patch.content = patch.content.trim();
 
   try {
     // Todoist keeps "move" separate from "update" — do the move first.
-    if (projectId) await moveTask(id, projectId);
+    if (projectId || sectionId) await moveTask(id, { projectId, sectionId });
+    if (date !== undefined) await rescheduleTask(id, date, (await resolveLocation()).timezone);
     const hasPatch = Object.values(patch).some((v) => v !== undefined);
     const task = hasPatch ? await updateTask(id, patch) : null;
     revalidateTag(TODOIST_TAG, { expire: 0 });

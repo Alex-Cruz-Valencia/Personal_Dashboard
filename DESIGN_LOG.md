@@ -95,6 +95,92 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Task Assist, on our own AI model
+
+**Problem** — Todoist's menu has "Task Assist", its AI helper for a stuck task.
+Todoist doesn't expose it to other apps, but the dashboard already has an AI
+model set up (Dartmouth Chat) for reply drafts.
+
+**Decision** — The menu's Task Assist (marked Beta) offers three asks about the
+task, each with a one-click way to apply the answer:
+- **Make it actionable:** a clearer title, shown next to the old one → "Use this
+  title".
+- **Break it down:** 3–6 next steps with checkboxes → "Add N subtasks". They're
+  created as real Todoist subtasks, in order.
+- **Give me tips:** 3–4 specific tips → "Add to notes" (appended under "Tips:").
+
+"Try again" asks once more. Each answer is a suggestion; nothing is written
+until a button is clicked.
+
+**Reasoning** — These are the three things you actually want from AI when a task
+won't move: say what it is, split it up, or get unstuck. Every result maps to
+an ordinary task write, so it rides on routes that already exist and are
+already guarded.
+
+**Safety (same rules as the other AI routes)** — `guardAi` (fails closed,
+same-origin only, an hourly cap). Only the task's title, notes and project name
+are sent. The model's JSON is checked on the server: lengths and counts are
+capped, list markers stripped, duplicates dropped. The task text is marked as
+data, not instructions. The menu item appears only where the AI is set up
+(`DashboardData.ai`), so never on the public demo. Tested end to end with the
+real model on a temporary task, applied for real, then deleted.
+
+**Alternatives considered** — Free-form chat about the task (open-ended, and
+harder to validate); auto-applying the suggestion (breaks the human-click
+rule); matching Todoist's exact Assist prompts (not public, and these three
+cover the job).
+
+**Tradeoffs** — Each ask is a model call (~2–3s here) and counts toward the
+hourly cap. Subtasks of a task due today only show on the dashboard if they
+match its task filter themselves.
+
+## 2026-10-29 — Todoist's own right-click menu on tasks
+
+**Problem** — Right-click opened the full task editor, which is a form: fine for
+editing notes, heavy for the quick things right-click is for (push to tomorrow,
+bump the priority, move it, delete it). The user lives in Todoist, so the menu
+their hand expects is Todoist's.
+
+**Decision** — Right-click now opens a copy of Todoist's task menu at the pointer:
+- Edit (opens the existing editor) and Go to project.
+- Date shortcuts: Today / Tomorrow / This weekend / Next week / No date, plus a
+  "•••" panel with natural-language entry and a day picker. The option matching
+  the current date is hidden, as in Todoist.
+- The four priority flags.
+- Deadline, Reminders, Move to… (projects and their sections, with search),
+  Duplicate, Copy link to task, and Delete (with a confirm).
+
+Todoist's keyboard shortcuts work while the menu is open: E, ⇧G, T, Y and 1–4,
+D, V, ⇧⌘C, ⌘⌫ / Delete, plus the arrow keys. Each write closes the menu only
+once Todoist confirms it.
+
+**Reasoning / details that matter**
+- **Moving a date keeps the repeat.** Todoist's shortcuts move one occurrence of
+  a repeating task and keep its time of day. A plain "due = tomorrow" would wipe
+  the "every day 3pm" rule, so the server reads the task and sends a Sync
+  `item_update` with the same repeat string and a new date. One-off tasks are
+  set by text, so Todoist names them the way the app does ("Oct 31 3:00 PM"),
+  not with a bare ISO date.
+- **Four flags, not three.** The dashboard's own priority merges P2 and P3. The
+  menu writes Todoist's P1–P4 directly (`todoistPriority`).
+- **Duplicate copies on the server.** It copies date (and repeat), labels,
+  priority, deadline, duration, notes, project and section.
+- Checked end to end against Todoist with temporary "ZZ temp test" tasks, all
+  deleted afterwards.
+
+**Alternatives considered** — Keeping the editor on right-click (a form where a
+menu is expected); a shorter menu with only dates and priority (the user asked
+for Todoist's, and the rest is cheap once the plumbing exists).
+
+**Tradeoffs / open questions**
+- **Reminders** opens the task in Todoist. Reminders need the Sync API and
+  Todoist Pro, so they aren't set here.
+- **Task Assist** isn't Todoist's own AI, which Todoist doesn't expose through
+  its API. Our model stands in for it (next entry).
+- Duplicate doesn't copy subtasks.
+- Todoist's undo toast after a change isn't copied; the date is one more
+  right-click away.
+
 ## 2026-10-29 — Right-click a task to edit it
 
 **Problem** — The task editor opened only on a click on the task's text.

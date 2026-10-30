@@ -11,17 +11,21 @@ import {
 import { useRouter } from "next/navigation";
 import { PRIORITY_LABEL } from "@/lib/format";
 import type { Theme } from "@/lib/settings";
-import type { Priority, Project, Task } from "@/lib/types";
+import type { Priority, Project, Section, Task } from "@/lib/types";
 import { useFocus } from "./Focus";
 import { flushFocus, Popover } from "./Popover";
+import { TaskMenu } from "./TaskMenu";
 
 interface Meta {
   projects: Project[];
+  sections?: Section[];
   labels: string[];
 }
 
 interface TaskDetailApi {
   open: (task: Task, anchorEl: HTMLElement) => void;
+  /** The right-click menu, at the pointer; `rowEl` is where Edit then anchors the editor. */
+  openMenu: (task: Task, x: number, y: number, rowEl: HTMLElement) => void;
   close: () => void;
   isSelected: (task: Task) => boolean;
 }
@@ -39,16 +43,23 @@ let metaCache: Meta | null = null;
 
 export function TaskDetailProvider({
   theme,
+  todayIso,
+  ai,
   children,
 }: {
   theme: Theme;
+  /** The AI model is set up (DashboardData.ai), so the menu offers Task Assist. */
+  ai: boolean;
+  /** The dashboard's day, for the menu's date shortcuts. */
+  todayIso: string;
   children: ReactNode;
 }) {
   const [state, setState] = useState<{ task: Task; anchor: DOMRect } | null>(null);
+  const [menu, setMenu] = useState<{ task: Task; at: DOMRect; rowEl: HTMLElement } | null>(null);
   const [meta, setMeta] = useState<Meta | null>(metaCache);
 
   useEffect(() => {
-    if (metaCache || !state) return;
+    if (metaCache || (!state && !menu)) return;
     let alive = true;
     fetch("/api/tasks/meta")
       .then((r) => (r.ok ? r.json() : { projects: [], labels: [] }))
@@ -60,18 +71,26 @@ export function TaskDetailProvider({
     return () => {
       alive = false;
     };
-  }, [state]);
+  }, [state, menu]);
 
   const open = useCallback((task: Task, anchorEl: HTMLElement) => {
+    setMenu(null);
     setState({ task, anchor: anchorEl.getBoundingClientRect() });
   }, []);
+  const openMenu = useCallback((task: Task, x: number, y: number, rowEl: HTMLElement) => {
+    setState(null);
+    setMenu({ task, at: new DOMRect(x, y, 0, 0), rowEl });
+  }, []);
   const close = useCallback(() => setState(null), []);
+  const closeMenu = useCallback(() => setMenu(null), []);
 
   const api: TaskDetailApi = {
     open,
+    openMenu,
     close,
     isSelected: (task) =>
-      Boolean(state) && Boolean(task.id) && state!.task.id === task.id,
+      Boolean(task.id) &&
+      ((Boolean(state) && state!.task.id === task.id) || (Boolean(menu) && menu!.task.id === task.id)),
   };
 
   return (
@@ -85,6 +104,19 @@ export function TaskDetailProvider({
           theme={theme}
           meta={meta ?? { projects: [], labels: [] }}
           onClose={close}
+        />
+      ) : null}
+      {menu?.task.id ? (
+        <TaskMenu
+          key={`menu-${menu.task.id}-${menu.at.x}-${menu.at.y}`}
+          task={menu.task}
+          at={menu.at}
+          theme={theme}
+          todayIso={todayIso}
+          meta={meta ?? { projects: [], labels: [] }}
+          ai={ai}
+          onEdit={() => open(menu.task, menu.rowEl)}
+          onClose={closeMenu}
         />
       ) : null}
     </Ctx.Provider>

@@ -2146,3 +2146,111 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .vcal__legend { list-style: none; margin: 0; padding: 0 22px 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; font-weight: 500; color: var(--ink-soft); }
 .vcal__legend li { display: inline-flex; align-items: center; gap: 6px; }
 .vcal__legend li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ev); }
+
+/* ===================== TASK MENU (right-click on a task, modelled on Todoist's) =====================
+   Portalled outside .morning, so it carries Todoist's flag + date colors itself (light, dark, and
+   system-dark). Rows, hairline groups, a bold "Date" / "Priority" head with its shortcut. */
+.taskmenu {
+  --todo-p1: #D1453B; --todo-p2: #EB8909; --todo-p3: #246FE0; --todo-p4: #808080;
+  --tm-today: #058527; --tm-tomorrow: #AD6200; --tm-weekend: #246FE0; --tm-nextweek: #692EC2;
+  position: fixed; z-index: 50; width: 264px; overflow-y: auto;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line);
+  border-radius: var(--radius); box-shadow: var(--shadow-pop); font-family: var(--font-body);
+}
+.taskmenu[data-theme="dark"] {
+  --todo-p1: #FF7066; --todo-p2: #FF9A14; --todo-p3: #5297FF; --todo-p4: #9A9A9A;
+  --tm-today: #25B84C; --tm-tomorrow: #FF9A14; --tm-weekend: #5297FF; --tm-nextweek: #A970FF;
+}
+@media (prefers-color-scheme: dark) {
+  .taskmenu:not([data-theme]) {
+    --todo-p1: #FF7066; --todo-p2: #FF9A14; --todo-p3: #5297FF; --todo-p4: #9A9A9A;
+    --tm-today: #25B84C; --tm-tomorrow: #FF9A14; --tm-weekend: #5297FF; --tm-nextweek: #A970FF;
+  }
+}
+.taskmenu__inner { outline: none; padding: 2px 0; }
+.taskmenu__group { padding: 4px 0; }
+.taskmenu__group + .taskmenu__group { border-top: 1px solid var(--line); }
+.taskmenu__row {
+  display: flex; align-items: center; gap: 10px; width: calc(100% - 8px); margin: 0 4px; padding: 6px 8px;
+  border: 0; border-radius: 6px; background: transparent; color: var(--ink); font: inherit; font-size: 13.5px;
+  text-align: left; cursor: pointer;
+}
+.taskmenu__row:hover, .taskmenu__row:focus-visible { background: var(--row-hover, color-mix(in srgb, var(--ink) 6%, transparent)); outline: none; }
+.taskmenu__row.is-on { font-weight: 600; }
+.taskmenu__row--danger { color: var(--todo-p1); }
+.taskmenu__row--section { padding-left: 26px; }
+.taskmenu__ico { flex: 0 0 22px; display: grid; place-items: center; color: var(--ink-soft); }
+.taskmenu__row--danger .taskmenu__ico { color: var(--todo-p1); }
+.taskmenu__label { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.taskmenu__keys { flex: 0 0 auto; font-size: 12px; color: var(--ink-faint); letter-spacing: 0.02em; }
+.taskmenu__head { display: flex; justify-content: space-between; align-items: baseline; padding: 6px 12px 2px; font-size: 13px; font-weight: 700; }
+.taskmenu__icons { display: flex; gap: 4px; padding: 2px 8px 6px; }
+.taskmenu__iconbtn {
+  width: 36px; height: 34px; display: grid; place-items: center; border: 1px solid transparent; border-radius: 6px;
+  background: transparent; color: var(--ink-soft); cursor: pointer; padding: 0;
+}
+.taskmenu__iconbtn:hover, .taskmenu__iconbtn:focus-visible { background: var(--row-hover, color-mix(in srgb, var(--ink) 6%, transparent)); outline: none; }
+.taskmenu__iconbtn svg { width: 22px; height: 22px; }
+.taskmenu__date--today { color: var(--tm-today); }
+.taskmenu__date--tomorrow { color: var(--tm-tomorrow); }
+.taskmenu__date--weekend { color: var(--tm-weekend); }
+.taskmenu__date--nextweek { color: var(--tm-nextweek); }
+.taskmenu__date--none, .taskmenu__date--more { color: var(--ink-soft); }
+.taskmenu__flag--p1 { color: var(--todo-p1); }
+.taskmenu__flag--p2 { color: var(--todo-p2); }
+.taskmenu__flag--p3 { color: var(--todo-p3); }
+.taskmenu__flag--p4 { color: var(--ink-soft); }
+.taskmenu__flag.is-on { border-color: var(--line); background: var(--surface-2); }
+.taskmenu__panel { padding: 4px 0 8px; }
+.taskmenu__panel-head { display: flex; align-items: center; gap: 6px; padding: 4px 8px 6px; font-size: 13px; font-weight: 700; }
+.taskmenu__back { border: 0; background: transparent; color: var(--ink-soft); font-size: 20px; line-height: 1; padding: 0 6px; cursor: pointer; border-radius: 6px; }
+.taskmenu__back:hover { background: var(--row-hover, color-mix(in srgb, var(--ink) 6%, transparent)); color: var(--ink); }
+.taskmenu__input {
+  display: block; width: calc(100% - 24px); margin: 0 12px 6px; padding: 6px 8px; font: inherit; font-size: 13px;
+  color: var(--ink); background: var(--surface-2); border: 1px solid var(--line); border-radius: 6px; outline: none;
+}
+.taskmenu__input:focus { border-color: var(--accent); }
+.taskmenu__list--scroll { max-height: 260px; overflow-y: auto; }
+.taskmenu__hash { font-weight: 700; font-size: 15px; color: var(--ink-faint); }
+.taskmenu__note { margin: 2px 12px 6px; font-size: 11.5px; color: var(--ink-faint); }
+.taskmenu__pick { display: grid; gap: 4px; padding-top: 6px; margin-top: 4px; border-top: 1px solid var(--line); }
+.taskmenu__pick > span { padding: 0 12px; font-size: 11.5px; font-weight: 600; color: var(--ink-faint); }
+.taskmenu__pick .taskmenu__input { margin-bottom: 0; }
+.taskmenu__confirm { padding: 12px 14px; }
+.taskmenu__confirm-title { margin: 0 0 4px; font-size: 14px; font-weight: 700; }
+.taskmenu__confirm-body { margin: 0 0 12px; font-size: 13px; color: var(--ink-soft); }
+.taskmenu__confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.taskmenu__btn { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: 6px; border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.taskmenu__btn--danger { background: var(--todo-p1); border-color: var(--todo-p1); color: #fff; }
+.taskmenu__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.taskmenu__error { margin: 4px 12px 8px; font-size: 12px; color: var(--todo-p1); }
+/* Task Assist (the AI submenu): a "Beta" tag like Todoist's, the sparkle in Todoist's magenta,
+   and results with a click to apply. */
+.taskmenu { --tm-assist: #B8255F; }
+.taskmenu[data-theme="dark"] { --tm-assist: #F27BAA; }
+@media (prefers-color-scheme: dark) { .taskmenu:not([data-theme]) { --tm-assist: #F27BAA; } }
+.taskmenu__badge {
+  margin-left: 8px; padding: 1px 6px; border-radius: 4px; font-size: 10.5px; font-weight: 700; letter-spacing: 0.08em;
+  text-transform: uppercase; color: #8A4B0E; background: #FBEBD3; vertical-align: 1px;
+}
+.taskmenu[data-theme="dark"] .taskmenu__badge { color: #FFC37A; background: rgba(255, 154, 20, 0.16); }
+@media (prefers-color-scheme: dark) { .taskmenu:not([data-theme]) .taskmenu__badge { color: #FFC37A; background: rgba(255, 154, 20, 0.16); } }
+.taskmenu__sparkle, .taskmenu__row:has(.taskmenu__badge) .taskmenu__ico { color: var(--tm-assist); }
+.taskmenu__row--two { align-items: flex-start; }
+.taskmenu__row--two .taskmenu__label { white-space: normal; }
+.taskmenu__row--two small { display: block; font-size: 11.5px; color: var(--ink-faint); margin-top: 1px; }
+.taskmenu__thinking { display: flex; align-items: center; gap: 8px; margin: 8px 14px 12px; font-size: 13px; color: var(--ink-soft); }
+.taskmenu__thinking .taskmenu__sparkle { display: inline-grid; animation: tm-pulse 1.1s ease-in-out infinite; }
+@keyframes tm-pulse { 50% { opacity: 0.35; transform: scale(0.85); } }
+@media (prefers-reduced-motion: reduce) { .taskmenu__thinking .taskmenu__sparkle { animation: none; } }
+.taskmenu__result { padding: 2px 12px 4px; }
+.taskmenu__result .taskmenu__note { margin: 4px 0 10px; }
+.taskmenu__was { margin: 2px 0 4px; font-size: 12px; color: var(--ink-faint); text-decoration: line-through; }
+.taskmenu__suggest { margin: 0 0 12px; font-size: 14px; font-weight: 600; line-height: 1.35; }
+.taskmenu__steps, .taskmenu__tips { list-style: none; margin: 2px 0 12px; padding: 0; display: grid; gap: 6px; font-size: 13px; line-height: 1.35; }
+.taskmenu__steps label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer; }
+.taskmenu__steps input { margin-top: 2px; accent-color: var(--tm-assist); }
+.taskmenu__tips li { position: relative; padding-left: 14px; color: var(--ink-soft); }
+.taskmenu__tips li::before { content: ""; position: absolute; left: 2px; top: 0.55em; width: 5px; height: 5px; border-radius: 50%; background: var(--tm-assist); }
+.taskmenu__btn--primary { background: var(--ink); border-color: var(--ink); color: var(--surface); }
+.taskmenu__btn:disabled { opacity: 0.5; cursor: default; }

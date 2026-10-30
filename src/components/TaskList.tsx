@@ -18,7 +18,7 @@ interface TaskListProps {
 
 export function TaskList({ tasks, settings, source }: TaskListProps) {
   const router = useRouter();
-  const { open, isSelected } = useTaskDetail();
+  const { open, openMenu, isSelected } = useTaskDetail();
   const [done, setDone] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
@@ -88,11 +88,11 @@ export function TaskList({ tasks, settings, source }: TaskListProps) {
                   task && isSelected(task) ? " task--selected" : ""
                 }`}
                 onContextMenu={(e) => {
-                  // Right-click anywhere on the row opens the same editor as a click on it.
+                  // Right-click anywhere on the row: Todoist's task menu, at the pointer.
                   const body = e.currentTarget.querySelector<HTMLElement>(".task__body");
                   if (!task || !body) return;
                   e.preventDefault();
-                  open(task, body);
+                  openMenu(task, e.clientX, e.clientY, body);
                 }}
               >
                 <i

@@ -87,8 +87,11 @@
   before any write, send the minimum data. Don't pass `temperature` (the model
   rejects it) and keep token budgets generous (they include hidden reasoning).
   Features: `POST /api/replies/[id]/draft` (+ `/save` → Gmail *draft*, never
-  sends; `gmail.modify` already covers drafts) and `POST /api/plan/suggest`
-  (validated by `schedule-validate.ts`; each suggestion needs its own Block).
+  sends; `gmail.modify` already covers drafts), `POST /api/plan/suggest`
+  (validated by `schedule-validate.ts`; each suggestion needs its own Block), and
+  `POST /api/tasks/[id]/assist` (Task Assist in the task menu, `lib/llm/assist.ts`:
+  actionable title / subtasks / tips, validated by `parseAssist`; applying one is
+  a normal task write — PATCH content/description, or POST /api/tasks with `parentId`).
   `npm run llm:models` lists model ids.
 - **Top row (2026-10-30):** `settings.topRow` — "unified" (default, `TopUnified`: one
   scenic card with greeting, clock, a one-line weather summary and the day's temperature
@@ -143,7 +146,11 @@
 - Client components (the reference is static, so these add interaction):
   `WeatherCard` (temperature-curve scrub); `TaskList` (checkbox completes,
   click a task → `TaskDetail` editor popover — priority/due/project/labels/
-  deadline/duration/notes, auto-saves per field; `+ Add task`); `DayArc`
+  deadline/duration/notes, auto-saves per field; right-click → `TaskMenu`, a copy
+  of Todoist's task menu at the pointer (`Popover align="point"`): date shortcuts
+  via PATCH `date` → `rescheduleTask` (keeps time + repeat through a Sync
+  `item_update`), P1–P4 via `todoistPriority`, Move to project/section,
+  `POST /api/tasks/[id]/duplicate`, Todoist's keys; `+ Add task`); `DayArc`
   (click → `EventDetail` popover); `PlanCard` (replaced the agenda list —
   countdown ring, open gaps filled by `buildPlan()` in `src/lib/plan.ts`,
   Block → `POST /api/events` tagged `[todoist:<id>]` in the description,
