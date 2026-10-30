@@ -199,8 +199,8 @@ The pencil opens the existing form, with a Back.
 - **Week events** now load location, link and notes too; they used to come through
   with only a name and time.
 
-**Size** — Like Google's, the card is large and sits beside the event: about 38% of
-the window wide (420–600px), up to nearly full height, moved so it stays on
+**Size** — Like Google's, the card is large and sits beside the event: about a third of
+the window wide (400–500px), up to nearly full height, moved so it stays on
 screen (`Popover align="side"`). It used to be 448px at most and squeezed into the
 room below the event. Lists of more than 8 guests fold behind an arrow, so the
 notes aren't pushed off the card.
