@@ -2400,3 +2400,73 @@ a:hover { color: var(--ink); text-decoration: underline; }
   background: color-mix(in srgb, var(--ev, var(--ink-faint)) 20%, var(--surface));
   box-shadow: inset 3px 0 0 var(--ev, var(--ink-faint)); font-size: 11px; font-weight: 600; line-height: 1.2; color: var(--ink);
 }
+
+/* ===================== EVENT CARD (read view, modelled on Google Calendar's) =====================
+   Icon column + text rows, a row of actions along the top, "Going?" pinned to the bottom. */
+.gevent {
+  position: fixed; z-index: 50; width: min(94vw, clamp(400px, 33vw, 500px)); overflow-y: auto; overscroll-behavior: contain;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 22px;
+  box-shadow: var(--shadow-pop); font-family: var(--font-body); font-size: 14.5px; line-height: 1.45;
+}
+.gevent__bar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; align-items: center; gap: 4px; padding: 8px 10px 2px; background: var(--surface); }
+.gevent__icon {
+  width: 36px; height: 36px; display: grid; place-items: center; flex: 0 0 auto; border: 0; border-radius: 50%;
+  background: transparent; color: var(--ink-soft); cursor: pointer; font: inherit;
+}
+.gevent__icon:hover { background: var(--row-hover); color: var(--ink); }
+.gevent__icon:focus-visible, .gevent__answer:focus-visible, .gevent__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.gevent__more { position: relative; }
+.gevent__menu {
+  position: absolute; top: 40px; right: 0; z-index: 3; padding: 9px 14px; white-space: nowrap; font-size: 13px; color: var(--ink); text-decoration: none;
+  background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-pop);
+}
+.gevent__menu:hover { background: var(--surface-2); }
+.gevent__title-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 16px; padding: 4px 24px 12px; }
+.gevent__swatch { width: 16px; height: 16px; margin: 9px 0 0 3px; border-radius: 4px; background: var(--ev, var(--accent)); }
+.gevent__title { margin: 0 0 5px; font-family: var(--font-body); font-size: 24px; font-weight: 400; line-height: 1.25; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.gevent__when { margin: 0; font-size: 14.5px; color: var(--ink); }
+.gevent__row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 8px 24px; }
+.gevent__row-icon { display: grid; place-items: center; height: 20px; color: var(--ink-soft); }
+.gevent__row-body { min-width: 0; overflow-wrap: anywhere; }
+.gevent__row-body a { color: var(--accent); }
+.gevent__row .gevent__icon { margin: -8px -8px 0 0; }
+.gevent__sub { font-size: 13px; color: var(--ink-soft); }
+.gevent__join { display: inline-block; padding: 7px 16px; border-radius: 999px; background: var(--accent); font-size: 13.5px; font-weight: 600; text-decoration: none; }
+.gevent__row-body a.gevent__join { color: var(--surface); }
+.gevent__guests { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.gevent__guest { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.gevent__avatar {
+  position: relative; flex: 0 0 auto; width: 30px; height: 30px; display: grid; place-items: center; border-radius: 50%;
+  background: var(--surface-2); color: var(--ink-soft); font-size: 13px; font-weight: 600;
+}
+.gevent__badge {
+  position: absolute; right: -3px; bottom: -3px; width: 15px; height: 15px; display: grid; place-items: center; border-radius: 50%;
+  font-size: 9px; font-style: normal; font-weight: 700; background: var(--surface); box-shadow: 0 0 0 1px var(--line);
+}
+.gevent__badge--yes { color: var(--mark-personal); }
+.gevent__badge--no { color: var(--mark-negative); }
+.gevent__badge--maybe { color: var(--ink-soft); }
+.gevent__guest-text { display: grid; min-width: 0; }
+.gevent__guest-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14px; }
+.gevent__notes { white-space: pre-line; }
+.gevent__loading { margin: 4px 24px 10px 62px; font-size: 12.5px; color: var(--ink-faint); }
+.gevent__error { margin: 4px 24px 10px 62px; font-size: 12.5px; color: var(--negative); }
+.gevent__confirm { display: grid; gap: 8px; margin: 0 24px 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--surface-2); font-size: 13px; }
+.gevent__confirm-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.gevent__btn { font: inherit; font-size: 13px; font-weight: 600; padding: 5px 12px; border-radius: 999px; border: 1px solid var(--line); background: var(--surface); color: var(--ink); cursor: pointer; }
+.gevent__btn--danger { background: var(--negative); border-color: var(--negative); color: #fff; }
+.gevent__going {
+  position: sticky; bottom: 0; z-index: 2; display: flex; align-items: center; justify-content: space-between; gap: 12px; margin-top: 8px; padding: 10px 16px 10px 24px;
+  background: var(--surface-2); border-top: 1px solid var(--line);
+}
+.gevent__answers { display: flex; gap: 8px; }
+.gevent__answer { font: inherit; font-size: 13px; font-weight: 500; padding: 5px 16px; border-radius: 999px; border: 1px solid var(--ink-faint); background: transparent; color: var(--ink); cursor: pointer; }
+.gevent__answer:hover { background: var(--row-hover); }
+.gevent__answer.is-on { background: var(--accent-tint); border-color: var(--accent); color: var(--accent); font-weight: 700; }
+.eventedit__back { border: 0; background: transparent; padding: 0; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
+.eventedit__back:hover { color: var(--ink); }
+.gevent__change { font-size: 13px; font-weight: 600; color: var(--accent); }
+.gevent__row-actions { display: flex; gap: 2px; margin: -8px -8px 0 0; }
+.gevent__row-actions .gevent__icon { margin: 0; }
+.gevent__fold svg { transition: transform 0.15s ease; }
+.gevent__fold.is-open svg { transform: rotate(180deg); }

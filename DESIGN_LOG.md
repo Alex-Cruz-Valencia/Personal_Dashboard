@@ -167,6 +167,57 @@ misses like that, and treat them as profile edits, not code changes.
 
 ---
 
+## 2026-10-30 — The event card reads like Google Calendar's
+
+**Problem** — Clicking an event opened an edit form straight away. Most of the
+time you want to read an event (who's coming, where, how often), and the user
+already knows how to read Google's card.
+
+**Decision** — The card now opens in a read view modelled on Google's: actions
+along the top (edit, delete, email guests, more, close), the color square and
+title, the date and repeat line ("Weekly on Monday, Wednesday, Friday, until Nov
+18, 2026"), Join, location, guests with their answers and the organizer, notes
+with clickable links, reminders, the calendar, and "Going?" pinned to the bottom.
+The pencil opens the existing form, with a Back.
+
+**Details that matter**
+- **Loaded on open, not on refresh.** Guests, the repeat rule and reminders come
+  from `GET /api/events/[id]` when the card opens, so guest emails aren't in the
+  page's data on every 60-second refresh. It costs a moment of "Loading
+  details…".
+- **Actions follow what's allowed.** Two separate rules: "Going?" needs write
+  access to the calendar, and edit and delete also need you to be the organizer
+  (or the event to be the calendar's own, or guests allowed to edit). A team
+  meeting someone else organized can be answered but not changed here; ⋮ opens it
+  in Google. Delete is held back on those on purpose: what it does for the other
+  guests isn't confirmed, so it isn't offered on someone else's event.
+- **Going?** writes your answer for this occurrence with `sendUpdates=none`, so
+  no email goes out from it. Your answer shows at once, and goes back if Google
+  refuses. Google's "all events" option is left out.
+- **Email guests** opens a Gmail compose window for you to write and send
+  yourself. The never-send rule stands: nothing here sends.
+- **Week events** now load location, link and notes too; they used to come through
+  with only a name and time.
+
+**Size** — Like Google's, the card is large and sits beside the event: about a third of
+the window wide (400–500px), up to nearly full height, moved so it stays on
+screen (`Popover align="side"`). It used to be 448px at most and squeezed into the
+room below the event. Lists of more than 8 guests fold behind an arrow, so the
+notes aren't pushed off the card.
+
+**Left out** — "Take meeting notes" and "Set your working location" only work
+inside Google. Guest photos aren't in the API, so avatars are initials.
+
+**Alternatives considered** — Keeping the form with Google's styling (still a form
+when you want to read); fetching all details with the agenda (simpler, but puts
+every guest list on the page and adds a call per recurring series).
+
+**Read-only calendars** — The dashboard signs in as one Google account. An invite
+sitting on a calendar that account can only read (Dartmouth's) can't be answered
+from here: Google refused the first real try. Those events show your answer with
+a "Change in Google Calendar" link, not buttons that can't work. Connecting that
+account too would fix it, if the school allows it.
+
 ## 2026-10-30 — The conflict card shows the overlap, not just says it
 
 **Problem** — The card listed two events and "50 min of overlap". Whether that's
