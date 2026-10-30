@@ -85,9 +85,7 @@ export function buildWeek(input: {
       eventCount: events ? events.filter((e) => e.end - e.start < ALL_DAY_HOURS).length : null,
       tasksDue,
       heavy: isHeavy(booked, tasksDue),
-      events: events
-        ? events.map((e) => ({ id: e.id, name: e.name, start: e.start, end: e.end, kind: e.kind, color: e.color }))
-        : null,
+      events,
       tasks,
     };
   });

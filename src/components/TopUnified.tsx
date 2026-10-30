@@ -1,17 +1,18 @@
 import { dateLineFor, greetingFor } from "@/lib/format";
 import { use24Hour } from "@/lib/settings";
-import type { DashboardSettings } from "@/lib/settings";
+import type { DashboardSettings, Theme } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
 import { ClockCard } from "./ClockCard";
 import { TempCurve } from "./TempCurve";
 import { WeatherScene } from "./WeatherScene";
+import { AmbientButton } from "./Ambient";
 
 /**
  * EXPERIMENT. One card for the top row: the greeting and the clock across the top, the weather
  * in a single line under the greeting, the day's temperature curve as a band across the full
  * width, and one scene (sun or moon included) behind all of it.
  */
-export function TopUnified({ data, settings, frozen }: { data: DashboardData; settings: DashboardSettings; frozen: boolean }) {
+export function TopUnified({ data, settings, theme, frozen }: { data: DashboardData; settings: DashboardSettings; theme: Theme; frozen: boolean }) {
   const { weather, today } = data;
   const isDay = today.nowHour >= weather.sunrise && today.nowHour < weather.sunset;
   return (
@@ -33,6 +34,7 @@ export function TopUnified({ data, settings, frozen }: { data: DashboardData; se
         </div>
         <div className="hello__time">
           <ClockCard today={today} use24={use24Hour(settings)} frozen={frozen} />
+          <AmbientButton today={today} weather={weather} use24={use24Hour(settings)} theme={theme} frozen={frozen} />
         </div>
       </div>
       {/* A band across a wide card; the usual chart shape on a phone, where the band would flatten. */}

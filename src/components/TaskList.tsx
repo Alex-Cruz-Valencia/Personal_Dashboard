@@ -18,7 +18,7 @@ interface TaskListProps {
 
 export function TaskList({ tasks, settings, source }: TaskListProps) {
   const router = useRouter();
-  const { open, openMenu, isSelected } = useTaskDetail();
+  const { openMenu, isSelected } = useTaskDetail();
   const [done, setDone] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
@@ -113,12 +113,15 @@ export function TaskList({ tasks, settings, source }: TaskListProps) {
                   className="task__body"
                   role={task ? "button" : undefined}
                   tabIndex={task ? 0 : -1}
-                  title={task ? "Edit task" : undefined}
-                  onClick={(e) => task && open(task, e.currentTarget)}
+                  title={task ? "Task menu" : undefined}
+                  aria-haspopup={task ? "menu" : undefined}
+                  // A click opens the same Todoist menu as a right-click; its Edit opens the full editor.
+                  onClick={(e) => task && openMenu(task, e.clientX, e.clientY, e.currentTarget)}
                   onKeyDown={(e) => {
                     if (task && (e.key === "Enter" || e.key === " ")) {
                       e.preventDefault();
-                      open(task, e.currentTarget);
+                      const r = e.currentTarget.getBoundingClientRect();
+                      openMenu(task, r.left + 12, r.bottom, e.currentTarget);
                     }
                   }}
                 >

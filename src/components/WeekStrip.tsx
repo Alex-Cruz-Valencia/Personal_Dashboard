@@ -1,8 +1,29 @@
 "use client";
 
-import { useState, type CSSProperties } from "react";
+import { useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
 import { formatHour, layoutOverlaps } from "@/lib/format";
 import type { WeekDay, WeekEvent, WeekTask } from "@/lib/types";
+import { useEventDetail } from "./EventDetail";
+
+/** Clicking a week event opens the same card as today's calendar, for that event's day. */
+function useOpenEvent() {
+  const { open, isSelected } = useEventDetail();
+  return (e: WeekEvent, iso: string) => {
+    const go = (el: HTMLElement) => e.id && open(e, el, iso);
+    return {
+      role: e.id ? "button" : undefined,
+      tabIndex: e.id ? 0 : undefined,
+      "aria-pressed": e.id ? isSelected(e) : undefined,
+      onClick: (ev: MouseEvent<HTMLElement>) => go(ev.currentTarget),
+      onKeyDown: (ev: KeyboardEvent<HTMLElement>) => {
+        if (ev.key === "Enter" || ev.key === " ") {
+          ev.preventDefault();
+          go(ev.currentTarget);
+        }
+      },
+    };
+  };
+}
 
 /** A full bar is this many hours of booked + task time. */
 const BAR_HOURS = 8;
@@ -93,6 +114,7 @@ const isAllDay = (e: WeekEvent) => e.end - e.start >= ALL_DAY_HOURS;
 
 /** Seven columns: tasks due, all-day banners, then a time grid like a calendar's week view. */
 function WeekGrid({ days, use24 }: { days: WeekDay[]; use24: boolean }) {
+  const eventProps = useOpenEvent();
   const timed = days.flatMap((d) => (d.events ?? []).filter((e) => !isAllDay(e) && e.end > e.start));
   // Show 8am–6pm at least, stretching to cover whatever the week holds.
   const from = Math.max(0, Math.min(8, timed.length ? Math.floor(Math.min(...timed.map((e) => e.start))) : 8));
@@ -126,7 +148,7 @@ function WeekGrid({ days, use24 }: { days: WeekDay[]; use24: boolean }) {
         {days.map((d) => (
           <div key={d.iso} className="week__cell">
             {(d.events ?? []).filter(isAllDay).map((e, i) => (
-              <div key={e.id ?? `${e.name}${i}`} data-color={e.color} className={`week__banner week__ev--${e.kind}`} title={e.name}>
+              <div key={e.id ?? `${e.name}${i}`} {...eventProps(e, d.iso)} data-color={e.color} className={`week__banner week__ev--${e.kind}`} title={e.name}>
                 {e.name}
               </div>
             ))}
@@ -178,6 +200,7 @@ function DayColumn({
   height: number;
   use24: boolean;
 }) {
+  const eventProps = useOpenEvent();
   const events = (day.events ?? []).filter((e) => !isAllDay(e) && e.end > e.start);
   const lanes = layoutOverlaps(events);
   return (
@@ -192,6 +215,7 @@ function DayColumn({
         return (
           <div
             key={e.id ?? `${e.name}${i}`}
+            {...eventProps(e, day.iso)}
             data-color={e.color} className={`week__event week__ev--${e.kind}`}
             style={{ top, height: h, left: `calc(${(lane / n) * 100}% + 1px)`, width: `calc(${100 / n}% - 2px)` } as CSSProperties}
             title={`${e.name}, ${formatHour(e.start, use24)} to ${formatHour(e.end, use24)}`}
@@ -234,7 +258,7 @@ export function DayDetail({ day, use24, onClose }: { day: WeekDay; use24: boolea
           ) : events.length === 0 ? (
             <p className="weekday__empty">Nothing scheduled.</p>
           ) : (
-            <DayGrid events={events} use24={use24} />
+            <DayGrid events={events} iso={day.iso} use24={use24} />
           )}
         </section>
         <section className="weekday__col" aria-label="Tasks">
@@ -264,7 +288,8 @@ export function DayDetail({ day, use24, onClose }: { day: WeekDay; use24: boolea
 const DAY_HOUR_PX = 44;
 
 /** The day as a vertical time grid, the way Google Calendar draws it: hours down the side, blocks sized by duration. */
-function DayGrid({ events, use24 }: { events: WeekEvent[]; use24: boolean }) {
+function DayGrid({ events, iso, use24 }: { events: WeekEvent[]; iso: string; use24: boolean }) {
+  const eventProps = useOpenEvent();
   const banners = events.filter(isAllDay);
   const timed = events.filter((e) => !isAllDay(e) && e.end > e.start);
   const from = Math.max(0, Math.min(8, timed.length ? Math.floor(Math.min(...timed.map((e) => e.start))) : 8));
@@ -278,7 +303,7 @@ function DayGrid({ events, use24 }: { events: WeekEvent[]; use24: boolean }) {
   return (
     <div className="weekday__cal">
       {banners.map((e, i) => (
-        <div key={e.id ?? `${e.name}${i}`} data-color={e.color} className={`week__banner week__ev--${e.kind}`} title={e.name}>
+        <div key={e.id ?? `${e.name}${i}`} {...eventProps(e, iso)} data-color={e.color} className={`week__banner week__ev--${e.kind}`} title={e.name}>
           {e.name}
         </div>
       ))}
@@ -302,6 +327,7 @@ function DayGrid({ events, use24 }: { events: WeekEvent[]; use24: boolean }) {
               return (
                 <div
                   key={e.id ?? `${e.name}${i}`}
+                  {...eventProps(e, iso)}
                   data-color={e.color} className={`week__event weekday__block week__ev--${e.kind}`}
                   style={{ top, height: h, left: `calc(${(lane / n) * 100}% + 2px)`, width: `calc(${100 / n}% - 4px)` } as CSSProperties}
                   title={`${e.name}, ${formatHour(e.start, use24)} to ${formatHour(e.end, use24)}`}

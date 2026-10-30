@@ -25,12 +25,13 @@ const SECTIONS = ".morning .card, .morning .attn";
  * so a meteor fades from view as it passes behind one and is only seen in the margins and the
  * gaps. The cut-outs are re-measured on scroll, resize and whenever a card changes size.
  */
-export function MeteorField() {
+export function MeteorField({ fenced = true }: { fenced?: boolean }) {
   const ref = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     const el = ref.current;
-    if (!el) return;
+    // Unfenced (the ambient screen): nothing sits over the sky, so nothing to cut out.
+    if (!el || !fenced) return;
     let timer: ReturnType<typeof setTimeout> | null = null;
 
     const update = () => {
@@ -67,7 +68,7 @@ export function MeteorField() {
       ro.disconnect();
       if (timer !== null) clearTimeout(timer);
     };
-  }, []);
+  }, [fenced]);
 
   return (
     <div ref={ref} className="scene__meteors" aria-hidden>

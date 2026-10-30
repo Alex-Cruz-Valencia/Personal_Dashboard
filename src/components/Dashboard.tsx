@@ -8,6 +8,7 @@ import { DayCalendar } from "./DayCalendar";
 import { FocusProvider } from "./Focus";
 import { EventDetailProvider } from "./EventDetail";
 import { Footline } from "./Footline";
+import { AmbientButton } from "./Ambient";
 import { HelloCard } from "./HelloCard";
 import { TaskDetailProvider } from "./TaskDetail";
 import { TaskList } from "./TaskList";
@@ -63,7 +64,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
             <SkyTint today={data.today} sunrise={data.weather.sunrise} sunset={data.weather.sunset} frozen={frozen} />
           ) : null}
           {settings.topRow === "unified" ? (
-            <TopUnified data={data} settings={settings} frozen={frozen} />
+            <TopUnified data={data} settings={settings} theme={settings.theme} frozen={frozen} />
           ) : (
             <div className="topbar">
               <HelloCard
@@ -104,6 +105,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
             aiDraft={data.ai}
             canTask={data.canAddTasks}
             todayIso={data.today.iso}
+            use24={use24}
           />
 
           <div className="twocol">
@@ -123,7 +125,17 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
 
           {data.week ? <WeekStrip days={data.week} use24={use24} /> : null}
 
-          <Footline agenda={data.agenda} today={data.today} settings={chosen} shownTheme={settings.theme} />
+          <Footline
+            agenda={data.agenda}
+            today={data.today}
+            settings={chosen}
+            shownTheme={settings.theme}
+            ambient={
+              settings.topRow === "unified" ? null : (
+                <AmbientButton today={data.today} weather={data.weather} use24={use24} theme={settings.theme} frozen={frozen} />
+              )
+            }
+          />
         </div>
       </TaskDetailProvider>
     </EventDetailProvider>

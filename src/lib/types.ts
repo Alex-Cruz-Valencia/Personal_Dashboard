@@ -189,7 +189,8 @@ export interface SourceStatus {
 }
 
 /** An event as the week's expanded view draws it. */
-export type WeekEvent = Pick<AgendaEvent, "id" | "name" | "start" | "end" | "kind" | "color">;
+/** The full event (location, link, notes…), so a click in the week opens the same card as today's calendar. */
+export type WeekEvent = AgendaEvent;
 
 /** A task due on a day of the week, for the expanded view. */
 export interface WeekTask {

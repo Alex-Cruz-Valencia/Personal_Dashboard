@@ -51,12 +51,15 @@ export function WeatherScene({
   isDay,
   variant = "card",
   celestial = true,
+  fenced = true,
 }: {
   sky: Sky;
   isDay: boolean;
   variant?: "card" | "page";
   /** Draw the sun / moon. Only the weather card does; other cards borrow the rest of the scene. */
   celestial?: boolean;
+  /** The page's meteors hide behind its cards; the ambient screen has none to hide behind. */
+  fenced?: boolean;
 }) {
   const { kind, windMph } = sky;
   // The page-wide scene covers the whole viewport, so it needs more of everything.
@@ -88,7 +91,7 @@ export function WeatherScene({
         : null}
       {!isDay ? (
         <>
-          {variant === "page" ? <MeteorField /> : null}
+          {variant === "page" ? <MeteorField fenced={fenced} /> : null}
           {variant === "card" && celestial
             ? CARD_METEORS.map((m, i) => (
                 <span
