@@ -24,13 +24,16 @@
   `.morning`; its block at the end of `globals.css` only matches while light is
   showing and sets tokens on `:root` via `:has()` so popovers follow. Any new
   light-only hardcoded color needs a clay counterpart there.
-- **Style "clean"** (experiment, ⚙ Style, `settings.look`, `?look=clean`):
+- **Style "clean"** (the default since 2026-10-30, ⚙ Style, `settings.look`, `?look=clean`):
   `.morning--clean` layer at the end of `globals.css` — Todoist-like structure
   page-wide (bold sentence-case headings, hairlines, a colored bar as the only
-  category marker, text buttons, flat cards). Default stays "cards".
+  category marker, text buttons, flat cards). "cards" is the opt-in alternative.
 - **Calendar look "google"** (⚙ Calendar, `settings.calLook`, `?cal=google`): `.morning--gcal` layer
   at the end of `globals.css` plus `lib/gcal-look.ts` (`cascade()`, `hourLabel`, `shortSpan`), applied
   in `DayCalendar` and `WeekStrip`. Default stays "dashboard".
+- **All-day events**: `getAllDayEvents()` → `DashboardData.allDay` (banners in `DayCalendar`), and
+  `allDay: true` entries (start 0, end 24) in `WeekDay.events`. Never put them in `agenda`: conflicts,
+  next-up and free gaps read it.
 - **Marker vs. text colors:** `--mark-*` tokens (negative/warning/neutral/
   meeting/focus/personal) are bright hues for non-text marks only — bars,
   dots, light tints. Text uses the darker readable tokens (`--negative`,

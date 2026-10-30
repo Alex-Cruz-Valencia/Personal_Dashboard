@@ -155,6 +155,8 @@ export interface AgendaEvent {
   kind: EventKind;
   /** The event's Google color family (its own, else its calendar's); absent for sample data. */
   color?: EventColor;
+  /** An all-day event: a banner, not booked time. `start`/`end` are 0 and 24. */
+  allDay?: boolean;
 
   /* ---- detail (shown in the click-to-expand card; optional) ---- */
   /** Physical location or room. */
@@ -293,6 +295,8 @@ export interface DashboardData {
   ai: boolean;
   /** Todoist is connected, so "Make task" on an email can write to it. */
   canAddTasks: boolean;
+  /** Today's all-day events (deadlines, holidays, terms), shown as banners. Kept out of `agenda`. */
+  allDay: AgendaEvent[];
   /** Connected calendars and their color family, for the calendar's legend; empty when not live. */
   calendars: CalendarLegendItem[];
 }

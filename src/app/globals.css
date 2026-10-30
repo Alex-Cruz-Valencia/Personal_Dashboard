@@ -2504,3 +2504,17 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .morning--gcal .vcal__now i::after { display: none; }
 .morning.morning--gcal .week__event[data-color] { padding: 1px 6px; }
 .morning.morning--gcal :is(.week__event-title, .week__event-time) { font-size: 11.5px; line-height: 1.25; }
+
+/* All-day banners above the day calendar (deadlines, holidays, terms). */
+.vcal__allday { list-style: none; margin: 0; padding: 0 22px 10px; display: grid; gap: 3px; }
+.vcal__banner { display: block; width: 100%; box-sizing: border-box; border: 1px solid transparent; text-align: left; font-family: inherit; cursor: pointer; }
+.vcal__banner:hover { filter: brightness(0.97); }
+.vcal__banner:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.vcal__allday-more { border: 0; background: transparent; padding: 2px 0; font: inherit; font-size: 12px; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
+.vcal__allday-more:hover { color: var(--ink); }
+.morning.morning--gcal :is(.week__banner)[data-color] { padding: 3px 8px; font-size: 12.5px; font-weight: 500; }
+/* In Clean, banners read like the calendar's blocks: a pale tint and a solid bar in the calendar's color. */
+.morning.morning--clean:not(.morning--gcal) .week__banner[data-color] {
+  background: color-mix(in srgb, var(--ev) 12%, var(--surface)); border-color: transparent; border-radius: 4px;
+  box-shadow: inset 3px 0 0 var(--ev); padding: 3px 8px 3px 11px; font-weight: 500;
+}

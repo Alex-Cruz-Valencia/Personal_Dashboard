@@ -111,6 +111,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
           <div className="twocol">
             <DayCalendar
               agenda={data.agenda}
+              allDay={data.allDay}
               arc={data.arc}
               today={data.today}
               settings={settings}

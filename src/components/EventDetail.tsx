@@ -191,7 +191,9 @@ function EventDetailCard({
   const clipped = event.start <= 0 || event.end >= 24;
 
   const dayLabel = new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
-  const when = `${dayLabel} · ${formatHour(timeInputToDecimal(startTime), use24)} – ${formatHour(timeInputToDecimal(endTime), use24)}`;
+  const when = event.allDay
+    ? `${dayLabel} · All day`
+    : `${dayLabel} · ${formatHour(timeInputToDecimal(startTime), use24)} – ${formatHour(timeInputToDecimal(endTime), use24)}`;
 
   if (!editing) {
     return (
@@ -272,13 +274,17 @@ function EventDetailCard({
         }}
       />
 
-      <div className="eventedit__time">
-        {formatHour(timeInputToDecimal(startTime), use24)} –{" "}
-        {formatHour(timeInputToDecimal(endTime), use24)}
-      </div>
+      {event.allDay ? null : (
+        <div className="eventedit__time">
+          {formatHour(timeInputToDecimal(startTime), use24)} –{" "}
+          {formatHour(timeInputToDecimal(endTime), use24)}
+        </div>
+      )}
 
       {clipped ? (
-        <p className="eventedit__hint">This runs past today, so change its times in Google Calendar.</p>
+        <p className="eventedit__hint">
+          {event.allDay ? "This is an all-day event, so change its dates in Google Calendar." : "This runs past today, so change its times in Google Calendar."}
+        </p>
       ) : null}
       <div className="eventedit__field">
         <span className="eventedit__label">Date</span>

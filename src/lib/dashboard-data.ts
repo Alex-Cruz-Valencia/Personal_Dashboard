@@ -8,7 +8,7 @@ import { getDaySummary } from "./anthropic/summary";
 import { config, features, forceMock, isDemoMode } from "./config";
 import { deterministicDayNote, WIND_DOWN_HOUR } from "./day-note";
 import type { NoteStyle } from "./settings";
-import { getAgenda, getCalendarLegend } from "./google/calendar";
+import { getAgenda, getAllDayEvents, getCalendarLegend } from "./google/calendar";
 import { getReplies } from "./google/gmail";
 import { GoogleAuthError } from "./google/oauth";
 import { resolveLocation, type LocationOverride } from "./location";
@@ -123,6 +123,7 @@ export async function getDashboardData(
       week: null,
       ai: false,
       canAddTasks: false,
+      allDay: [],
       calendars: [],
       sources: {
         weather: "off",
@@ -151,6 +152,11 @@ export async function getDashboardData(
     ? getCalendarLegend().catch(() => [])
     : Promise.resolve([]);
 
+  // All-day banners are extra: failing just leaves them out.
+  const allDayEvents = features.google
+    ? getAllDayEvents(today.iso, location.timezone).catch(() => [] as AgendaEvent[])
+    : Promise.resolve([] as AgendaEvent[]);
+
   const [weather, tasks, agenda, replies, geocoded]: [
     Settled<Weather>,
     Settled<Task[]>,
@@ -175,11 +181,13 @@ export async function getDashboardData(
       : reverseGeocode(location.latitude, location.longitude),
   ]);
 
+  const allDay = agenda.live ? await allDayEvents : [];
+
   const week =
     features.google || features.todoist
       ? buildWeek({
           todayIso: today.iso,
-          todayAgenda: agenda.live ? agenda.value : null,
+          todayAgenda: agenda.live ? [...allDay, ...agenda.value] : null,
           laterAgendas: await laterAgendas,
           weekTasks: await weekTasks,
           todayTasks: tasks.live
@@ -244,6 +252,7 @@ export async function getDashboardData(
     week,
     ai: features.llm && features.google,
     canAddTasks: features.todoist,
+    allDay,
     calendars: agenda.live ? await calendarLegend : [],
   };
 }

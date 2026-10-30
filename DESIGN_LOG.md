@@ -167,6 +167,36 @@ misses like that, and treat them as profile edits, not code changes.
 
 ---
 
+## 2026-10-30 — Clean becomes the default style
+
+**Problem** — The user liked the calendar on localhost and couldn't find it on the
+live site. Style is saved per browser and per site, so Clean, the experiment they'd
+switched on locally, never reached it.
+
+**Decision** — Clean is now the default; Cards stays under ⚙ Style. All-day banners
+take the same treatment as Clean's calendar blocks (pale tint, solid bar), so they
+sit with the events rather than shouting. The public demo gets the same default.
+
+**Tradeoff** — A browser where Cards was explicitly chosen keeps it, so it needs one
+click under ⚙.
+
+## 2026-10-30 — All-day events as banners
+
+**Problem** — Deadlines, holidays and term dates never reached the dashboard: it
+only read events with a time, so "Final day to withdraw" was invisible here.
+
+**Decision** — All-day events show as banners: a row above today's hours (up to
+three, then "+N more") and the week's existing All day row. They open the same
+event card, which says "All day". The row shows in both calendar looks.
+
+**Reasoning** — They're kept out of `agenda` on purpose. Everything reading it
+(conflicts, the next-up line, free gaps) would treat a deadline as a 24-hour
+meeting. Booked hours and "Heavy" ignore them too.
+
+**Tradeoffs** — "Working location" markers are left out. A multi-day event
+shows on each day rather than as one bar across the week, as Google draws it.
+Dates of an all-day event can't be changed here; the card says so.
+
 ## 2026-10-30 — A Google Calendar look for the calendars
 
 **Problem** — The user reads Google Calendar all day; the dashboard's pale tinted

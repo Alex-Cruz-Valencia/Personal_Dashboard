@@ -27,6 +27,8 @@ const NOW_AT = 0.4;
 const IDLE_RETURN_MS = 60_000;
 /** With past events tucked away, the calendar starts this many hours before now (to the hour above). */
 const PAST_KEEP_H = 1;
+/** All-day banners shown above the hours before the rest fold behind "+N more". */
+const ALL_DAY_SHOWN = 3;
 /** Upward scroll (px of wheel delta) past the top it takes to bring the tucked-away hours back. */
 const PULL_WHEEL_PX = 450;
 /** The same for a touch drag down from the top. */
@@ -52,6 +54,8 @@ interface Span {
 
 interface DayCalendarProps {
   agenda: AgendaEvent[];
+  /** Today's all-day events, as banners above the hours. */
+  allDay?: AgendaEvent[];
   arc: ArcWindow;
   today: TodayInfo;
   settings: ShownSettings;
@@ -74,7 +78,7 @@ interface DayCalendarProps {
  * Google is connected, drag one to move it, drag its bottom edge to resize it,
  * or drag on an empty stretch to add a new one. Nothing is saved until you let go.
  */
-export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = false, focusTask, editable = false, tomorrow = null, legend = [] }: DayCalendarProps) {
+export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settings, frozen = false, focusTask, editable = false, tomorrow = null, legend = [] }: DayCalendarProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const focus = useFocus();
@@ -117,6 +121,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   const [viewH, setViewH] = useState<number | null>(null);
   const collapsed = settings.pastEvents === "hide" && !showPast;
   const gcal = settings.calLook === "google";
+  const [showAllDay, setShowAllDay] = useState(false);
   // Nothing left today (events all over, or an empty day that has run out): the hours slide
   // away and "That's the day" takes the whole calendar. A firm pull up brings them back.
   // "That's the day" belongs to the evening: it appears from the wind-down hour (⚙ Wind down at,
@@ -444,6 +449,24 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
         </ul>
       ) : null}
 
+      {allDay.length ? (
+        <ul className="vcal__allday" aria-label="All day">
+          {(showAllDay ? allDay : allDay.slice(0, ALL_DAY_SHOWN)).map((e) => (
+            <li key={e.id ?? e.name}>
+              <button type="button" className="week__banner vcal__banner" data-color={e.color} title={e.name} onClick={(ev) => open(e, ev.currentTarget)}>
+                {e.name}
+              </button>
+            </li>
+          ))}
+          {allDay.length > ALL_DAY_SHOWN ? (
+            <li>
+              <button type="button" className="vcal__allday-more" onClick={() => setShowAllDay(!showAllDay)}>
+                {showAllDay ? "Show fewer" : `+${allDay.length - ALL_DAY_SHOWN} more`}
+              </button>
+            </li>
+          ) : null}
+        </ul>
+      ) : null}
       {gcal ? (
         <div className="gcal__dayhead">
           <span className="gcal__dow">{weekdayShort(today.iso)}</span>

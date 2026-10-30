@@ -78,7 +78,7 @@ export interface DashboardSettings {
 export const DEFAULT_SETTINGS: DashboardSettings = {
   theme: "system",
   lightPalette: "daylight",
-  look: "cards",
+  look: "clean",
   calLook: "dashboard",
   timeFormat: "12-hour",
   density: "comfortable",
