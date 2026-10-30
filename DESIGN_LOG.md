@@ -95,6 +95,42 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Earlier events take a firm pull, not a button or a flick
+
+**Problem** — With past events tucked away, two things brought the morning back
+too easily. A standing "↑ Earlier today · 7 events" pill sat over the calendar
+all day, which was chrome for something you rarely want. And any upward scroll
+at the top revealed it, including the momentum of a flick that just happened to
+reach the top. So the past popped back without you meaning to ask for it.
+
+**Decision** — The pill is gone as a standing control. Scrolling up past the top
+now meets resistance: the hours give way a little (up to 36px), and "Earlier
+today · N events" fades in as a hint, in proportion to how hard you're pulling.
+Only a firm, continued pull opens it: about 450px of upward wheel travel without
+a pause, or a 120px touch drag down. Let go or pause (220ms) and it springs back.
+Momentum that carries a scroll up to the top doesn't count, so a pull has to be
+a fresh gesture made while already at the top. The hint stays a real button, so
+it shows when focused and the keyboard still has a way in.
+
+Hard to get out, easy to get back: once the morning is open, scrolling back down
+to where the tucked view started tucks it away again. When "That's the day" has
+the whole calendar, that point is the bottom. There's no extra resistance going
+back, and the view doesn't jump. Before this, the only ways back were "Now" or a
+quiet minute, so the scene you had scrolled away from seemed stuck off.
+
+**Reasoning** — Same idea as pull-to-refresh: the extra effort is a signal of
+intent, and the give plus the fading hint tell you something is there and how
+far along you are. That answers "is there more above?" without a permanent pill.
+
+**Alternatives considered** — A plain delay (feels broken, no feedback);
+counting scroll events (depends on the device; a trackpad sends dozens per flick,
+a mouse one per notch); keeping the pill but smaller (still chrome); removing
+the reveal entirely (Show in ⚙ is too far away for a quick look back).
+
+**Tradeoffs / open questions** — The thresholds are tuned by feel on one mouse
+and trackpad. A very slow, pause-y pull resets and never opens, which is
+intended, but could surprise someone. ⚙ Past events → Show still turns tucking off.
+
 ## 2026-10-29 — Calendar blocks use your Google Calendar colors (in our palette)
 
 **Problem / trigger** — Alex color-codes events in Google Calendar, but the dashboard
