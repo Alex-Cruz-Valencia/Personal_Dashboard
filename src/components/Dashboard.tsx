@@ -44,7 +44,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
         {/* "system" leaves the attribute off so globals.css can fall through
             to prefers-color-scheme (see the effective-theme block there). */}
         <div
-          className={`morning${settings.surface === "glass" ? " morning--glass" : ""}${settings.motion === "off" ? " morning--still" : ""}${pageScene ? " morning--scene" : ""}`}
+          className={`morning${settings.surface === "glass" ? " morning--glass" : ""}${settings.motion === "off" ? " morning--still" : ""}${pageScene ? " morning--scene" : ""}${settings.look === "clean" ? " morning--clean" : ""}`}
           data-theme={settings.theme === "system" ? undefined : settings.theme}
           data-palette={settings.lightPalette}
         >
@@ -116,6 +116,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
               editable={data.sources.calendar === "live"}
               tomorrow={data.week?.find((d) => d.iso > data.today.iso) ?? null}
               focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
+              legend={data.calendars}
             />
             <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} />
           </div>

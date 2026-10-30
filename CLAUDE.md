@@ -23,7 +23,29 @@
   `settings.lightPalette` (⚙ Light palette, `?palette=clay`) → `data-palette` on
   `.morning`; its block at the end of `globals.css` only matches while light is
   showing and sets tokens on `:root` via `:has()` so popovers follow. Any new
-  light-only hardcoded color needs a clay counterpart there. 12/8/6px radii; no card shadow in dark,
+  light-only hardcoded color needs a clay counterpart there.
+- **Style "clean"** (experiment, ⚙ Style, `settings.look`, `?look=clean`):
+  `.morning--clean` layer at the end of `globals.css` — Todoist-like structure
+  page-wide (bold sentence-case headings, hairlines, a colored bar as the only
+  category marker, text buttons, flat cards). Default stays "cards".
+- **Marker vs. text colors:** `--mark-*` tokens (negative/warning/neutral/
+  meeting/focus/personal) are bright hues for non-text marks only — bars,
+  dots, light tints. Text uses the darker readable tokens (`--negative`,
+  `--ink-soft`, …). Each light palette and dark sets its own `--mark-*`.
+- **Google Calendar colors:** each event's own `colorId`, else its calendar's
+  `backgroundColor` (snapped by hue), becomes `AgendaEvent.color` — a family
+  name (`src/lib/event-colors.ts`), never Google's hex. Blocks carry it as
+  `data-color` and the page paints it with `--ev-<family>` (light and dark
+  sets in `globals.css`). It overrides the meeting/focus/personal color only;
+  `kind` still drives labels and "where" text. The day calendar shows a legend
+  (`.vcal__legend`, `DashboardData.calendars` from `getCalendarLegend()`, two or
+  more calendars only): names come from `calendarLabel()` — the viewer's rename,
+  else primary → "Personal", another account → its domain ("Dartmouth",
+  "DALI"), a shared calendar → its title minus "[TEAM]" tags; Google's built-in
+  holiday/birthday/week-number calendars are left out. `GOOGLE_CALENDAR_COLORS`
+  (`config.google.calendarColors`, "Name=family,…" by calendar id or legend
+  name) overrides a calendar's color on the dashboard only — the env keeps
+  the viewer's calendar names out of the repo. 12/8/6px radii; no card shadow in dark,
   two soft levels in light (`--shadow` cards, `--shadow-pop` popovers); light
   secondary text held to ~6–8:1 for daylight; selected chips carry a border +
   bold, not tint alone; a flat day-arc band, a global accent-colored focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →
@@ -173,7 +195,7 @@
   compatibility with the old first-party Vercel KV naming), else the
   gitignored `.data/google-tokens.json` file.
 - `getAgenda` (`src/lib/google/calendar.ts`) auto-discovers every calendar
-  the account can see via `calendarList` (`discoverCalendarIds`, min access
+  the account can see via `calendarList` (`discoverCalendars`, min access
   role `freeBusyReader`) — including one shared from another Google
   account, no extra OAuth scope needed — minus
   `config.google.calendarExcludeIds` (`GOOGLE_CALENDAR_EXCLUDE_IDS`,
@@ -229,7 +251,7 @@
   covers creating/deleting/sharing whole calendars). `AgendaEvent.id` is
   `<encodeURIComponent(calendarId)>:<eventId>` (`compositeId`/
   `parseCompositeId` in `calendar.ts`) — it used to be a positional
-  `calendarIndex`, which broke the moment `discoverCalendarIds()` returned
+  `calendarIndex`, which broke the moment `discoverCalendars()` returned
   calendars in a different order between requests; the real calendar id is
   the only thing safe to persist across a render. `deleteEvent`/
   `updateEvent` operate on a single occurrence (the list call already used

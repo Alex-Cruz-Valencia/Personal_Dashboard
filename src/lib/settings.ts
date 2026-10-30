@@ -30,12 +30,15 @@ export type PastEvents = "hide" | "show";
 export type TopRow = "classic" | "unified";
 /** The light theme's palette: "daylight" (off-white, sage) or "clay" (sand, terracotta). Dark is unaffected. */
 export type LightPalette = "daylight" | "clay";
+/** "cards" is the dashboard's own look; "clean" borrows Todoist's: flat rows, hairlines, sentence-case labels, quiet chrome. */
+export type Look = "cards" | "clean";
 /** Voice of the "shape of the day" note — see src/lib/day-note.ts. */
 export type NoteStyle = "timely" | "gentle" | "plain";
 
 export interface DashboardSettings {
   theme: ThemeChoice;
   lightPalette: LightPalette;
+  look: Look;
   timeFormat: TimeFormat;
   density: Density;
   surface: Surface;
@@ -68,6 +71,7 @@ export interface DashboardSettings {
 export const DEFAULT_SETTINGS: DashboardSettings = {
   theme: "system",
   lightPalette: "daylight",
+  look: "cards",
   timeFormat: "12-hour",
   density: "comfortable",
   surface: "solid",
@@ -132,6 +136,7 @@ export function parseSettings(
   return {
     theme: pick(searchParams.theme, ["light", "dark", "system", "timed"], base.theme),
     lightPalette: pick(searchParams.palette, ["daylight", "clay"], base.lightPalette),
+    look: pick(searchParams.look, ["cards", "clean"], base.look),
     timeFormat: pick(
       searchParams.timeFormat ?? searchParams.time,
       ["12-hour", "24-hour"],
@@ -173,6 +178,9 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   }
   if (obj.lightPalette === "daylight" || obj.lightPalette === "clay") {
     out.lightPalette = obj.lightPalette;
+  }
+  if (obj.look === "cards" || obj.look === "clean") {
+    out.look = obj.look;
   }
   if (obj.timeFormat === "12-hour" || obj.timeFormat === "24-hour") {
     out.timeFormat = obj.timeFormat;

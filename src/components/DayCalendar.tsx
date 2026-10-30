@@ -7,7 +7,7 @@ import { dateLineFor, decimalHourToTimeInput, formatHour, layoutOverlaps } from 
 import { minutesLabel } from "@/lib/plan";
 import type { ShownSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
-import type { AgendaEvent, ArcWindow, TodayInfo, WeekDay } from "@/lib/types";
+import type { AgendaEvent, ArcWindow, CalendarLegendItem, TodayInfo, WeekDay } from "@/lib/types";
 import { useNowSeconds } from "@/lib/use-now";
 import { EndOfDay } from "./EndOfDay";
 import { useEventDetail } from "./EventDetail";
@@ -51,6 +51,8 @@ interface DayCalendarProps {
   editable?: boolean;
   /** Tomorrow's agenda and tasks, for "Plan tomorrow" (null when neither source is readable). */
   tomorrow?: WeekDay | null;
+  /** Which color is which connected calendar; the legend shows when there are two or more. */
+  legend?: CalendarLegendItem[];
 }
 
 /**
@@ -60,7 +62,7 @@ interface DayCalendarProps {
  * Google is connected, drag one to move it, drag its bottom edge to resize it,
  * or drag on an empty stretch to add a new one. Nothing is saved until you let go.
  */
-export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = false, focusTask, editable = false, tomorrow = null }: DayCalendarProps) {
+export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = false, focusTask, editable = false, tomorrow = null, legend = [] }: DayCalendarProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const focus = useFocus();
@@ -352,6 +354,15 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
           </p>
         ) : null}
       </div>
+      {legend.length > 1 ? (
+        <ul className="vcal__legend" aria-label="Calendars">
+          {legend.map((c) => (
+            <li key={c.label} data-color={c.color}>
+              {c.label}
+            </li>
+          ))}
+        </ul>
+      ) : null}
 
       <div className="vcal__wrap">
       <div
@@ -449,6 +460,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
               return (
                 <div
                   key={e.id ?? `${e.name}${i}`}
+                  data-color={e.color}
                   className={`vcal__event vcal__event--${e.kind} vcal__event--${state}${isSelected(e) ? " vcal__event--selected" : ""}${canEdit ? " vcal__event--editable" : ""}${dragging ? " vcal__event--dragging" : ""}`}
                   style={
                     {

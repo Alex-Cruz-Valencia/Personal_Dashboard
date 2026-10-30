@@ -129,7 +129,10 @@ calendar this account can see — your own plus any calendar someone else has
 shared with it, even from a different Google account. `calendar.readonly`
 already covers anything shared with you, so no extra consent is needed.
 Leave one out with `GOOGLE_CALENDAR_EXCLUDE_IDS` (comma-separated
-addresses/ids). One calendar failing (revoked access) doesn't blank the
+addresses/ids). Blocks take each event's Google color (else its calendar's),
+shown in the dashboard's own shade; `GOOGLE_CALENDAR_COLORS`
+(`"Personal=banana,Work=blueberry"`, by calendar id or legend name) overrides a
+calendar's color on the dashboard only. One calendar failing (revoked access) doesn't blank the
 others — it's dropped and logged, and what's still reachable renders
 normally.
 

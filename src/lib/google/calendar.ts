@@ -5,8 +5,9 @@
 import "server-only";
 import { config } from "@/lib/config";
 import { dayBoundsUtc, decimalHourForTimestamp } from "@/lib/time";
-import type { AgendaEvent, EventKind } from "@/lib/types";
+import type { AgendaEvent, CalendarLegendItem, EventKind } from "@/lib/types";
 import { googleFetch } from "./tokens";
+import { colorFromHex, colorFromId, isEventColor, type EventColor } from "@/lib/event-colors";
 
 const CAL_BASE = "https://www.googleapis.com/calendar/v3";
 
@@ -33,6 +34,8 @@ interface GCalEvent {
   end: GCalDateTime;
   attendees?: { email?: string; responseStatus?: string; self?: boolean }[];
   eventType?: string;
+  /** Set only when the event has its own color ("1"–"11"); otherwise it shows its calendar's. */
+  colorId?: string;
   conferenceData?: {
     entryPoints?: { entryPointType?: string; uri?: string }[];
   };
@@ -46,6 +49,12 @@ interface GCalListEntry {
   id: string;
   deleted?: boolean;
   accessRole?: string;
+  /** The calendar's color as the viewer set it, e.g. "#16a765". */
+  backgroundColor?: string;
+  summary?: string;
+  /** The viewer's own rename of a calendar, when they've set one. */
+  summaryOverride?: string;
+  primary?: boolean;
 }
 
 interface GCalCalendarListResponse {
@@ -59,7 +68,7 @@ interface GCalCalendarListResponse {
  * share is still included (its events just come back opaque; `classify()`
  * and the "(busy)" fallback already handle that).
  */
-async function discoverCalendarIds(): Promise<string[]> {
+async function discoverCalendars(): Promise<{ id: string; color?: EventColor; label: string }[]> {
   // Writable calendars first: when the same event shows up on two calendars,
   // `dedupeEvents` keeps the first copy, and that should be one you can edit.
   const ROLE_RANK: Record<string, number> = { owner: 0, writer: 1, reader: 2, freeBusyReader: 3 };
@@ -76,7 +85,48 @@ async function discoverCalendarIds(): Promise<string[]> {
   return (data.items ?? [])
     .filter((c) => !c.deleted && !excluded.has(c.id.toLowerCase()))
     .sort((a, b) => (ROLE_RANK[a.accessRole ?? ""] ?? 4) - (ROLE_RANK[b.accessRole ?? ""] ?? 4))
-    .map((c) => c.id);
+    .map((c) => {
+      const label = calendarLabel(c);
+      // A dashboard-only override (GOOGLE_CALENDAR_COLORS), by id or legend name, beats Google's color.
+      const override = config.google.calendarColors[c.id.toLowerCase()] ?? config.google.calendarColors[label.toLowerCase()];
+      return { id: c.id, label, color: isEventColor(override) ? override : colorFromHex(c.backgroundColor) };
+    });
+}
+
+/**
+ * A short name for the legend: the viewer's own rename if any; the primary
+ * calendar is "Personal"; another account's calendar is named by its domain
+ * ("dartmouth.edu" → "Dartmouth", "dali.dartmouth.edu" → "DALI"); a shared
+ * calendar by its title without "[TEAM]"-style tags.
+ */
+function calendarLabel(c: GCalListEntry): string {
+  if (c.summaryOverride?.trim()) return c.summaryOverride.trim();
+  if (c.primary) return "Personal";
+  const at = c.id.indexOf("@");
+  if (at > 0 && !/calendar\.google\.com$/.test(c.id)) {
+    const domain = c.id.slice(at + 1).toLowerCase();
+    if (domain === "gmail.com" || domain === "googlemail.com") return c.id.slice(0, at);
+    const word = domain.split(".")[0];
+    return word.length <= 4 ? word.toUpperCase() : word[0].toUpperCase() + word.slice(1);
+  }
+  return (c.summary ?? "Calendar").replace(/\[[^\]]*\]/g, "").trim() || "Calendar";
+}
+
+/** Google's built-in calendars (holidays, birthdays, week numbers) — not worth a legend entry. */
+const BUILT_IN = /#(holiday|contacts|weeknum)@group\.v\.calendar\.google\.com$/;
+
+/** Which color is which calendar, for the day calendar's legend. Reuses the cached calendar list. */
+export async function getCalendarLegend(): Promise<CalendarLegendItem[]> {
+  const seen = new Set<string>();
+  return (await discoverCalendars())
+    .filter((c) => c.color && !BUILT_IN.test(c.id))
+    .filter((c) => (seen.has(c.label) ? false : (seen.add(c.label), true)))
+    .map((c) => ({ label: c.label, color: c.color as EventColor }));
+}
+
+/** An event's color family: its own color if set, else its calendar's. */
+function eventColor(e: GCalEvent, calendarColor: EventColor | undefined): EventColor | undefined {
+  return colorFromId(e.colorId) ?? calendarColor;
 }
 
 /**
@@ -181,7 +231,8 @@ export async function getAgenda(
   timezone: string,
 ): Promise<AgendaEvent[]> {
   const { timeMin, timeMax } = dayBoundsUtc(todayIso, timezone);
-  const calendarIds = await discoverCalendarIds();
+  const calendars = await discoverCalendars();
+  const calendarIds = calendars.map((c) => c.id);
 
   // One failed/inaccessible shared calendar (revoked access, a typo'd id)
   // shouldn't blank out the whole agenda — merge whatever succeeded and log
@@ -190,10 +241,10 @@ export async function getAgenda(
     calendarIds.map((id) => fetchCalendarEvents(id, timeMin, timeMax)),
   );
 
-  const events: { calendarId: string; event: GCalEvent }[] = [];
+  const events: { calendarId: string; calendarColor?: EventColor; event: GCalEvent }[] = [];
   results.forEach((result, i) => {
     if (result.status === "fulfilled") {
-      for (const event of result.value) events.push({ calendarId: calendarIds[i], event });
+      for (const event of result.value) events.push({ calendarId: calendarIds[i], calendarColor: calendars[i].color, event });
     } else if (process.env.NODE_ENV !== "production") {
       console.warn(`[calendar] ${calendarIds[i]} → skipped:`, (result.reason as Error).message);
     }
@@ -207,7 +258,7 @@ export async function getAgenda(
       ({ event: e }) => e.status !== "cancelled" && e.start?.dateTime && e.end?.dateTime,
     ),
   )
-    .map<AgendaEvent>(({ calendarId, event: e }) => {
+    .map<AgendaEvent>(({ calendarId, calendarColor, event: e }) => {
       const kind = classify(e);
       const others = (e.attendees ?? []).filter((a) => !a.self).length;
       return {
@@ -221,6 +272,7 @@ export async function getAgenda(
         start: decimalHourForTimestamp(e.start.dateTime as string, todayIso, timezone),
         end: decimalHourForTimestamp(e.end.dateTime as string, todayIso, timezone),
         kind,
+        color: eventColor(e, calendarColor),
         location: e.location?.trim() || undefined,
         meetingLink: meetingLinkOf(e),
         description: toPlainText(e.description),
@@ -253,7 +305,8 @@ export async function getWeekAgendas(
 
   const { timeMin } = dayBoundsUtc(dayIsos[0], timezone);
   const { timeMax } = dayBoundsUtc(dayIsos[dayIsos.length - 1], timezone);
-  const calendarIds = await discoverCalendarIds();
+  const calendars = await discoverCalendars();
+  const calendarIds = calendars.map((c) => c.id);
 
   const results = await Promise.allSettled(
     calendarIds.map((id) =>
@@ -281,6 +334,7 @@ export async function getWeekAgendas(
           start,
           end,
           kind: classify(e),
+          color: eventColor(e, calendars[i].color),
         });
       });
     }

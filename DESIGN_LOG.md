@@ -95,6 +95,113 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Calendar blocks use your Google Calendar colors (in our palette)
+
+**Problem / trigger** — Alex color-codes events in Google Calendar, but the dashboard
+ignored it. Every block was colored by our own guess at its kind
+(meeting/focus/personal), so nearly everything showed as "personal".
+
+**Decision** — Read the color Google already sends, but don't paint it verbatim:
+- **Source:** an event's own `colorId` (Google's 11 event colors), else its
+  calendar's `backgroundColor` from the calendar list we already fetch, snapped by hue
+  to the nearest family.
+- **Family names, not hex:** each becomes a family (tomato, flamingo, tangerine,
+  banana, sage, basil, peacock, blueberry, lavender, grape, graphite), painted in our
+  own `--ev-*` shades, lighter in dark mode.
+- **Where it shows:** block bars and tints in both Styles, and the week strip. Kind
+  still drives the labels.
+- **Scope:** no new OAuth scope; `calendar.readonly` already covers it.
+
+**Reasoning** — Alex asked for "colors adjacent in the same style", not Google's
+exact ones. Google's palette is heavier and more saturated than the page. Mapping by
+family keeps the meaning (red is red) while every block still sits in the dashboard's
+palette and contrast rules. Checked against live data: today's events are all on a
+calendar set to `#cd74e6`, which maps to grape. No event had its own color today.
+
+**Alternatives considered** — *Use Google's hex directly*: it clashes with the
+palettes and needs per-color contrast work. *Keep kind colors*: loses information Alex
+deliberately curates.
+
+**Follow-up: a legend.** In use, a day where every event came from one account
+(Dartmouth) read as "all the same color". The colors were right, just unexplained.
+The calendar now has a one-line legend under its header naming each connected
+calendar with its dot:
+- **Personal:** the primary Gmail calendar.
+- **Dartmouth and DALI:** the other accounts, named by their domain.
+- **Evergreen 26F:** a shared team calendar, by title.
+- **Left out:** Google's holiday calendars.
+
+A rename in Google wins. A legend beats per-block account labels, since blocks are
+often too short to fit one. Alex then chose colors per account (Personal yellow, DALI teal,
+Evergreen green, classes blue). That's a dashboard-only override,
+`GOOGLE_CALENDAR_COLORS`, keyed by calendar id or legend name. It lives in env, not
+code, so personal calendar names stay out of the repo, and Google Calendar's own
+colors are left alone.
+
+**Tradeoffs / open questions** — Hue snapping can land a borderline calendar color on
+a neighboring family; for example `#16a765` reads as sage rather than basil.
+Blueberry, peacock and lavender bring blue back into light mode, but only when Alex
+chose those colors.
+
+---
+
+## 2026-10-29 — Experiment: a "Clean" style borrowed from Todoist
+
+**Problem / trigger** — After the task card was made to mirror Todoist, it became the
+calmest part of the page. Alex wanted to try that feel everywhere: not Todoist's
+colors, but its clean structure, spacing and type.
+
+**Decision** — A ⚙ **Style** setting (`settings.look`, `?look=clean`): Cards (default,
+unchanged) or **Clean**, a scoped layer (`.morning--clean`) that applies the task row's
+ingredients page-wide:
+- **Type:** one sans family with bold sentence-case headings (no spaced capitals,
+  no display face on titles, greeting or clock). Regular-weight body text with grey
+  metadata; counts as plain text, not pills.
+- **Lines and markers:** hairlines instead of tinted tiles. A thin colored bar is the
+  only category marker, on attention items (red/amber/grey) and calendar blocks (by
+  kind).
+- **Controls and surfaces:** quiet text buttons instead of pills, and flat cards with a
+  hairline and no shadow.
+- **Week strip:** plain columns split by hairlines, today named in the accent.
+
+Works with both light palettes and dark.
+
+**Reasoning** — The Todoist look works because it removes encodings: one color cue per
+row, one weight for content, labels that read like words. Applying the same rules to
+the other cards keeps them consistent without copying Todoist's palette. As a setting
+it's cheap to compare side by side and to drop.
+
+**Alternatives considered** — *Make Clean the new default straight away*: too big a
+change to make without living with it. *Copy Todoist's exact visuals* (white page, red
+accent, system font): Alex asked for the style, not the brand.
+
+**Follow-up (same day): Todoist's lightness, not just its layout.** In use, light
+mode read too dark: muddy amber labels, brown-grey bars, heavy secondary text.
+Todoist keeps text neutral and only moderately dark, and puts bright color on
+small marks. So light mode now splits **marker** colors from **text** colors:
+- **Markers:** new `--mark-*` tokens (negative, warning, neutral, meeting, focus,
+  personal) in bright Todoist-like hues, e.g. red `#D1453B` and orange `#EB8909`,
+  used only for bars, dots and very light tints. Dark maps them to its existing
+  bright semantics.
+- **Secondary and faint text:** eased back to Todoist-like greys, about 6:1 and 5:1.
+  The earlier 7–8:1 overshot.
+- **Attention labels:** neutral grey, red only for a real problem.
+
+Calendar markers then went brighter still: muted taupe/plum/sage read dull,
+especially since most events are "personal". In light, both palettes now use
+Okabe–Ito hues, picked because they stay distinct for colorblind viewers: mint
+`#2FB38F` for personal, orchid `#CC6FB0` for meetings, and orange for focus. Block
+tints are 11% (16% for the event happening now).
+
+This walks back part of the "daylight standard" entry. Contrast still clears AA,
+but readable no longer means as dark as possible.
+
+**Tradeoffs / open questions** — Experimental; local only. Popovers (task/event
+editors, settings) keep the Cards styling for now. If Clean wins, fold it into the base
+styles and delete the toggle rather than maintain two looks.
+
+---
+
 ## 2026-10-29 — A choice of light palettes, and a lighter weather curve
 
 **Problem / trigger** — Two notes from using Clean daylight:

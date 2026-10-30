@@ -25,8 +25,8 @@
   --surface-2:  #F1EFEA;
   --line:       #E4E1DA;
   --ink:        #24262A;
-  --ink-soft:   #4E5257;
-  --ink-faint:  #5F6368;
+  --ink-soft:   #5F6266;
+  --ink-faint:  #6A6D72;
   --accent:     #4F725C;
   --accent-tint:#E6EEE8;
   /* CALENDAR KINDS — plum / amber / grey in light (the Solid layout below
@@ -43,6 +43,28 @@
   --warning-tint:  #F8EEDB;
   --neutral:       #55595E;
   --neutral-tint:  #EEEDEA;
+
+  /* MARKERS — bright hues for non-text marks only (bars, dots, fills), the way
+     Todoist colors its rings. Text keeps the darker readable tokens above. */
+  --mark-negative: #D1453B;
+  --mark-warning:  #EB8909;
+  --mark-neutral:  #A9ABAF;
+  /* calendar kinds: Okabe–Ito hues (colorblind-safe) — orchid / orange / mint */
+  --mark-meeting:  #CC6FB0;
+  --mark-focus:    #EE9A2E;
+  --mark-personal: #2FB38F;
+  /* Google Calendar color families, in this page's style (src/lib/event-colors.ts) */
+  --ev-tomato: #DD4B3E;
+  --ev-flamingo: #E8787A;
+  --ev-tangerine: #EE8A3A;
+  --ev-banana: #E2B42A;
+  --ev-sage: #2FB38F;
+  --ev-basil: #3C9A5A;
+  --ev-peacock: #26A6C4;
+  --ev-blueberry: #5B7FDB;
+  --ev-lavender: #8B8FE0;
+  --ev-grape: #A866C9;
+  --ev-graphite: #9A9AA0;
 
   /* priority ramp — urgent / normal / someday (task list only) */
   /* text-on-tint pairs are kept at or above WCAG AA (4.5:1) */
@@ -93,6 +115,9 @@
   --warning-tint:  #2E2718;
   --neutral:       #A2B0B8;
   --neutral-tint:  #212A2F;
+  --mark-negative: #E4705A; --mark-warning: #D9A445; --mark-neutral: #A2B0B8;
+  --mark-meeting: #8FAAC6; --mark-focus: #4DC3C4; --mark-personal: #A39D90;
+  --ev-tomato: #F07A6E; --ev-flamingo: #F29A9B; --ev-tangerine: #F5A764; --ev-banana: #F0CB5C; --ev-sage: #5FD0B0; --ev-basil: #6CC48A; --ev-peacock: #5EC6DE; --ev-blueberry: #8CA6F0; --ev-lavender: #ADB0F2; --ev-grape: #C796E0; --ev-graphite: #B4B4BA;
   --shadow:     none;
   --shadow-pop: none;
   color-scheme: dark;
@@ -141,6 +166,9 @@
   --warning-tint:  #2E2718;
   --neutral:       #A2B0B8;
   --neutral-tint:  #212A2F;
+  --mark-negative: #E4705A; --mark-warning: #D9A445; --mark-neutral: #A2B0B8;
+  --mark-meeting: #8FAAC6; --mark-focus: #4DC3C4; --mark-personal: #A39D90;
+  --ev-tomato: #F07A6E; --ev-flamingo: #F29A9B; --ev-tangerine: #F5A764; --ev-banana: #F0CB5C; --ev-sage: #5FD0B0; --ev-basil: #6CC48A; --ev-peacock: #5EC6DE; --ev-blueberry: #8CA6F0; --ev-lavender: #ADB0F2; --ev-grape: #C796E0; --ev-graphite: #B4B4BA;
   --shadow:     none;
   --shadow-pop: none;
   color-scheme: dark;
@@ -171,6 +199,9 @@
     --warning-tint:  #2E2718;
     --neutral:       #A2B0B8;
     --neutral-tint:  #212A2F;
+  --mark-negative: #E4705A; --mark-warning: #D9A445; --mark-neutral: #A2B0B8;
+  --mark-meeting: #8FAAC6; --mark-focus: #4DC3C4; --mark-personal: #A39D90;
+  --ev-tomato: #F07A6E; --ev-flamingo: #F29A9B; --ev-tangerine: #F5A764; --ev-banana: #F0CB5C; --ev-sage: #5FD0B0; --ev-basil: #6CC48A; --ev-peacock: #5EC6DE; --ev-blueberry: #8CA6F0; --ev-lavender: #ADB0F2; --ev-grape: #C796E0; --ev-graphite: #B4B4BA;
     --shadow:     none;
     --shadow-pop: none;
     color-scheme: dark;
@@ -1910,8 +1941,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
   --surface-2:  #F3EAE0;
   --line:       #E6D8C7;
   --ink:        #2F2520;
-  --ink-soft:   #59473C;
-  --ink-faint:  #6A5649;
+  --ink-soft:   #685A50;
+  --ink-faint:  #76675C;
   --accent:     #A04A28;
   --accent-tint:#F5E3D8;
   --cal-meeting:  #7A5274;
@@ -1923,6 +1954,12 @@ a:hover { color: var(--ink); text-decoration: underline; }
   --warning-tint:  #F6EBD6;
   --neutral:       #5E544C;
   --neutral-tint:  #EFE8E0;
+  --mark-negative: #C8463F;
+  --mark-warning:  #E08A2C;
+  --mark-neutral:  #B6AAA0;
+  --mark-meeting:  #CC6FB0;
+  --mark-focus:    #E8803F;
+  --mark-personal: #2FB38F;
   --p1:         #9E2A3A;
   --p1-tint:    #F6E1E3;
   --p2:         #805708;
@@ -1951,8 +1988,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
     --surface-2:  #F3EAE0;
     --line:       #E6D8C7;
     --ink:        #2F2520;
-    --ink-soft:   #59473C;
-    --ink-faint:  #6A5649;
+    --ink-soft:   #685A50;
+    --ink-faint:  #76675C;
     --accent:     #A04A28;
     --accent-tint:#F5E3D8;
     --cal-meeting:  #7A5274;
@@ -1964,6 +2001,12 @@ a:hover { color: var(--ink); text-decoration: underline; }
     --warning-tint:  #F6EBD6;
     --neutral:       #5E544C;
     --neutral-tint:  #EFE8E0;
+    --mark-negative: #C8463F;
+    --mark-warning:  #E08A2C;
+    --mark-neutral:  #B6AAA0;
+    --mark-meeting:  #CC6FB0;
+    --mark-focus:    #E8803F;
+    --mark-personal: #2FB38F;
     --p1:         #9E2A3A;
     --p1-tint:    #F6E1E3;
     --p2:         #805708;
@@ -1986,3 +2029,118 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .morning[data-palette="clay"]:not([data-theme]) .skytint__blob--b { background: radial-gradient(circle, rgb(236, 208, 180), transparent 68%); }
   .morning[data-palette="clay"]:not([data-theme]).morning--glass, :root:has(.morning[data-palette="clay"]:not([data-theme]).morning--glass) .eventedit { --cal-meeting: #B07AA6; }
 }
+
+/* =============================================================================
+   CLEAN STYLE (experiment, 2026-10-29) — ⚙ Style → Clean (`settings.look`,
+   `.morning--clean`). The whole page borrows what makes the Todoist task card
+   read so calmly: one sans family with bold sentence-case headings (no spaced
+   caps), regular-weight body text with grey metadata, hairlines instead of
+   tinted tiles, a thin colored bar as the only category marker, quiet text
+   buttons instead of pills, and flat cards (hairline, no shadow). Colors stay
+   whichever palette is chosen. Cards (the default) is untouched.
+   ========================================================================== */
+.morning--clean { --gap: 22px; }
+
+/* cards: flat sheets with a hairline */
+.morning--clean:not(.morning--glass) :is(.card, .attn) { box-shadow: none; border-color: var(--line); border-radius: 10px; }
+
+/* headings: one family, bold, sentence case */
+.morning--clean .card__title { font-family: var(--font-body); font-size: 17px; font-weight: 700; letter-spacing: -0.01em; }
+.morning--clean .hello__greeting { font-family: var(--font-body); font-weight: 700; letter-spacing: -0.03em; }
+.morning--clean .hello__date { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
+.morning--clean .clock__hm { font-family: var(--font-body); font-weight: 600; letter-spacing: -0.04em; }
+.morning--clean .clock__ampm { letter-spacing: 0; }
+
+/* counts: plain grey text, not a pill */
+.morning--clean .card__count { font-size: 13px; font-weight: 500; letter-spacing: 0; padding: 0; background: none; border: 0; color: var(--ink-soft); }
+
+/* needs attention: each item a soft row tinted by its status, a solid bar on
+   the left and a chevron on the right — it reads as something to open */
+.morning--clean .attn { padding: 16px 20px 18px; }
+.morning--clean .attn__title { margin-bottom: 10px; font-size: 17px; font-weight: 700; letter-spacing: -0.01em; text-transform: none; color: var(--ink); }
+.morning--clean .attn__list { gap: 10px; }
+.morning--clean .attn__item {
+  --bar: var(--mark-neutral);
+  position: relative; gap: 4px; padding: 12px 36px 12px 16px; border-radius: 8px;
+  background: color-mix(in srgb, var(--bar) 6%, var(--surface));
+  box-shadow: inset 3px 0 0 var(--bar);
+}
+.morning--clean .attn__item::after {
+  content: ""; position: absolute; right: 16px; top: 50%; width: 7px; height: 7px; margin-top: -4px;
+  border-right: 2px solid var(--ink-faint); border-top: 2px solid var(--ink-faint); transform: rotate(45deg);
+  transition: transform .15s ease, border-color .15s ease;
+}
+.morning--clean .attn__item:hover { background: color-mix(in srgb, var(--bar) 12%, var(--surface)); box-shadow: inset 3px 0 0 var(--bar); }
+.morning--clean .attn__item:hover::after { border-color: var(--ink); transform: translateX(2px) rotate(45deg); }
+.morning--clean :is(.attn__item--conflict, .attn__item--overdue) { --bar: var(--mark-negative); }
+.morning--clean .attn__item--tight { --bar: var(--mark-warning); }
+/* color lives on the bar; the label stays a readable grey (red only when it's a real problem) */
+.morning--clean .attn__label { font-size: 12.5px; font-weight: 600; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
+.morning--clean :is(.attn__item--conflict, .attn__item--overdue) .attn__label { color: var(--negative); }
+.morning--clean .attn__text { font-size: 15px; font-weight: 600; line-height: 1.3; }
+.morning--clean .attn__detail { font-size: 13px; color: var(--ink-soft); }
+
+/* calendar: light blocks with a kind-colored bar, quiet header controls */
+.morning--clean .vcal__tag { font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
+.morning--clean .vcal__name { font-weight: 500; }
+.morning--clean .vcal__btn { border-color: transparent; background: none; font-size: 13px; font-weight: 500; padding: 5px 9px; border-radius: 6px; }
+.morning--clean .vcal__btn:hover { background: var(--row-hover); }
+.morning--clean :is(.vcal__now-btn, .eod__plan) { border-color: transparent; color: var(--accent); }
+/* Blocks are a pale tint of their kind's bright marker color with a solid bar
+   (a pseudo-element, so the now/soon glow animating box-shadow can't hide it).
+   `.morning.morning--clean` outranks the light theme's personal-event rule. */
+.morning.morning--clean .vcal__event {
+  --kind: var(--mark-meeting);
+  background: color-mix(in srgb, var(--kind) 11%, var(--surface));
+  border: 0; border-radius: 4px; padding: 4px 8px 4px 12px;
+}
+.morning.morning--clean .vcal__event::before {
+  content: ""; position: absolute; left: 0; top: 0; bottom: 0; width: 3px; background: var(--kind); border-radius: 4px 0 0 4px; z-index: 1;
+}
+.morning.morning--clean .vcal__event--focus { --kind: var(--mark-focus); }
+.morning.morning--clean .vcal__event--personal { --kind: var(--mark-personal); }
+.morning.morning--clean .vcal__event--now { background: color-mix(in srgb, var(--kind) 16%, var(--surface)); }
+.morning.morning--clean .vcal__event:hover { filter: none; background: color-mix(in srgb, var(--kind) 20%, var(--surface)); }
+.morning--clean .vcal__event-title { font-size: 13px; font-weight: 500; color: var(--ink); }
+.morning--clean .vcal__event-elapsed { background: color-mix(in srgb, var(--kind) 12%, transparent); }
+.morning--clean .vcal__event--past { opacity: 0.6; filter: none; }
+
+/* this week: plain columns split by hairlines; today in the accent, not a box */
+.morning--clean .week__key { font-size: 12.5px; }
+.morning--clean .week__days { gap: 0; }
+.morning--clean .week__day { background: none; border-radius: 0; box-shadow: none; border-left: 1px solid var(--line); }
+.morning--clean .week__day:first-child { border-left: 0; }
+.morning--clean .week__daybtn { border-radius: 6px; }
+.morning--clean .week__day--today .week__name { color: var(--accent); }
+.morning--clean .week__day--picked { box-shadow: none; }
+.morning--clean .week__day--picked .week__daybtn { background: var(--row-hover); }
+.morning--clean .week__bar { height: 4px; background: color-mix(in srgb, var(--mark-neutral) 30%, var(--surface)); }
+.morning--clean .week__bar-booked, .morning--clean .week__key-item::before { background: var(--mark-neutral); }
+.morning--clean .week__key-item--tasks::before { background: var(--accent); }
+.morning--clean .week__heavy { font-size: 12px; font-weight: 600; letter-spacing: 0; text-transform: none; }
+.morning--clean .weekday__h { font-size: 13px; font-weight: 700; letter-spacing: 0; text-transform: none; color: var(--ink); }
+.morning--clean .week__expand { border-color: transparent; background: none; font-size: 13px; font-weight: 500; border-radius: 6px; }
+.morning--clean .week__expand:hover { background: var(--row-hover); }
+
+/* ---- Google Calendar colors (2026-10-29) ----
+   An event's own Google color (else its calendar's) arrives as a family name in
+   `data-color`; each family is painted in this page's palette (`--ev-*`), not
+   Google's hex. It replaces the meeting/focus/personal color, never the text. */
+[data-color="tomato"] { --ev: var(--ev-tomato); }
+[data-color="flamingo"] { --ev: var(--ev-flamingo); }
+[data-color="tangerine"] { --ev: var(--ev-tangerine); }
+[data-color="banana"] { --ev: var(--ev-banana); }
+[data-color="sage"] { --ev: var(--ev-sage); }
+[data-color="basil"] { --ev: var(--ev-basil); }
+[data-color="peacock"] { --ev: var(--ev-peacock); }
+[data-color="blueberry"] { --ev: var(--ev-blueberry); }
+[data-color="lavender"] { --ev: var(--ev-lavender); }
+[data-color="grape"] { --ev: var(--ev-grape); }
+[data-color="graphite"] { --ev: var(--ev-graphite); }
+.morning.morning--clean .vcal__event[data-color] { --kind: var(--ev); }
+.morning:not(.morning--clean) .vcal__event[data-color] { background: color-mix(in srgb, var(--ev) 18%, var(--surface)); border-color: color-mix(in srgb, var(--ev) 55%, var(--surface)); }
+.morning :is(.week__event, .week__banner)[data-color] { background: color-mix(in srgb, var(--ev) 18%, var(--surface)); border-color: color-mix(in srgb, var(--ev) 55%, var(--surface)); }
+/* the day calendar's legend: which color is which connected calendar */
+.vcal__legend { list-style: none; margin: 0; padding: 0 22px 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; font-weight: 500; color: var(--ink-soft); }
+.vcal__legend li { display: inline-flex; align-items: center; gap: 6px; }
+.vcal__legend li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ev); }

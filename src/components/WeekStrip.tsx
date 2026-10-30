@@ -126,7 +126,7 @@ function WeekGrid({ days, use24 }: { days: WeekDay[]; use24: boolean }) {
         {days.map((d) => (
           <div key={d.iso} className="week__cell">
             {(d.events ?? []).filter(isAllDay).map((e, i) => (
-              <div key={e.id ?? `${e.name}${i}`} className={`week__banner week__ev--${e.kind}`} title={e.name}>
+              <div key={e.id ?? `${e.name}${i}`} data-color={e.color} className={`week__banner week__ev--${e.kind}`} title={e.name}>
                 {e.name}
               </div>
             ))}
@@ -192,7 +192,7 @@ function DayColumn({
         return (
           <div
             key={e.id ?? `${e.name}${i}`}
-            className={`week__event week__ev--${e.kind}`}
+            data-color={e.color} className={`week__event week__ev--${e.kind}`}
             style={{ top, height: h, left: `calc(${(lane / n) * 100}% + 1px)`, width: `calc(${100 / n}% - 2px)` } as CSSProperties}
             title={`${e.name}, ${formatHour(e.start, use24)} to ${formatHour(e.end, use24)}`}
           >
@@ -278,7 +278,7 @@ function DayGrid({ events, use24 }: { events: WeekEvent[]; use24: boolean }) {
   return (
     <div className="weekday__cal">
       {banners.map((e, i) => (
-        <div key={e.id ?? `${e.name}${i}`} className={`week__banner week__ev--${e.kind}`} title={e.name}>
+        <div key={e.id ?? `${e.name}${i}`} data-color={e.color} className={`week__banner week__ev--${e.kind}`} title={e.name}>
           {e.name}
         </div>
       ))}
@@ -302,7 +302,7 @@ function DayGrid({ events, use24 }: { events: WeekEvent[]; use24: boolean }) {
               return (
                 <div
                   key={e.id ?? `${e.name}${i}`}
-                  className={`week__event weekday__block week__ev--${e.kind}`}
+                  data-color={e.color} className={`week__event weekday__block week__ev--${e.kind}`}
                   style={{ top, height: h, left: `calc(${(lane / n) * 100}% + 2px)`, width: `calc(${100 / n}% - 4px)` } as CSSProperties}
                   title={`${e.name}, ${formatHour(e.start, use24)} to ${formatHour(e.end, use24)}`}
                 >
