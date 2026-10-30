@@ -11,6 +11,9 @@ import type { AgendaEvent, EventDetails, EventGuest, RsvpStatus } from "@/lib/ty
  * meeting notes" and "Set your working location" are left out: they only work inside Google.
  */
 
+/** More guests than this and the list starts folded. */
+const GUESTS_SHOWN = 8;
+
 const LINK = /(https?:\/\/[^\s<>"')]+)/g;
 
 /** Plain text with its web links clickable. Built as elements, so nothing in it runs as HTML. */
@@ -97,8 +100,11 @@ export function EventRead({
   const [menu, setMenu] = useState(false);
   const [confirming, setConfirming] = useState(false);
   const [copied, setCopied] = useState(false);
+  // Like Google: a long guest list folds away, so the notes aren't pushed off the card.
+  const [showGuests, setShowGuests] = useState(false);
   const guests = details?.guests ?? [];
   const emails = guests.flatMap((g) => (g.email && !g.self ? [g.email] : []));
+  const foldable = guests.length > GUESTS_SHOWN;
   const canEdit = details?.canEdit ?? false;
   const canWrite = details?.canWrite ?? false;
 
@@ -188,18 +194,34 @@ export function EventRead({
         <Row
           icon={<People />}
           action={
-            <button type="button" className="gevent__icon" title={copied ? "Copied" : "Copy guest emails"} aria-label="Copy guest emails" onClick={() => void copyGuests()}>
-              {copied ? "✓" : <Copy />}
-            </button>
+            <span className="gevent__row-actions">
+              <button type="button" className="gevent__icon" title={copied ? "Copied" : "Copy guest emails"} aria-label="Copy guest emails" onClick={() => void copyGuests()}>
+                {copied ? "✓" : <Copy />}
+              </button>
+              {foldable ? (
+                <button
+                  type="button"
+                  className={`gevent__icon gevent__fold${showGuests ? " is-open" : ""}`}
+                  title={showGuests ? "Hide guests" : "Show guests"}
+                  aria-label={showGuests ? "Hide guests" : "Show guests"}
+                  aria-expanded={showGuests}
+                  onClick={() => setShowGuests(!showGuests)}
+                >
+                  <Chevron />
+                </button>
+              ) : null}
+            </span>
           }
         >
           <div>{guests.length} {guests.length === 1 ? "guest" : "guests"}</div>
           <div className="gevent__sub">{guestCounts(guests)}</div>
-          <ul className="gevent__guests">
-            {guests.map((g) => (
-              <Guest key={g.email ?? g.name} g={g} />
-            ))}
-          </ul>
+          {!foldable || showGuests ? (
+            <ul className="gevent__guests">
+              {guests.map((g) => (
+                <Guest key={g.email ?? g.name} g={g} />
+              ))}
+            </ul>
+          ) : null}
         </Row>
       ) : null}
 
@@ -281,6 +303,7 @@ const Pencil = () => <svg {...S}><path d="M4 20l1-4L16 5l3 3L8 19z" /><path d="M
 const Trash = () => <svg {...S}><path d="M4.5 6.5h15M9.5 6.5v-2h5v2M6.5 6.5l1 13h9l1-13M10.5 10v6M13.5 10v6" /></svg>;
 const Mail = () => <svg {...S}><rect x="3.5" y="5.5" width="17" height="13" rx="2" /><path d="M4 7l8 6 8-6" /></svg>;
 const Dots = () => <svg {...S}><circle cx="12" cy="5.5" r="1.2" fill="currentColor" /><circle cx="12" cy="12" r="1.2" fill="currentColor" /><circle cx="12" cy="18.5" r="1.2" fill="currentColor" /></svg>;
+const Chevron = () => <svg {...S}><path d="M6 9l6 6 6-6" /></svg>;
 const Close = () => <svg {...S}><path d="M6 6l12 12M18 6L6 18" /></svg>;
 const Video = () => <svg {...S}><rect x="3.5" y="6.5" width="12" height="11" rx="2" /><path d="M15.5 10.5l5-3v9l-5-3" /></svg>;
 const Pin = () => <svg {...S}><path d="M12 21s7-6.4 7-11.5a7 7 0 0 0-14 0C5 14.6 12 21 12 21z" /><circle cx="12" cy="9.5" r="2.5" /></svg>;

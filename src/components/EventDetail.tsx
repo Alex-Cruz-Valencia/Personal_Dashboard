@@ -201,6 +201,7 @@ function EventDetailCard({
         onClose={onClose}
         ariaLabel={`Event: ${name}`}
         className="gevent"
+        align="side"
         layoutKey={details ? "loaded" : "loading"}
       >
         <EventRead
@@ -241,6 +242,7 @@ function EventDetailCard({
       onClose={onClose}
       ariaLabel={`Edit event: ${event.name}`}
       className="eventedit"
+      align="side"
       layoutKey="editing"
     >
       <div className="eventedit__head">

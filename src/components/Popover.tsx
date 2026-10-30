@@ -30,9 +30,10 @@ interface PopoverProps {
   closeOnScroll?: boolean;
   /**
    * "center" (default) centres the card under the anchor; "point" puts its top-left corner at
-   * the anchor, like a context menu opened at the pointer.
+   * the anchor, like a context menu opened at the pointer; "side" sits beside the anchor and may
+   * use nearly the full height of the window, like Google Calendar's event card.
    */
-  align?: "center" | "point";
+  align?: "center" | "point" | "side";
   /** Change this when the content changes size after opening, so the card is placed again. */
   layoutKey?: string;
   className?: string;
@@ -92,6 +93,22 @@ export function Popover({
     const roomBelow = vh - aBottom - gap - margin;
     const roomAbove = aTop - gap - margin;
     const below = roomBelow >= Math.min(height, 200) || roomBelow >= roomAbove;
+
+    if (align === "side") {
+      const tallest = vh - 2 * margin;
+      const fits = Math.min(height, tallest);
+      const sideGap = 12;
+      const right = anchor.right + sideGap;
+      const left = anchor.left - sideGap - width;
+      // The side with room, else whichever covers the event least (a phone has no side to use).
+      const x = right + width <= vw - margin ? right : left >= margin ? left : (vw - width) / 2;
+      setPos({
+        top: clamp(anchor.top - 48, margin, Math.max(margin, vh - fits - margin)),
+        left: clamp(x, margin, Math.max(margin, vw - width - margin)),
+        maxHeight: tallest,
+      });
+      return;
+    }
 
     const maxHeight = clamp(below ? roomBelow : roomAbove, 160, vh - 2 * margin);
     const fit = Math.min(height, maxHeight);

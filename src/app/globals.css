@@ -2404,9 +2404,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
 /* ===================== EVENT CARD (read view, modelled on Google Calendar's) =====================
    Icon column + text rows, a row of actions along the top, "Going?" pinned to the bottom. */
 .gevent {
-  position: fixed; z-index: 50; width: clamp(300px, 94vw, 448px); overflow-y: auto; overscroll-behavior: contain;
+  position: fixed; z-index: 50; width: min(94vw, clamp(420px, 38vw, 600px)); overflow-y: auto; overscroll-behavior: contain;
   background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: 22px;
-  box-shadow: var(--shadow-pop); font-family: var(--font-body); font-size: 14px; line-height: 1.4;
+  box-shadow: var(--shadow-pop); font-family: var(--font-body); font-size: 15px; line-height: 1.45;
 }
 .gevent__bar { position: sticky; top: 0; z-index: 2; display: flex; justify-content: flex-end; align-items: center; gap: 4px; padding: 8px 10px 2px; background: var(--surface); }
 .gevent__icon {
@@ -2421,16 +2421,16 @@ a:hover { color: var(--ink); text-decoration: underline; }
   background: var(--surface); border: 1px solid var(--line); border-radius: 8px; box-shadow: var(--shadow-pop);
 }
 .gevent__menu:hover { background: var(--surface-2); }
-.gevent__title-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 16px; padding: 4px 24px 12px; }
-.gevent__swatch { width: 15px; height: 15px; margin: 8px 0 0 3px; border-radius: 4px; background: var(--ev, var(--accent)); }
-.gevent__title { margin: 0 0 4px; font-family: var(--font-body); font-size: 22px; font-weight: 400; line-height: 1.25; letter-spacing: -0.01em; overflow-wrap: anywhere; }
-.gevent__when { margin: 0; font-size: 13.5px; color: var(--ink); }
-.gevent__row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 16px; align-items: start; padding: 7px 24px; }
+.gevent__title-row { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 18px; padding: 4px 28px 14px; }
+.gevent__swatch { width: 16px; height: 16px; margin: 11px 0 0 3px; border-radius: 4px; background: var(--ev, var(--accent)); }
+.gevent__title { margin: 0 0 6px; font-family: var(--font-body); font-size: 26px; font-weight: 400; line-height: 1.25; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.gevent__when { margin: 0; font-size: 15px; color: var(--ink); }
+.gevent__row { display: grid; grid-template-columns: 22px minmax(0, 1fr) auto; gap: 18px; align-items: start; padding: 9px 28px; }
 .gevent__row-icon { display: grid; place-items: center; height: 20px; color: var(--ink-soft); }
 .gevent__row-body { min-width: 0; overflow-wrap: anywhere; }
 .gevent__row-body a { color: var(--accent); }
 .gevent__row .gevent__icon { margin: -8px -8px 0 0; }
-.gevent__sub { font-size: 12px; color: var(--ink-soft); }
+.gevent__sub { font-size: 13px; color: var(--ink-soft); }
 .gevent__join { display: inline-block; padding: 7px 16px; border-radius: 999px; background: var(--accent); font-size: 13.5px; font-weight: 600; text-decoration: none; }
 .gevent__row-body a.gevent__join { color: var(--surface); }
 .gevent__guests { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
@@ -2447,7 +2447,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .gevent__badge--no { color: var(--mark-negative); }
 .gevent__badge--maybe { color: var(--ink-soft); }
 .gevent__guest-text { display: grid; min-width: 0; }
-.gevent__guest-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 13.5px; }
+.gevent__guest-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 14.5px; }
 .gevent__notes { white-space: pre-line; }
 .gevent__loading { margin: 4px 24px 10px 62px; font-size: 12.5px; color: var(--ink-faint); }
 .gevent__error { margin: 4px 24px 10px 62px; font-size: 12.5px; color: var(--negative); }
@@ -2466,3 +2466,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .eventedit__back { border: 0; background: transparent; padding: 0; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
 .eventedit__back:hover { color: var(--ink); }
 .gevent__change { font-size: 13px; font-weight: 600; color: var(--accent); }
+.gevent__row-actions { display: flex; gap: 2px; margin: -8px -8px 0 0; }
+.gevent__row-actions .gevent__icon { margin: 0; }
+.gevent__fold svg { transition: transform 0.15s ease; }
+.gevent__fold.is-open svg { transform: rotate(180deg); }
