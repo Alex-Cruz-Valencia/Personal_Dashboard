@@ -15,7 +15,7 @@ import { Popover } from "./Popover";
 
 const TODOIST = "https://app.todoist.com/app";
 
-type View = "main" | "date" | "deadline" | "move" | "delete";
+type View = "main" | "date" | "deadline" | "move" | "assist" | "delete";
 type TodoistP = 1 | 2 | 3 | 4;
 
 interface Meta {
@@ -55,6 +55,7 @@ export function TaskMenu({
   theme,
   todayIso,
   meta,
+  ai,
   onEdit,
   onClose,
 }: {
@@ -64,6 +65,8 @@ export function TaskMenu({
   theme: Theme;
   todayIso: string;
   meta: Meta;
+  /** The AI model is set up, so Task Assist is offered. */
+  ai: boolean;
   onEdit: () => void;
   onClose: () => void;
 }) {
@@ -212,6 +215,11 @@ export function TaskMenu({
               <Item icon={<IconDuplicate />} label="Duplicate" onClick={() => act(`/api/tasks/${id}/duplicate`, "POST")} />
               <Item icon={<IconLink />} label={copied ? "Link copied" : "Copy link to task"} keys="⇧⌘C" onClick={() => void copyLink()} />
             </Group>
+            {ai ? (
+              <Group>
+                <Item icon={<IconSparkle />} label="Task Assist" badge="Beta" keys="›" onClick={() => setView("assist")} />
+              </Group>
+            ) : null}
             <Group>
               <Item icon={<IconTrash />} label="Delete" keys="⌘⌫" danger onClick={() => setView("delete")} />
             </Group>
@@ -240,6 +248,8 @@ export function TaskMenu({
           />
         ) : view === "move" ? (
           <MovePanel task={task} meta={meta} query={query} setQuery={setQuery} onBack={() => setView("main")} onMove={(to) => patch(to)} />
+        ) : view === "assist" ? (
+          <AssistPanel task={task} busy={busy} onBack={() => setView("main")} send={send} onDone={onClose} />
         ) : (
           <div className="taskmenu__confirm">
             <p className="taskmenu__confirm-title">Delete task?</p>
@@ -386,6 +396,179 @@ function MovePanel({
   );
 }
 
+type AssistMode = "actionable" | "breakdown" | "tips";
+type AssistResult =
+  | { mode: "actionable"; title: string }
+  | { mode: "breakdown"; subtasks: string[] }
+  | { mode: "tips"; tips: string[] };
+
+const ASSIST_OPTIONS: { mode: AssistMode; label: string; hint: string }[] = [
+  { mode: "actionable", label: "Make it actionable", hint: "A clearer title that starts with what to do" },
+  { mode: "breakdown", label: "Break it down", hint: "Next steps, added as subtasks" },
+  { mode: "tips", label: "Give me tips", hint: "Ideas for getting it done" },
+];
+
+/**
+ * Task Assist: ask the AI model about this task, then apply what it suggests with a click.
+ * Nothing is written to Todoist until "Use this title", "Add subtasks" or "Add to notes".
+ */
+function AssistPanel({
+  task,
+  busy,
+  onBack,
+  send,
+  onDone,
+}: {
+  task: Task;
+  busy: boolean;
+  onBack: () => void;
+  send: (path: string, method: "PATCH" | "POST" | "DELETE", body?: unknown) => Promise<boolean>;
+  onDone: () => void;
+}) {
+  const id = task.id as string;
+  const [mode, setMode] = useState<AssistMode | null>(null);
+  const [result, setResult] = useState<AssistResult | null>(null);
+  const [thinking, setThinking] = useState(false);
+  const [problem, setProblem] = useState<string | null>(null);
+  const [picked, setPicked] = useState<boolean[]>([]);
+
+  const ask = async (m: AssistMode) => {
+    setMode(m);
+    setResult(null);
+    setProblem(null);
+    setThinking(true);
+    try {
+      const res = await fetch(`/api/tasks/${id}/assist`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ mode: m }),
+      });
+      const body = await res.json().catch(() => ({}));
+      if (!res.ok) throw new Error(body.error || "Task Assist couldn't help with that.");
+      setResult(body as AssistResult);
+      if (body.mode === "breakdown") setPicked((body.subtasks as string[]).map(() => true));
+    } catch (e) {
+      setProblem((e as Error).message);
+    } finally {
+      setThinking(false);
+    }
+  };
+
+  const addSubtasks = async (items: string[]) => {
+    // One at a time, so they land in the order suggested.
+    for (const content of items) {
+      if (!(await send("/api/tasks", "POST", { content, parentId: id }))) return;
+    }
+    onDone();
+  };
+
+  const back = () => (mode ? (setMode(null), setResult(null), setProblem(null)) : onBack());
+
+  return (
+    <div className="taskmenu__panel taskmenu__assist">
+      <PanelHead title={mode ? ASSIST_OPTIONS.find((o) => o.mode === mode)!.label : "Task Assist"} onBack={back} />
+      {!mode ? (
+        <div className="taskmenu__list">
+          {ASSIST_OPTIONS.map((o) => (
+            <button key={o.mode} type="button" data-mi className="taskmenu__row taskmenu__row--two" onClick={() => void ask(o.mode)}>
+              <span className="taskmenu__ico taskmenu__sparkle">
+                <IconSparkle />
+              </span>
+              <span className="taskmenu__label">
+                {o.label}
+                <small>{o.hint}</small>
+              </span>
+            </button>
+          ))}
+          <p className="taskmenu__note">Sends this task&apos;s title, notes and project name to your AI model. Nothing changes until you apply it.</p>
+        </div>
+      ) : thinking ? (
+        <p className="taskmenu__thinking" aria-live="polite">
+          <span className="taskmenu__sparkle">
+            <IconSparkle />
+          </span>{" "}
+          Thinking…
+        </p>
+      ) : problem ? (
+        <div className="taskmenu__result">
+          <p className="taskmenu__note">{problem}</p>
+          <div className="taskmenu__confirm-actions">
+            <button type="button" data-mi className="taskmenu__btn" onClick={() => void ask(mode)}>
+              Try again
+            </button>
+          </div>
+        </div>
+      ) : result?.mode === "actionable" ? (
+        <div className="taskmenu__result">
+          <p className="taskmenu__was">{task.name}</p>
+          <p className="taskmenu__suggest">{result.title}</p>
+          <div className="taskmenu__confirm-actions">
+            <button type="button" data-mi className="taskmenu__btn" onClick={() => void ask("actionable")}>
+              Try again
+            </button>
+            <button type="button" data-mi className="taskmenu__btn taskmenu__btn--primary" disabled={busy} onClick={async () => (await send(`/api/tasks/${id}`, "PATCH", { content: result.title })) && onDone()}>
+              Use this title
+            </button>
+          </div>
+        </div>
+      ) : result?.mode === "breakdown" ? (
+        <div className="taskmenu__result">
+          <ul className="taskmenu__steps">
+            {result.subtasks.map((st, i) => (
+              <li key={st}>
+                <label>
+                  <input type="checkbox" data-mi checked={picked[i] ?? true} onChange={(e) => setPicked((p) => p.map((v, j) => (j === i ? e.target.checked : v)))} />
+                  <span>{st}</span>
+                </label>
+              </li>
+            ))}
+          </ul>
+          <div className="taskmenu__confirm-actions">
+            <button type="button" data-mi className="taskmenu__btn" onClick={() => void ask("breakdown")}>
+              Try again
+            </button>
+            <button
+              type="button"
+              data-mi
+              className="taskmenu__btn taskmenu__btn--primary"
+              disabled={busy || !picked.some(Boolean)}
+              onClick={() => void addSubtasks(result.subtasks.filter((_, i) => picked[i] ?? true))}
+            >
+              Add {picked.filter(Boolean).length} subtask{picked.filter(Boolean).length === 1 ? "" : "s"}
+            </button>
+          </div>
+        </div>
+      ) : result?.mode === "tips" ? (
+        <div className="taskmenu__result">
+          <ul className="taskmenu__tips">
+            {result.tips.map((t) => (
+              <li key={t}>{t}</li>
+            ))}
+          </ul>
+          <div className="taskmenu__confirm-actions">
+            <button type="button" data-mi className="taskmenu__btn" onClick={onDone}>
+              Done
+            </button>
+            <button
+              type="button"
+              data-mi
+              className="taskmenu__btn taskmenu__btn--primary"
+              disabled={busy}
+              onClick={async () => {
+                const tips = result.tips.map((t) => `- ${t}`).join("\n");
+                const description = [task.description?.trim(), `Tips:\n${tips}`].filter(Boolean).join("\n\n").slice(0, 2000);
+                if (await send(`/api/tasks/${id}`, "PATCH", { description })) onDone();
+              }}
+            >
+              Add to notes
+            </button>
+          </div>
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 /* ---------- pieces ---------- */
 
 function Group({ children }: { children: ReactNode }) {
@@ -407,10 +590,12 @@ function Item({
   keys,
   danger,
   title,
+  badge,
   onClick,
 }: {
   icon: ReactNode;
   label: string;
+  badge?: string;
   keys?: string;
   danger?: boolean;
   title?: string;
@@ -419,7 +604,10 @@ function Item({
   return (
     <button type="button" role="menuitem" data-mi title={title} className={`taskmenu__row${danger ? " taskmenu__row--danger" : ""}`} onClick={onClick}>
       <span className="taskmenu__ico">{icon}</span>
-      <span className="taskmenu__label">{label}</span>
+      <span className="taskmenu__label">
+        {label}
+        {badge ? <span className="taskmenu__badge">{badge}</span> : null}
+      </span>
       {keys ? <span className="taskmenu__keys">{keys}</span> : null}
     </button>
   );
@@ -481,6 +669,9 @@ const IconLink = () => (
 );
 const IconTrash = () => (
   <svg {...S}><path d="M4.5 6.5h15M9.5 6.5V4.5h5v2M6.5 6.5l1 13h9l1-13M10.5 10v6M13.5 10v6" /></svg>
+);
+const IconSparkle = () => (
+  <svg {...S}><path d="M10 3.5l1.6 4.4L16 9.5l-4.4 1.6L10 15.5l-1.6-4.4L4 9.5l4.4-1.6z" fill="currentColor" stroke="none" /><path d="M17.5 13.5l.8 2.2 2.2.8-2.2.8-.8 2.2-.8-2.2-2.2-.8 2.2-.8z" fill="currentColor" stroke="none" /></svg>
 );
 const IconSection = () => (
   <svg {...S}><path d="M5 8h14M5 12h14M5 16h9" /></svg>

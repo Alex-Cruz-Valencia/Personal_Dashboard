@@ -287,6 +287,8 @@ export interface TaskPatch {
 export interface NewTask {
   content: string;
   projectId?: string;
+  /** Make it a subtask of this task (it lands in the parent's project). */
+  parentId?: string;
   priority?: Priority;
   /** Natural-language due ("tomorrow 9am"). Prefer `dueDate` when you have a date. */
   due?: string;
@@ -377,6 +379,13 @@ async function getTask(id: string): Promise<TodoistTask> {
   return (await res.json()) as TodoistTask;
 }
 
+/** Just what Task Assist sends to the model: the title, notes and project name. */
+export async function getTaskForAssist(id: string): Promise<{ content: string; description?: string; project?: string }> {
+  const t = await getTask(id);
+  const project = (await listProjects().catch(() => [] as Project[])).find((p) => p.id === t.project_id)?.name;
+  return { content: t.content, description: t.description || undefined, project };
+}
+
 /** One Sync API command — the only way to set a due date and keep its repeat. */
 async function syncCommand(type: string, args: Record<string, unknown>): Promise<void> {
   if (!config.todoist.token) throw new Error("Todoist not configured");
@@ -458,7 +467,8 @@ export async function duplicateTask(id: string): Promise<unknown> {
 
 export function addTask(task: NewTask): Promise<unknown> {
   const body: Record<string, unknown> = { content: task.content };
-  if (task.projectId) body.project_id = task.projectId;
+  if (task.parentId) body.parent_id = task.parentId;
+  else if (task.projectId) body.project_id = task.projectId;
   if (task.priority !== undefined) {
     body.priority = TO_TODOIST_PRIORITY[task.priority];
   }

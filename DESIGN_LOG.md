@@ -95,6 +95,45 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Task Assist, on our own AI model
+
+**Problem** — Todoist's menu has "Task Assist", its AI helper for a stuck task.
+Todoist doesn't expose it to other apps, but the dashboard already has an AI
+model set up (Dartmouth Chat) for reply drafts.
+
+**Decision** — The menu's Task Assist (marked Beta) offers three asks about the
+task, each with a one-click way to apply the answer:
+- **Make it actionable:** a clearer title, shown next to the old one → "Use this
+  title".
+- **Break it down:** 3–6 next steps with checkboxes → "Add N subtasks". They're
+  created as real Todoist subtasks, in order.
+- **Give me tips:** 3–4 specific tips → "Add to notes" (appended under "Tips:").
+
+"Try again" asks once more. Each answer is a suggestion; nothing is written
+until a button is clicked.
+
+**Reasoning** — These are the three things you actually want from AI when a task
+won't move: say what it is, split it up, or get unstuck. Every result maps to
+an ordinary task write, so it rides on routes that already exist and are
+already guarded.
+
+**Safety (same rules as the other AI routes)** — `guardAi` (fails closed,
+same-origin only, an hourly cap). Only the task's title, notes and project name
+are sent. The model's JSON is checked on the server: lengths and counts are
+capped, list markers stripped, duplicates dropped. The task text is marked as
+data, not instructions. The menu item appears only where the AI is set up
+(`DashboardData.ai`), so never on the public demo. Tested end to end with the
+real model on a temporary task, applied for real, then deleted.
+
+**Alternatives considered** — Free-form chat about the task (open-ended, and
+harder to validate); auto-applying the suggestion (breaks the human-click
+rule); matching Todoist's exact Assist prompts (not public, and these three
+cover the job).
+
+**Tradeoffs** — Each ask is a model call (~2–3s here) and counts toward the
+hourly cap. Subtasks of a task due today only show on the dashboard if they
+match its task filter themselves.
+
 ## 2026-10-29 — Todoist's own right-click menu on tasks
 
 **Problem** — Right-click opened the full task editor, which is a form: fine for
@@ -136,8 +175,8 @@ for Todoist's, and the rest is cheap once the plumbing exists).
 **Tradeoffs / open questions**
 - **Reminders** opens the task in Todoist. Reminders need the Sync API and
   Todoist Pro, so they aren't set here.
-- **Task Assist** (Todoist's AI) is left out. Todoist doesn't expose it through
-  its API; our own model could stand in later.
+- **Task Assist** isn't Todoist's own AI, which Todoist doesn't expose through
+  its API. Our model stands in for it (next entry).
 - Duplicate doesn't copy subtasks.
 - Todoist's undo toast after a change isn't copied; the date is one more
   right-click away.

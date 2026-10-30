@@ -87,8 +87,11 @@
   before any write, send the minimum data. Don't pass `temperature` (the model
   rejects it) and keep token budgets generous (they include hidden reasoning).
   Features: `POST /api/replies/[id]/draft` (+ `/save` → Gmail *draft*, never
-  sends; `gmail.modify` already covers drafts) and `POST /api/plan/suggest`
-  (validated by `schedule-validate.ts`; each suggestion needs its own Block).
+  sends; `gmail.modify` already covers drafts), `POST /api/plan/suggest`
+  (validated by `schedule-validate.ts`; each suggestion needs its own Block), and
+  `POST /api/tasks/[id]/assist` (Task Assist in the task menu, `lib/llm/assist.ts`:
+  actionable title / subtasks / tips, validated by `parseAssist`; applying one is
+  a normal task write — PATCH content/description, or POST /api/tasks with `parentId`).
   `npm run llm:models` lists model ids.
 - **Top row (2026-10-30):** `settings.topRow` — "unified" (default, `TopUnified`: one
   scenic card with greeting, clock, a one-line weather summary and the day's temperature

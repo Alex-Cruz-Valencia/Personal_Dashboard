@@ -40,7 +40,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
       theme={settings.theme}
       todayIso={data.today.iso}
     >
-      <TaskDetailProvider theme={settings.theme} todayIso={data.today.iso}>
+      <TaskDetailProvider theme={settings.theme} todayIso={data.today.iso} ai={data.ai}>
         {/* "system" leaves the attribute off so globals.css can fall through
             to prefers-color-scheme (see the effective-theme block there). */}
         <div

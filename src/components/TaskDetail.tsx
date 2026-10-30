@@ -44,9 +44,12 @@ let metaCache: Meta | null = null;
 export function TaskDetailProvider({
   theme,
   todayIso,
+  ai,
   children,
 }: {
   theme: Theme;
+  /** The AI model is set up (DashboardData.ai), so the menu offers Task Assist. */
+  ai: boolean;
   /** The dashboard's day, for the menu's date shortcuts. */
   todayIso: string;
   children: ReactNode;
@@ -111,6 +114,7 @@ export function TaskDetailProvider({
           theme={theme}
           todayIso={todayIso}
           meta={meta ?? { projects: [], labels: [] }}
+          ai={ai}
           onEdit={() => open(menu.task, menu.rowEl)}
           onClose={closeMenu}
         />
