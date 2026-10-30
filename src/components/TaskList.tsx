@@ -87,6 +87,13 @@ export function TaskList({ tasks, settings, source }: TaskListProps) {
                 className={`${t.cls}${isDone ? " task--done" : ""}${
                   task && isSelected(task) ? " task--selected" : ""
                 }`}
+                onContextMenu={(e) => {
+                  // Right-click anywhere on the row opens the same editor as a click on it.
+                  const body = e.currentTarget.querySelector<HTMLElement>(".task__body");
+                  if (!task || !body) return;
+                  e.preventDefault();
+                  open(task, body);
+                }}
               >
                 <i
                   className="task__check"
