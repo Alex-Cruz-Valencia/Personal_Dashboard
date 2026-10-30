@@ -95,6 +95,24 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Right-click a task to edit it
+
+**Problem** — The task editor opened only on a click on the task's text.
+Right-clicking a row, the habit from Todoist and most desktop apps, brought up
+the browser's own menu instead, which has nothing useful for a task.
+
+**Decision** — A right-click anywhere on a task row (checkbox included) opens
+the same editor, anchored where a click would put it. There's no separate
+context menu: the editor already holds every action (priority, due date,
+project, delete, focus).
+
+**Alternatives considered** — A small Todoist-style context menu with quick
+actions (a second surface to keep in sync with the editor); leaving the browser
+menu (a dead end on a task).
+
+**Tradeoffs** — The browser's menu (copy, inspect) is no longer available on task
+rows. Text can still be selected and copied from the editor.
+
 ## 2026-10-29 — Earlier events take a firm pull, not a button or a flick
 
 **Problem** — With past events tucked away, two things brought the morning back
