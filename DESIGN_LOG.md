@@ -202,8 +202,11 @@ inside Google. Guest photos aren't in the API, so avatars are initials.
 when you want to read); fetching all details with the agenda (simpler, but puts
 every guest list on the page and adds a call per recurring series).
 
-**Not tested for real** — Saving an RSVP to Google; the click and the request were
-checked with the write intercepted.
+**Read-only calendars** — The dashboard signs in as one Google account. An invite
+sitting on a calendar that account can only read (Dartmouth's) can't be answered
+from here: Google refused the first real try. Those events show your answer with
+a "Change in Google Calendar" link, not buttons that can't work. Connecting that
+account too would fix it, if the school allows it.
 
 ## 2026-10-30 — The conflict card shows the overlap, not just says it
 

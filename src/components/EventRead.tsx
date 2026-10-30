@@ -26,6 +26,13 @@ function Linked({ text }: { text: string }) {
   );
 }
 
+const RSVP_LABEL: Record<RsvpStatus, string> = {
+  accepted: "Going",
+  declined: "Not going",
+  tentative: "Maybe going",
+  needsAction: "Not answered yet",
+};
+
 function guestCounts(guests: EventGuest[]): string {
   const n = (s: RsvpStatus) => guests.filter((g) => g.status === s).length;
   const parts = [
@@ -214,7 +221,19 @@ export function EventRead({
       {failed ? <p className="gevent__loading">Couldn&apos;t load the guests and repeat details.</p> : null}
       {error ? <p className="gevent__error" role="alert">{error}</p> : null}
 
-      {rsvp ? (
+      {/* A read-only calendar is one Google won't take an answer through, so don't offer the buttons. */}
+      {rsvp && !canEdit && details ? (
+        <div className="gevent__going">
+          <span>{RSVP_LABEL[rsvp]}</span>
+          {event.htmlLink ? (
+            <a className="gevent__change" href={event.htmlLink} target="_blank" rel="noopener noreferrer">
+              Change in Google Calendar
+            </a>
+          ) : null}
+        </div>
+      ) : null}
+
+      {rsvp && canEdit ? (
         <div className="gevent__going">
           <span>Going?</span>
           <span className="gevent__answers" role="group" aria-label="Going?">

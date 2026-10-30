@@ -2465,3 +2465,4 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .gevent__answer.is-on { background: var(--accent-tint); border-color: var(--accent); color: var(--accent); font-weight: 700; }
 .eventedit__back { border: 0; background: transparent; padding: 0; font: inherit; font-size: 12.5px; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
 .eventedit__back:hover { color: var(--ink); }
+.gevent__change { font-size: 13px; font-weight: 600; color: var(--accent); }
