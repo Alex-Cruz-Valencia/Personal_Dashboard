@@ -31,6 +31,9 @@
 - **Calendar look "google"** (⚙ Calendar, `settings.calLook`, `?cal=google`): `.morning--gcal` layer
   at the end of `globals.css` plus `lib/gcal-look.ts` (`cascade()`, `hourLabel`, `shortSpan`), applied
   in `DayCalendar` and `WeekStrip`. Default stays "dashboard".
+- **All-day events**: `getAllDayEvents()` → `DashboardData.allDay` (banners in `DayCalendar`), and
+  `allDay: true` entries (start 0, end 24) in `WeekDay.events`. Never put them in `agenda`: conflicts,
+  next-up and free gaps read it.
 - **Marker vs. text colors:** `--mark-*` tokens (negative/warning/neutral/
   meeting/focus/personal) are bright hues for non-text marks only — bars,
   dots, light tints. Text uses the darker readable tokens (`--negative`,

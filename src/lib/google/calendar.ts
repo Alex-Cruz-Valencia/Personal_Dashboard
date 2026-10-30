@@ -344,6 +344,11 @@ export async function getWeekAgendas(
   results.forEach((result, i) => {
     if (result.status !== "fulfilled") return;
     for (const e of result.value) {
+      if (e.start?.date && isBanner(e)) {
+        dayIsos.forEach((day, d) => {
+          if (coversDay(e, day)) byDay[d].push(allDayEvent(calendarIds[i], calendars[i].color, e));
+        });
+      }
       if (e.status === "cancelled" || !e.start?.dateTime || !e.end?.dateTime) continue;
       const startTs = e.start.dateTime;
       const endTs = e.end.dateTime;
@@ -365,6 +370,47 @@ export async function getWeekAgendas(
     }
   });
   return byDay.map((list) => list.sort((a, b) => a.start - b.start));
+}
+
+/** Does this all-day event cover `day`? Google's end date is the day after it finishes. */
+function coversDay(e: GCalEvent, day: string): boolean {
+  const start = e.start?.date;
+  const end = e.end?.date ?? start;
+  return Boolean(start && end && start <= day && day < end);
+}
+
+function allDayEvent(calendarId: string, color: EventColor | undefined, e: GCalEvent): AgendaEvent {
+  const kind = classify(e);
+  return {
+    id: compositeId(calendarId, e.id),
+    name: e.summary?.trim() || "(busy)",
+    start: 0,
+    end: 24,
+    kind,
+    allDay: true,
+    color: eventColor(e, color),
+    ...cardFields(e, kind),
+  };
+}
+
+/** "Working from home"-style all-day markers aren't events you'd want a banner for. */
+const isBanner = (e: GCalEvent) => e.status !== "cancelled" && e.eventType !== "workingLocation";
+
+/**
+ * Today's all-day events. Same request as `getAgenda`, so it comes from the same cached fetch.
+ * Separate because the agenda is timed events only: everything that reads it (conflicts, the
+ * next-up line, free gaps) would otherwise treat a deadline as a 24-hour meeting.
+ */
+export async function getAllDayEvents(todayIso: string, timezone: string): Promise<AgendaEvent[]> {
+  const { timeMin, timeMax } = dayBoundsUtc(todayIso, timezone);
+  const calendars = await discoverCalendars();
+  const results = await Promise.allSettled(calendars.map((c) => fetchCalendarEvents(c.id, timeMin, timeMax)));
+  const found = results.flatMap((r, i) =>
+    r.status === "fulfilled"
+      ? r.value.filter((e) => isBanner(e) && coversDay(e, todayIso)).map((event) => ({ calendar: calendars[i], event }))
+      : [],
+  );
+  return dedupeEvents(found).map(({ calendar, event }) => allDayEvent(calendar.id, calendar.color, event));
 }
 
 /* ---------- editing an event ---------- */
