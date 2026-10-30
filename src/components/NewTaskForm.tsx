@@ -44,6 +44,8 @@ interface Props {
   submitLabel?: string;
   /** AI helper: returns fields to overwrite (content, priority, due). */
   onFill?: () => Promise<Partial<TaskDraft>>;
+  /** Run `onFill` once on open (read-only; adding still takes the click). */
+  autoFill?: boolean;
   /** Extra controls above the buttons (parent owns their state). */
   extra?: ReactNode;
   onCancel?: () => void;
@@ -51,11 +53,11 @@ interface Props {
 }
 
 /** Fill in a task the way Todoist does, then add it. Nothing is written until Add. */
-export function NewTaskForm({ initial, submitLabel = "Add task", onFill, extra, onCancel, onAdded }: Props) {
+export function NewTaskForm({ initial, submitLabel = "Add task", onFill, autoFill, extra, onCancel, onAdded }: Props) {
   const [d, setD] = useState<TaskDraft>({ ...EMPTY_DRAFT, ...initial });
   const [meta, setMeta] = useState<TaskMeta | null>(null);
   const [labelDraft, setLabelDraft] = useState("");
-  const [phase, setPhase] = useState<"edit" | "reading" | "saving">("edit");
+  const [phase, setPhase] = useState<"edit" | "reading" | "saving">(autoFill && onFill ? "reading" : "edit");
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -87,6 +89,20 @@ export function NewTaskForm({ initial, submitLabel = "Add task", onFill, extra, 
     }
     setPhase("edit");
   };
+
+  // Mount-only on purpose: a later re-render must not overwrite what the person typed.
+  useEffect(() => {
+    if (!autoFill || !onFill) return;
+    let alive = true;
+    onFill()
+      .then((fields) => alive && setD((s) => ({ ...s, ...fields })))
+      .catch((e: Error) => alive && setError(e.message))
+      .finally(() => alive && setPhase("edit"));
+    return () => {
+      alive = false;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const submit = async () => {
     const content = d.content.trim();

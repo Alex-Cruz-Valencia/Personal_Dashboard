@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { gmailLink, loadLabels, moveReply, trashReply, type LabelInfo } from "@/lib/reply-actions";
+import {
+  gmailLink,
+  loadLabels,
+  loadTriage,
+  moveReply,
+  trashReply,
+  type LabelInfo,
+  type TriageSuggestion,
+} from "@/lib/reply-actions";
 import { SNOOZE_HOURS, snoozeReply } from "@/lib/reply-state";
 import type { Priority } from "@/lib/types";
 import type { Theme } from "@/lib/settings";
@@ -12,7 +20,8 @@ import { Popover } from "./Popover";
 
 /**
  * The emails behind an attention item, with an action on each: reply (opens
- * Gmail), wait (hide for a day, this browser only), move, trash.
+ * Gmail), wait (hide for a day, this browser only), move, trash. With AI on,
+ * each email also shows one suggested action; it runs only when clicked.
  */
 export function ReplyQueue({
   title,
@@ -42,6 +51,9 @@ export function ReplyQueue({
   const [draft, setDraft] = useState("");
   const [drafting, setDrafting] = useState<string | null>(null);
   const [tasking, setTasking] = useState<string | null>(null);
+  const [triage, setTriage] = useState<Map<string, TriageSuggestion | null> | null>(null);
+  const [triageError, setTriageError] = useState(false);
+  const idKey = replies.map((r) => r.id).join(",");
 
   useEffect(() => {
     let alive = true;
@@ -50,6 +62,18 @@ export function ReplyQueue({
       alive = false;
     };
   }, []);
+
+  // Suggestions are read-only, so they load on open (cached per page load).
+  useEffect(() => {
+    if (!aiDraft || !idKey) return;
+    let alive = true;
+    loadTriage(idKey.split(","))
+      .then((m) => alive && setTriage(m))
+      .catch(() => alive && setTriageError(true));
+    return () => {
+      alive = false;
+    };
+  }, [aiDraft, idKey]);
 
   // Everything dealt with: close rather than show an empty card.
   useEffect(() => {
@@ -63,6 +87,16 @@ export function ReplyQueue({
     const ok = await run(id);
     if (ok) router.refresh();
     else setError("Couldn't do that. Try again.");
+  };
+
+  const apply = (id: string, s: TriageSuggestion) => {
+    setMoving(null);
+    setTrashing(null);
+    if (s.action === "trash") done(id, trashReply);
+    else if (s.action === "file" && s.label) done(id, (i) => moveReply(i, s.label as string));
+    else if (s.action === "task") { setTasking(id); setDrafting(null); }
+    else if (s.action === "reply") { setDrafting(id); setTasking(null); }
+    else snoozeReply(id);
   };
 
   return (
@@ -79,6 +113,14 @@ export function ReplyQueue({
               </div>
               <div className="rq__subject">{r.subject}</div>
               <div className={`reply__note reply__note--u${r.urgency}`}>{r.note}</div>
+              {aiDraft ? (
+                <Suggestion
+                  s={triage?.get(id) ?? null}
+                  loading={triage === null && !triageError}
+                  canTask={canTask}
+                  onApply={(s) => apply(id, s)}
+                />
+              ) : null}
               <div className="rq__actions">
                 <a className="rq__btn rq__btn--primary" href={gmailLink(id)} target="_blank" rel="noreferrer">
                   Reply in Gmail
@@ -124,12 +166,19 @@ export function ReplyQueue({
                   </button>
                 )}
               </div>
-              {drafting === id ? <DraftPanel id={id} /> : null}
+              {drafting === id ? (
+                <DraftPanel
+                  id={id}
+                  fileAfter={triage?.get(id)?.action === "reply" ? triage.get(id)?.label : undefined}
+                  onFile={(label) => done(id, (i) => moveReply(i, label))}
+                />
+              ) : null}
               {tasking === id ? (
                 <TaskPanel
                   reply={r}
                   id={id}
                   ai={aiDraft}
+                  autoFill={triage?.get(id)?.action === "task"}
                   todayIso={todayIso}
                   onAdded={() => {
                     router.refresh();
@@ -166,12 +215,69 @@ export function ReplyQueue({
         })}
       </ul>
       {error ? <p className="rq__error">{error}</p> : null}
+      {triageError ? <p className="rq__hint rq__ai-note">Couldn&apos;t get AI suggestions right now.</p> : null}
     </Popover>
   );
 }
 
+const ACTION_NAME: Record<TriageSuggestion["action"], string> = {
+  trash: "Trash",
+  task: "Make a task",
+  reply: "Reply",
+  file: "File",
+  leave: "Leave it",
+};
+
+const applyLabel = (s: TriageSuggestion) =>
+  s.action === "file" ? `File to ${s.label}` : s.action === "reply" ? "Draft reply" : s.action === "leave" ? `Hide for ${SNOOZE_HOURS}h` : ACTION_NAME[s.action];
+
+/** One line: what the AI would do with this email and why, plus the one click that does it. */
+function Suggestion({
+  s,
+  loading,
+  canTask,
+  onApply,
+}: {
+  s: TriageSuggestion | null;
+  loading: boolean;
+  canTask: boolean;
+  onApply: (s: TriageSuggestion) => void;
+}) {
+  if (loading) return <div className="rq__ai rq__ai--loading">Thinking about this one…</div>;
+  if (!s) return null;
+  const name = s.action === "file" ? `File to ${s.label}` : ACTION_NAME[s.action];
+  const runnable = s.action !== "task" || canTask;
+  return (
+    <div className={`rq__ai rq__ai--${s.action}`}>
+      <span className="rq__ai-text">
+        <span className="rq__ai-kicker">Suggested:</span> <strong>{name}</strong>
+        {s.action === "reply" && s.label ? <span className="rq__ai-then">, then file to {s.label}</span> : null}
+        {s.reason ? <span className="rq__ai-why"> · {s.reason}</span> : null}
+      </span>
+      {runnable ? (
+        <button
+          type="button"
+          className={`rq__btn rq__btn--sm${s.action === "trash" ? " rq__btn--danger" : ""}`}
+          onClick={() => onApply(s)}
+        >
+          {applyLabel(s)}
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
 /** "Draft reply": optional one-line steer, then an editable draft to save to Gmail. Never sends. */
-function DraftPanel({ id }: { id: string }) {
+function DraftPanel({
+  id,
+  fileAfter,
+  onFile,
+}: {
+  id: string;
+  /** The label triage suggested filing under once the reply is drafted. */
+  fileAfter?: string;
+  onFile: (label: string) => void;
+}) {
   const [note, setNote] = useState("");
   const [text, setText] = useState("");
   const [phase, setPhase] = useState<"idle" | "drafting" | "ready" | "saving" | "saved">("idle");
@@ -253,9 +359,16 @@ function DraftPanel({ id }: { id: string }) {
           <p className="rq__hint">AI draft. Read it before you send; nothing is sent from here.</p>
           <div className="rq__actions">
             {phase === "saved" && url ? (
-              <a className="rq__btn rq__btn--primary" href={url} target="_blank" rel="noreferrer">
-                Saved. Open in Gmail drafts
-              </a>
+              <>
+                <a className="rq__btn rq__btn--primary" href={url} target="_blank" rel="noreferrer">
+                  Saved. Open in Gmail drafts
+                </a>
+                {fileAfter ? (
+                  <button type="button" className="rq__btn" onClick={() => onFile(fileAfter)}>
+                    File to {fileAfter}
+                  </button>
+                ) : null}
+              </>
             ) : (
               <button type="button" className="rq__btn rq__btn--primary" disabled={phase === "saving" || !text.trim()} onClick={save}>
                 {phase === "saving" ? "Saving…" : "Save to Gmail drafts"}
@@ -290,12 +403,15 @@ function TaskPanel({
   reply,
   id,
   ai,
+  autoFill,
   todayIso,
   onAdded,
 }: {
   reply: Reply;
   id: string;
   ai: boolean;
+  /** Triage suggested a task: fill the fields from the email right away. */
+  autoFill?: boolean;
   todayIso: string;
   onAdded: () => void;
 }) {
@@ -326,6 +442,7 @@ function TaskPanel({
         }}
         submitLabel="Add to Todoist"
         onFill={ai ? fill : undefined}
+        autoFill={ai && autoFill}
         extra={
           <>
             <label className="rq__check">

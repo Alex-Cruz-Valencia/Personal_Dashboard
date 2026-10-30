@@ -51,3 +51,31 @@ export function loadLabels(): Promise<LabelInfo[]> {
   }
   return labelPromise;
 }
+
+export type TriageAction = "trash" | "task" | "reply" | "file" | "leave";
+
+export interface TriageSuggestion {
+  id: string;
+  action: TriageAction;
+  label?: string;
+  reason: string;
+}
+
+/** id → suggestion (null: asked, but the model had none). Kept for the page load, so reopening the queue costs nothing. */
+const triageCache = new Map<string, TriageSuggestion | null>();
+
+/** AI suggestions for these emails; only ids not asked about yet go to the server. Read-only. */
+export async function loadTriage(ids: string[]): Promise<Map<string, TriageSuggestion | null>> {
+  const missing = ids.filter((id) => !triageCache.has(id));
+  if (missing.length) {
+    const res = await fetch("/api/replies/triage", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ ids: missing }),
+    });
+    const body = (await res.json().catch(() => ({}))) as { suggestions?: TriageSuggestion[]; error?: string };
+    if (!res.ok || !body.suggestions) throw new Error(body.error || "Couldn't get suggestions.");
+    for (const id of missing) triageCache.set(id, body.suggestions.find((s) => s.id === id) ?? null);
+  }
+  return new Map(ids.map((id) => [id, triageCache.get(id) ?? null]));
+}
