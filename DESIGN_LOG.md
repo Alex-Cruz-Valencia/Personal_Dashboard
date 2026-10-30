@@ -167,6 +167,96 @@ misses like that, and treat them as profile edits, not code changes.
 
 ---
 
+## 2026-10-30 — Ramble, our own: talk, get tasks back
+
+**Problem** — The user likes Todoist's Ramble (talk, and it becomes structured
+tasks). Ramble is an in-app beta with no public API, so the dashboard can't call
+it.
+
+**Decision** — A "Ramble" button beside "+ Add task" opens a panel:
+1. **Start talking.** The browser's own speech recognition (Web Speech API)
+   fills a text box live. The box is editable, and typing or pasting works too,
+   which is also the fallback in browsers without speech recognition.
+2. **Make tasks.** `POST /api/tasks/ramble` sends only the text and the names of
+   the user's Todoist projects to the AI model. It returns separate tasks, each
+   with a date (resolved against today: "Friday", "tomorrow at 6", "next
+   week"), a time, P1–P4, and a project matched to one that exists.
+3. **Review.** Each task has a checkbox and an editable title, with its date,
+   priority and project shown.
+4. **Add N tasks** creates the ticked ones in order (`POST /api/tasks`, which now
+   takes `todoistPriority`). If one fails, the ones before it are already marked
+   added, so a retry doesn't duplicate them.
+
+**Safety (AI route rules)** — `guardAi` (fails closed, same-origin, hourly cap);
+input capped at 3,000 characters; output validated on the server:
+- dates must be real and fall between today and a year out;
+- times must be HH:MM, and only with a date;
+- priority must be 1–4;
+- projects must match an existing project, or the task goes to the Inbox.
+
+The transcript is marked as data, not instructions. The button shows only where
+the AI is set up and tasks are live.
+
+**Privacy note** — In Chrome, speech recognition runs on Google's servers; Safari
+can do it on the device. The panel says so ("Speech is turned into text by your
+browser"). Our model only ever receives text.
+
+**Alternatives considered** — Recording audio and sending it to a speech-to-text
+API (another key and another data flow); a live audio model like Todoist's (not
+available on our model).
+
+**Tested** — With the real model: a typed ramble became three dated, prioritised,
+project-matched tasks. Adding was intercepted in the browser, and one task was
+created and deleted in real Todoist to confirm a P1 at 10:00 lands as
+"Oct 31 10:00 AM", P1.
+
+## 2026-10-30 — A batch: click-for-menu, clickable week, resolvable conflicts, Ambient, two greeting cards
+
+**Tasks: a click opens the Todoist menu too.** Right-click and left-click now do
+the same thing, as the user asked. The menu's Edit (or E) still opens the full
+editor, so nothing is lost. Enter or Space on a focused task opens the menu
+under it.
+
+**The week view's events are clickable.** In the expanded week (the grid, the
+all-day banners, and a picked day's agenda), a click opens the same event card
+as today's calendar, with that day's date filled in. `WeekEvent` now carries the
+full event, so the card has location, link and notes.
+
+**Conflicts and tight turnarounds can be resolved.** Before, they only warned.
+Clicking one opens a small card listing both events:
+- **Edit** on either opens it to move, shorten or delete it.
+- **Show on calendar** scrolls there, as before.
+- **It's fine** dismisses the warning. It's remembered in this browser, keyed by
+  both events *and their exact times*, so it comes back if either one moves.
+  Nothing is written to Google.
+
+**Ambient.** A button under the clock (or in the footer with the classic top
+row) opens a full-screen, non-functional screen to leave up: a large, light
+clock and the date over the day's sky. At night that's a deep gradient with
+stars, meteors and a crescent moon; by day, a soft sky and a warm sun. The
+cursor hides when idle, the display is kept awake where the browser allows,
+and any key or click goes back. It's named Ambient rather than Focus because
+"Focus 25" is already the calendar's timer.
+
+**Two greeting cards to try** (⚙ Top row: Curve / Simple / Brief / Classic; the
+default is unchanged). The user found the day's temperature curve unhelpful.
+- **Simple:** now, high/low, feels-like (when it differs by 3° or more), and one
+  rain-or-wind line. No curve.
+- **Brief:** the same, plus up to four short lines that change plans:
+  - when rain starts and stops, named against a meeting it lands on ("during
+    Career & Life Design");
+  - wind and strong UV, only when they're notable;
+  - sunset, with the light left once it's under 3 hours;
+  - tomorrow's high/low and rain, from late afternoon.
+- New data: the daily high and low, the current feels-like, and the rest of
+  today's rain window, wind peak and UV peak, plus tomorrow (Open-Meteo, now
+  two forecast days).
+
+**Alternatives considered** — For the greeting card: hourly icons (still a chart
+to read); an AI-written weather sentence (slower, and less exact than computed
+lines). For Ambient: a dimmed dashboard (still functional, which it's meant not
+to be).
+
 ## 2026-10-30 — Partly cloudy keeps the stars
 
 **Problem** — The night scene (stars, meteors, moon) seemed to disappear. The

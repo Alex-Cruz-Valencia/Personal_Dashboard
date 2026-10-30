@@ -28,6 +28,9 @@ export async function POST(request: Request) {
   if (body.priority !== undefined && ![1, 2, 3].includes(body.priority)) {
     return NextResponse.json({ error: "priority must be 1, 2 or 3" }, { status: 400 });
   }
+  if (body.todoistPriority !== undefined && ![1, 2, 3, 4].includes(body.todoistPriority)) {
+    return NextResponse.json({ error: "todoistPriority must be 1–4" }, { status: 400 });
+  }
 
   if (body.dueDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(body.dueDate)) {
     return NextResponse.json({ error: "dueDate must be YYYY-MM-DD" }, { status: 400 });

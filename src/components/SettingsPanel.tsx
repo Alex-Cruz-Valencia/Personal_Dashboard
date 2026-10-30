@@ -159,7 +159,9 @@ export function SettingsPanel({ settings, shownTheme }: { settings: DashboardSet
             label="Top row"
             value={settings.topRow}
             options={[
-              ["unified", "One card"],
+              ["unified", "Curve"],
+              ["simple", "Simple"],
+              ["brief", "Brief"],
               ["classic", "Classic"],
             ]}
             onPick={(topRow) => update({ topRow })}

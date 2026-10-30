@@ -26,7 +26,17 @@ export interface AttentionItem {
   target: "arc" | "tasks" | "replies";
   /** For reply items: the messages it counts, so the strip can open them. */
   replyIds?: string[];
+  /** For conflicts and tight turnarounds: the two events, so the strip can offer to edit them. */
+  events?: AgendaEvent[];
+  /**
+   * For conflicts and tight turnarounds: the pair and their exact times, so "It's fine" holds
+   * only until either event moves.
+   */
+  okKey?: string;
 }
+
+const pairKey = (todayIso: string, a: AgendaEvent, b: AgendaEvent) =>
+  [todayIso, ...[a, b].map((e) => `${e.id ?? e.name}@${e.start}-${e.end}`)].join("|");
 
 /** "18h" → 0.75, "3d" → 3, anything unparseable → 0. */
 function ageDays(age: string): number {
@@ -50,8 +60,10 @@ export function buildAttention(input: {
   tasks: Task[];
   replies: Reply[];
   nowHour: number;
+  /** Ties a dismissed conflict to today, so "It's fine" doesn't carry over to a repeat tomorrow. */
+  todayIso?: string;
 }): AttentionItem[] {
-  const { agenda, tasks, replies, nowHour } = input;
+  const { agenda, tasks, replies, nowHour, todayIso = "" } = input;
   const items: AttentionItem[] = [];
 
   // Only what's still ahead (or underway) matters for conflicts and gaps.
@@ -77,6 +89,8 @@ export function buildAttention(input: {
         title: `${a.name} overlaps ${b.name}`,
         detail: `${minutesLabel(Math.max(1, overlap))} of overlap`,
         target: "arc",
+        events: [a, b],
+        okKey: `conflict|${pairKey(todayIso, a, b)}`,
       });
     }
   }
@@ -94,6 +108,8 @@ export function buildAttention(input: {
       title: `${a.name} then ${b.name}`,
       detail: gap === 0 ? "Back to back" : `${plural(gap, "min")} between`,
       target: "arc",
+      events: [a, b],
+      okKey: `tight|${pairKey(todayIso, a, b)}`,
     });
   }
 

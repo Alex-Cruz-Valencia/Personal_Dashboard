@@ -2,6 +2,7 @@ import { footLeft, footRight } from "@/lib/format";
 import type { DashboardSettings, Theme } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
 import Link from "next/link";
+import type { ReactNode } from "react";
 import type { AgendaEvent, TodayInfo } from "@/lib/types";
 import { SettingsPanel } from "./SettingsPanel";
 
@@ -11,9 +12,11 @@ interface FootlineProps {
   settings: DashboardSettings;
   /** The theme actually rendered (settings.theme may be "timed"). */
   shownTheme: Theme;
+  /** The Ambient button, here when the top row has no room for it (classic). */
+  ambient?: ReactNode;
 }
 
-export function Footline({ agenda, today, settings, shownTheme }: FootlineProps) {
+export function Footline({ agenda, today, settings, shownTheme, ambient }: FootlineProps) {
   return (
     <footer className="footline">
       <div>{footLeft(agenda, today.nowHour)}</div>
@@ -27,6 +30,7 @@ export function Footline({ agenda, today, settings, shownTheme }: FootlineProps)
           <i aria-hidden />
           {footRight(today.nowHour, use24Hour(settings))}
         </span>
+        {ambient}
         <SettingsPanel settings={settings} shownTheme={shownTheme} />
       </div>
     </footer>

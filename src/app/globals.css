@@ -2265,3 +2265,123 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .taskmenu__tips li::before { content: ""; position: absolute; left: 2px; top: 0.55em; width: 5px; height: 5px; border-radius: 50%; background: var(--tm-assist); }
 .taskmenu__btn--primary { background: var(--ink); border-color: var(--ink); color: var(--surface); }
 .taskmenu__btn:disabled { opacity: 0.5; cursor: default; }
+
+/* Week view events open the same event card as today's calendar. */
+.week__event[role="button"], .week__banner[role="button"] { cursor: pointer; }
+.week__event[role="button"]:hover, .week__banner[role="button"]:hover { filter: brightness(1.06); }
+.week__event[aria-pressed="true"], .week__banner[aria-pressed="true"] { outline: 2px solid var(--accent); outline-offset: 1px; }
+.week__event[role="button"]:focus-visible, .week__banner[role="button"]:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* Resolving a conflict / tight turnaround from the attention strip. */
+.resolve {
+  position: fixed; z-index: 50; width: clamp(260px, 92vw, 320px); padding: 14px;
+  display: grid; gap: 10px; overflow-y: auto; font-family: var(--font-body);
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop);
+}
+.resolve__title { margin: 0; font-size: 14px; font-weight: 700; }
+.resolve__detail { margin: -6px 0 0; font-size: 12.5px; color: var(--ink-soft); }
+.resolve__events { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.resolve__event {
+  --ev: var(--ink-faint);
+  display: grid; grid-template-columns: 1fr auto; align-items: center; gap: 2px 10px; width: 100%; text-align: left;
+  padding: 8px 10px 8px 12px; border: 1px solid var(--line); border-radius: var(--radius-sm); cursor: pointer;
+  background: color-mix(in srgb, var(--ev) 9%, var(--surface)); box-shadow: inset 3px 0 0 var(--ev); color: var(--ink); font: inherit;
+}
+.resolve__event:hover:not(:disabled) { background: color-mix(in srgb, var(--ev) 15%, var(--surface)); }
+.resolve__event:disabled { cursor: default; }
+.resolve__name { font-size: 13px; font-weight: 600; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.resolve__when { grid-column: 1; font-size: 12px; color: var(--ink-soft); }
+.resolve__edit { grid-column: 2; grid-row: 1 / span 2; font-size: 12px; font-weight: 600; color: var(--accent); }
+.resolve__actions { display: flex; justify-content: flex-end; gap: 8px; }
+.resolve__btn { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; }
+.resolve__btn--ok { background: var(--accent); border-color: var(--accent); color: var(--surface); }
+.resolve__btn:focus-visible, .resolve__event:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* ===================== AMBIENT (a screen to leave up: the time over the sky) ===================== */
+.ambient-btn {
+  display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 999px; cursor: pointer;
+  font: inherit; font-size: 12px; font-weight: 600; color: var(--ink-soft);
+  background: color-mix(in srgb, var(--surface) 70%, transparent); border: 1px solid var(--line);
+}
+.ambient-btn:hover { color: var(--ink); border-color: var(--ink-faint); }
+.ambient-btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ambient {
+  position: fixed; inset: 0; z-index: 200; overflow: hidden; cursor: default; color: #EEF0F4;
+  font-family: var(--font-display); display: grid; place-items: center;
+  background: radial-gradient(120% 90% at 78% 8%, #1F2A4D 0%, #0D1222 55%, #070A13 100%);
+}
+.ambient--day { color: #1F2328; background: radial-gradient(120% 90% at 78% 6%, #FFF3D9 0%, #E9EEF2 45%, #D3DEE6 100%); }
+.ambient--idle { cursor: none; }
+/* The page scene, here in front of its own background and with nothing over it. */
+.ambient .scene--page { position: absolute; z-index: 0; }
+.ambient .scene--page .scene__star { background: #F4F6FF; box-shadow: 0 0 6px rgba(220, 230, 255, 0.6); }
+.ambient .scene__meteor { background: linear-gradient(to right, transparent, rgba(240, 244, 255, 0.9)); }
+.ambient--day .scene__cloud { background: #FFFFFF; opacity: 0.5; }
+.ambient__orb {
+  position: absolute; top: 9vh; right: 12vw; width: min(16vh, 140px); aspect-ratio: 1; border-radius: 50%; z-index: 0;
+  background: radial-gradient(circle at 35% 35%, #FBF6E6, #DCD3BC 70%); box-shadow: 0 0 60px 10px rgba(230, 225, 200, 0.18);
+  -webkit-mask: radial-gradient(circle at 72% 30%, transparent 46%, #000 47%); mask: radial-gradient(circle at 72% 30%, transparent 46%, #000 47%);
+  animation: ambient-float 14s ease-in-out infinite alternate;
+}
+.ambient--day .ambient__orb {
+  -webkit-mask: none; mask: none; background: radial-gradient(circle, #FFE7A8 0%, #FFC45E 55%, rgba(255, 196, 94, 0) 72%);
+  box-shadow: 0 0 120px 40px rgba(255, 205, 120, 0.35);
+}
+@keyframes ambient-float { to { transform: translateY(14px); } }
+.ambient__center { position: relative; z-index: 1; text-align: center; user-select: none; }
+.ambient__time {
+  font-size: clamp(88px, 20vw, 260px); font-weight: 300; letter-spacing: -0.04em; line-height: 0.9;
+  font-variant-numeric: tabular-nums; text-shadow: 0 0 40px rgba(180, 200, 255, 0.15);
+}
+.ambient--day .ambient__time { text-shadow: 0 2px 30px rgba(255, 255, 255, 0.6); }
+.ambient__colon { display: inline-block; margin: 0 0.02em; animation: ambient-breathe 4s ease-in-out infinite; }
+@keyframes ambient-breathe { 50% { opacity: 0.35; } }
+.ambient__ampm { font-size: 0.18em; font-weight: 500; letter-spacing: 0.04em; margin-left: 0.25em; opacity: 0.7; }
+.ambient__date { margin-top: 1.2vh; font-family: var(--font-body); font-size: clamp(14px, 1.6vw, 20px); letter-spacing: 0.18em; text-transform: uppercase; opacity: 0.6; }
+.ambient__hint {
+  position: absolute; bottom: 4vh; left: 0; right: 0; z-index: 1; margin: 0; text-align: center;
+  font-family: var(--font-body); font-size: 12px; opacity: 0.45; transition: opacity 1.2s ease;
+}
+.ambient--idle .ambient__hint { opacity: 0; }
+@media (prefers-reduced-motion: reduce) { .ambient__orb, .ambient__colon { animation: none; } }
+
+/* Top row "simple" and "brief": the same card without the curve. Simple keeps one weather line;
+   brief adds a few short lines that change plans (rain over a meeting, wind, light left, tomorrow). */
+.topuni--simple, .topuni--brief { padding-bottom: 26px; }
+.topuni__hl { font-weight: 600; color: var(--ink); }
+.topuni__brief { list-style: none; margin: 6px 0 0; padding: 14px 0 0; border-top: 1px solid var(--line); display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); gap: 10px 24px; }
+.brief { display: flex; align-items: baseline; gap: 8px; min-width: 0; font-size: 13.5px; }
+.brief__icon { flex: 0 0 auto; align-self: center; color: var(--ink-soft); }
+.brief__text { font-weight: 600; white-space: nowrap; }
+.brief__note { color: var(--ink-soft); font-size: 12.5px; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.brief--rain .brief__icon { color: var(--mark-meeting, var(--accent)); }
+.brief--wind .brief__icon, .brief--sun .brief__icon { color: var(--mark-warning, var(--warning)); }
+.brief--tomorrow .brief__icon { color: var(--accent); }
+
+/* Ramble: talk → tasks, beside "+ Add task". */
+.tasks__adds { display: flex; align-items: baseline; gap: 18px; }
+.tasks__ramble { display: inline-flex; align-items: center; gap: 5px; }
+.tasks__ramble svg { align-self: center; }
+.ramble__lead { margin: 0; font-size: 13px; color: var(--ink-soft); line-height: 1.4; }
+.ramble__mic {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; cursor: pointer;
+  font: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 999px;
+}
+.ramble__mic.is-on { color: #fff; background: var(--mark-negative, var(--negative)); border-color: transparent; animation: ramble-pulse 1.4s ease-in-out infinite; }
+@keyframes ramble-pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--mark-negative, var(--negative)) 22%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .ramble__mic.is-on { animation: none; } }
+.ramble__text { min-height: 96px; }
+.ramble__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 320px; overflow-y: auto; }
+.ramble__task { display: flex; gap: 10px; align-items: flex-start; padding: 8px 2px; border-bottom: 1px solid var(--line); }
+.ramble__task input[type="checkbox"] { margin-top: 4px; accent-color: var(--accent); }
+.ramble__task.is-off .ramble__body { opacity: 0.45; }
+.ramble__body { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.ramble__name { font: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid transparent; padding: 1px 0; outline: none; min-width: 0; }
+.ramble__name:focus { border-bottom-color: var(--accent); }
+.ramble__meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--ink-soft); }
+.ramble__none { color: var(--ink-faint); }
+.ramble__p { font-weight: 700; }
+.ramble__p--1 { color: var(--todo-p1, var(--negative)); }
+.ramble__p--2 { color: var(--todo-p2, var(--warning)); }
+.ramble__p--3 { color: var(--todo-p3, var(--ink-soft)); }

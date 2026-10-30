@@ -289,6 +289,8 @@ export interface NewTask {
   projectId?: string;
   /** Make it a subtask of this task (it lands in the parent's project). */
   parentId?: string;
+  /** Todoist's own P1–P4 (1 = urgent). Wins over `priority`. */
+  todoistPriority?: 1 | 2 | 3 | 4;
   priority?: Priority;
   /** Natural-language due ("tomorrow 9am"). Prefer `dueDate` when you have a date. */
   due?: string;
@@ -472,6 +474,7 @@ export function addTask(task: NewTask): Promise<unknown> {
   if (task.priority !== undefined) {
     body.priority = TO_TODOIST_PRIORITY[task.priority];
   }
+  if (task.todoistPriority !== undefined) body.priority = 5 - task.todoistPriority;
   if (task.dueDate) body.due_date = task.dueDate;
   else if (task.due) body.due_string = task.due;
   if (task.description) body.description = task.description;

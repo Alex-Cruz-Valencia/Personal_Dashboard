@@ -18,10 +18,12 @@ import { flushFocus, Popover } from "./Popover";
 interface OpenState {
   event: AgendaEvent;
   anchor: DOMRect;
+  dateIso?: string;
 }
 
 interface EventDetailApi {
-  open: (event: AgendaEvent, anchorEl: HTMLElement) => void;
+  /** `dateIso`: the day the event is on, when it isn't today (the week view). */
+  open: (event: AgendaEvent, anchorEl: HTMLElement, dateIso?: string) => void;
   close: () => void;
   isSelected: (event: AgendaEvent) => boolean;
 }
@@ -56,8 +58,8 @@ export function EventDetailProvider({
 }) {
   const [state, setState] = useState<OpenState | null>(null);
 
-  const open = useCallback((event: AgendaEvent, anchorEl: HTMLElement) => {
-    setState({ event, anchor: anchorEl.getBoundingClientRect() });
+  const open = useCallback((event: AgendaEvent, anchorEl: HTMLElement, dateIso?: string) => {
+    setState({ event, anchor: anchorEl.getBoundingClientRect(), dateIso });
   }, []);
   const close = useCallback(() => setState(null), []);
 
@@ -77,7 +79,7 @@ export function EventDetailProvider({
           anchor={state.anchor}
           use24={use24}
           theme={theme}
-          todayIso={todayIso}
+          todayIso={state.dateIso ?? todayIso}
           onClose={close}
         />
       ) : null}

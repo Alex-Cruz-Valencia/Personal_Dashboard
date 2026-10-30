@@ -17,11 +17,15 @@ export interface WeatherLocation {
 }
 
 interface OpenMeteoResponse {
+  /** Not in the response; filled from `current.time` below. */
+  current_time?: string;
   current: {
+    time?: string;
     temperature_2m: number;
     weather_code: number;
     wind_speed_10m: number;
     wind_direction_10m: number;
+    apparent_temperature?: number;
   };
   hourly: {
     time: string[];
@@ -35,6 +39,9 @@ interface OpenMeteoResponse {
     sunrise: string[];
     sunset: string[];
     precipitation_probability_max: number[];
+    temperature_2m_max?: number[];
+    temperature_2m_min?: number[];
+    weather_code?: number[];
   };
 }
 
@@ -103,6 +110,32 @@ function buildHourly(
   return out;
 }
 
+/** What's left of today, hour by hour: the next rainy stretch, the windiest hour, the UV peak. */
+function restOfToday(data: OpenMeteoResponse, nowHour: number) {
+  const today = data.hourly.time[0]?.slice(0, 10);
+  const hours = data.hourly.time
+    .map((t, i) => ({ h: isoLocalToDecimalHour(t), day: t.slice(0, 10), i }))
+    .filter((x) => x.day === today && x.h + 1 > nowHour);
+  let rain: { start: number; end: number; chance: number } | null = null;
+  for (const { h, i } of hours) {
+    const p = data.hourly.precipitation_probability?.[i] ?? 0;
+    if (p >= 40) {
+      if (!rain) rain = { start: Math.max(h, nowHour), end: h + 1, chance: p };
+      else if (rain.end === h) rain = { start: rain.start, end: h + 1, chance: Math.max(rain.chance, p) };
+    } else if (rain) break;
+  }
+  const rainWindow: Weather["rainWindow"] = rain;
+  let windPeak: Weather["windPeak"];
+  let uvPeak: Weather["uvPeak"] = null;
+  for (const { h, i } of hours) {
+    const w = data.hourly.wind_speed_10m?.[i] ?? 0;
+    if (!windPeak || w > windPeak.mph) windPeak = { mph: Math.round(w), at: h };
+    const uv = data.hourly.uv_index?.[i] ?? 0;
+    if (uv >= 6 && (!uvPeak || uv > uvPeak.index)) uvPeak = { index: Math.round(uv), at: h };
+  }
+  return { rainWindow, windPeak, uvPeak };
+}
+
 export async function getWeather(
   location: WeatherLocation,
   arc: { from: number; to: number } = { from: 6, to: 22 },
@@ -112,7 +145,7 @@ export async function getWeather(
   url.searchParams.set("longitude", String(location.longitude));
   url.searchParams.set(
     "current",
-    "temperature_2m,weather_code,wind_speed_10m,wind_direction_10m",
+    "temperature_2m,weather_code,wind_speed_10m,wind_direction_10m,apparent_temperature",
   );
   url.searchParams.set(
     "hourly",
@@ -120,10 +153,11 @@ export async function getWeather(
   );
   url.searchParams.set(
     "daily",
-    "sunrise,sunset,precipitation_probability_max",
+    "sunrise,sunset,precipitation_probability_max,temperature_2m_max,temperature_2m_min,weather_code",
   );
   url.searchParams.set("timezone", location.timezone);
-  url.searchParams.set("forecast_days", "1");
+  // Two days: tomorrow's line on the briefing card. Everything else reads day 0.
+  url.searchParams.set("forecast_days", "2");
   url.searchParams.set("temperature_unit", "fahrenheit");
   url.searchParams.set("wind_speed_unit", "mph");
 
@@ -132,6 +166,7 @@ export async function getWeather(
     throw new Error(`Open-Meteo responded ${res.status}`);
   }
   const data = (await res.json()) as OpenMeteoResponse;
+  data.current_time = data.current.time;
 
   const condition = weatherCodeToText(data.current.weather_code);
   const wind = Math.round(data.current.wind_speed_10m);
@@ -142,7 +177,25 @@ export async function getWeather(
   const sunrise = isoLocalToDecimalHour(data.daily.sunrise[0]);
   const sunset = isoLocalToDecimalHour(data.daily.sunset[0]);
 
+  const nowHour = isoLocalToDecimalHour(data.current_time ?? "") || new Date().getHours();
+  const d = data.daily;
+  const tomorrow =
+    d.temperature_2m_max?.[1] != null && d.temperature_2m_min?.[1] != null
+      ? {
+          high: Math.round(d.temperature_2m_max[1]),
+          low: Math.round(d.temperature_2m_min[1]),
+          condition: weatherCodeToText(d.weather_code?.[1] ?? 0),
+          rainChance: d.precipitation_probability_max[1] ?? 0,
+        }
+      : undefined;
+
   return {
+    ...restOfToday(data, nowHour),
+    high: d.temperature_2m_max?.[0] != null ? Math.round(d.temperature_2m_max[0]) : undefined,
+    low: d.temperature_2m_min?.[0] != null ? Math.round(d.temperature_2m_min[0]) : undefined,
+    feelsLike: data.current.apparent_temperature != null ? Math.round(data.current.apparent_temperature) : undefined,
+    rainChance,
+    tomorrow,
     place: "",
     tempNow: Math.round(data.current.temperature_2m),
     condition,
