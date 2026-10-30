@@ -105,12 +105,25 @@ export interface Task {
   section?: string;
   /** The project's color as hex, for the "#" mark. */
   projectColor?: string;
+  /** Section id, so "Move to…" can mark where the task is now. */
+  sectionId?: string;
+  /** The local day it's due, "YYYY-MM-DD" (absent with no due date). */
+  dueDate?: string;
 }
 
 /** A Todoist project, for the task editor's "move to" control. */
 export interface Project {
   id: string;
   name: string;
+  /** The project's color as hex, for the "#" mark. */
+  color?: string;
+}
+
+/** A Todoist section, for the task menu's "Move to…". */
+export interface Section {
+  id: string;
+  name: string;
+  projectId: string;
 }
 
 export interface AgendaEvent {

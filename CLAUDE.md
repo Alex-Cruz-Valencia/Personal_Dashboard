@@ -143,7 +143,11 @@
 - Client components (the reference is static, so these add interaction):
   `WeatherCard` (temperature-curve scrub); `TaskList` (checkbox completes,
   click a task → `TaskDetail` editor popover — priority/due/project/labels/
-  deadline/duration/notes, auto-saves per field; `+ Add task`); `DayArc`
+  deadline/duration/notes, auto-saves per field; right-click → `TaskMenu`, a copy
+  of Todoist's task menu at the pointer (`Popover align="point"`): date shortcuts
+  via PATCH `date` → `rescheduleTask` (keeps time + repeat through a Sync
+  `item_update`), P1–P4 via `todoistPriority`, Move to project/section,
+  `POST /api/tasks/[id]/duplicate`, Todoist's keys; `+ Add task`); `DayArc`
   (click → `EventDetail` popover); `PlanCard` (replaced the agenda list —
   countdown ring, open gaps filled by `buildPlan()` in `src/lib/plan.ts`,
   Block → `POST /api/events` tagged `[todoist:<id>]` in the description,

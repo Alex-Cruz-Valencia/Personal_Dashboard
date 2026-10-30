@@ -28,6 +28,11 @@ interface PopoverProps {
   onClose: () => void;
   /** Close when the page scrolls (good for read-only cards, not for editors). */
   closeOnScroll?: boolean;
+  /**
+   * "center" (default) centres the card under the anchor; "point" puts its top-left corner at
+   * the anchor, like a context menu opened at the pointer.
+   */
+  align?: "center" | "point";
   className?: string;
   ariaLabel: string;
   children: ReactNode;
@@ -43,6 +48,7 @@ export function Popover({
   theme,
   onClose,
   closeOnScroll = false,
+  align = "center",
   className,
   ariaLabel,
   children,
@@ -73,7 +79,7 @@ export function Popover({
     // under the initial maxHeight, which would cap a tall card (settings, the
     // task editor) and place it too low, running off the bottom of the screen.
     const height = el.scrollHeight + (el.offsetHeight - el.clientHeight);
-    const gap = 8;
+    const gap = align === "point" ? 2 : 8;
     const margin = 12;
 
     // The anchor may be partly or fully off-screen (scrolled list) — clamp it
@@ -93,13 +99,13 @@ export function Popover({
     );
 
     const left = clamp(
-      anchor.left + anchor.width / 2 - width / 2,
+      align === "point" ? anchor.left : anchor.left + anchor.width / 2 - width / 2,
       margin,
       Math.max(margin, vw - width - margin),
     );
 
     setPos({ top, left, maxHeight });
-  }, [anchor]);
+  }, [anchor, align]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {

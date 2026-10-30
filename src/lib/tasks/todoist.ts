@@ -13,7 +13,7 @@ import "server-only";
 import { config } from "@/lib/config";
 import { formatHour } from "@/lib/format";
 import { decimalHourForTimestamp, isoDateInZone } from "@/lib/time";
-import type { Priority, Project, Task, WeekTask } from "@/lib/types";
+import type { Priority, Project, Section, Task, WeekTask } from "@/lib/types";
 
 const API = "https://api.todoist.com/api/v1";
 /** A hung Todoist call would hold the whole page render; give up instead. */
@@ -56,6 +56,8 @@ interface TodoistProject {
 interface TodoistSection {
   id: string;
   name: string;
+  project_id: string;
+  is_archived?: boolean;
 }
 
 /** Todoist's named project colors → the hex the Todoist app paints them. */
@@ -191,6 +193,8 @@ export async function getTasks(
       meta: projectById.get(t.project_id)?.name ?? t.labels[0] ?? "Task",
       todoistPriority: (5 - t.priority) as 1 | 2 | 3 | 4,
       section: (t.section_id && sectionName.get(t.section_id)) || undefined,
+      sectionId: t.section_id ?? undefined,
+      dueDate: t.due ? dueDayOf(t.due, timezone) : undefined,
       projectColor: PROJECT_COLORS[projectById.get(t.project_id)?.color ?? ""],
       due: dueLabel(t.due, todayIso, timezone),
       dueHour: dueHourOf(t.due, todayIso, timezone),
@@ -229,7 +233,21 @@ export async function listProjects(): Promise<Project[]> {
   const page = (await res.json()) as Page<TodoistProject>;
   return page.results
     .filter((p) => !p.is_archived)
-    .map((p) => ({ id: p.id, name: p.name }));
+    .map((p) => ({ id: p.id, name: p.name, color: PROJECT_COLORS[p.color ?? ""] }));
+}
+
+export async function listSections(): Promise<Section[]> {
+  if (!config.todoist.token) throw new Error("Todoist not configured");
+  const res = await fetch(`${API}/sections?limit=200`, {
+    headers: { Authorization: `Bearer ${config.todoist.token}` },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    next: metaTtl(),
+  });
+  if (!res.ok) throw new Error(`Todoist /sections responded ${res.status}`);
+  const page = (await res.json()) as Page<TodoistSection>;
+  return page.results
+    .filter((s) => !s.is_archived)
+    .map((s) => ({ id: s.id, name: s.name, projectId: s.project_id }));
 }
 
 export async function listLabels(): Promise<string[]> {
@@ -255,6 +273,8 @@ export interface TaskPatch {
   description?: string;
   /** Dashboard scale: 1 = urgent, 2 = normal, 3 = someday. */
   priority?: Priority;
+  /** Todoist's own P1–P4 (1 = urgent), for the task menu's four flags. Wins over `priority`. */
+  todoistPriority?: 1 | 2 | 3 | 4;
   /** Natural-language due ("tomorrow 9am", "every monday"), or null to clear. */
   due?: string | null;
   labels?: string[];
@@ -322,6 +342,7 @@ export function updateTask(id: string, patch: TaskPatch): Promise<unknown> {
   if (patch.priority !== undefined) {
     body.priority = TO_TODOIST_PRIORITY[patch.priority];
   }
+  if (patch.todoistPriority !== undefined) body.priority = 5 - patch.todoistPriority;
   if (patch.labels !== undefined) body.labels = patch.labels;
   if (patch.due === null) body.due_string = "no date";
   else if (patch.due !== undefined) body.due_string = patch.due;
@@ -336,9 +357,103 @@ export function updateTask(id: string, patch: TaskPatch): Promise<unknown> {
   return todoistWrite(`/tasks/${id}`, "POST", body);
 }
 
-/** Move a task to a different project (Todoist keeps this separate from update). */
-export function moveTask(id: string, projectId: string): Promise<unknown> {
-  return todoistWrite(`/tasks/${id}/move`, "POST", { project_id: projectId });
+/** Move a task to a project, or to a section (Todoist keeps this separate from update). */
+export function moveTask(id: string, to: { projectId?: string; sectionId?: string }): Promise<unknown> {
+  return todoistWrite(
+    `/tasks/${id}/move`,
+    "POST",
+    to.sectionId ? { section_id: to.sectionId } : { project_id: to.projectId },
+  );
+}
+
+async function getTask(id: string): Promise<TodoistTask> {
+  if (!config.todoist.token) throw new Error("Todoist not configured");
+  const res = await fetch(`${API}/tasks/${id}`, {
+    headers: { Authorization: `Bearer ${config.todoist.token}` },
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Todoist GET /tasks/${id} responded ${res.status}`);
+  return (await res.json()) as TodoistTask;
+}
+
+/** One Sync API command — the only way to set a due date and keep its repeat. */
+async function syncCommand(type: string, args: Record<string, unknown>): Promise<void> {
+  if (!config.todoist.token) throw new Error("Todoist not configured");
+  const uuid = crypto.randomUUID();
+  const res = await fetch(`${API}/sync`, {
+    method: "POST",
+    headers: { Authorization: `Bearer ${config.todoist.token}`, "Content-Type": "application/json" },
+    body: JSON.stringify({ commands: [{ type, uuid, args }] }),
+    signal: AbortSignal.timeout(TIMEOUT_MS),
+    cache: "no-store",
+  });
+  if (!res.ok) throw new Error(`Todoist sync responded ${res.status}`);
+  const out = (await res.json()) as { sync_status?: Record<string, unknown> };
+  if (out.sync_status?.[uuid] !== "ok") throw new Error(`Todoist couldn't ${type.replace("item_", "")} that task`);
+}
+
+/** A due moved to `isoDate`, keeping its time of day and its repeat rule. */
+function movedDue(due: TodoistDue, isoDate: string, timezone: string): Record<string, unknown> {
+  let date = isoDate;
+  if (isTimed(due)) {
+    if (hasExplicitZone(due.date)) {
+      const days = Math.round((Date.parse(`${isoDate}T00:00:00Z`) - Date.parse(`${dueDayOf(due, timezone)}T00:00:00Z`)) / 86_400_000);
+      date = new Date(Date.parse(due.date) + days * 86_400_000).toISOString().replace(/\.\d{3}Z$/, "Z");
+    } else {
+      date = isoDate + due.date.slice(10);
+    }
+  }
+  return due.is_recurring
+    ? { date, string: due.string, is_recurring: true, timezone: due.timezone, lang: "en" }
+    : { date, timezone: due.timezone };
+}
+
+/**
+ * Move a task to another day, like Todoist's date shortcuts: the time of day stays, and a
+ * repeating task keeps repeating (only this occurrence moves). null clears the date.
+ */
+export async function rescheduleTask(id: string, isoDate: string | null, timezone: string): Promise<void> {
+  if (isoDate === null) {
+    await updateTask(id, { due: null });
+    return;
+  }
+  const t = await getTask(id);
+  // A one-off date (or floating time) goes in as text, so Todoist names it the way the app
+  // does ("Oct 31 3:00 PM"); due_date or Sync would leave the bare ISO date as its name.
+  if (!t.due || (!t.due.is_recurring && !(isTimed(t.due) && hasExplicitZone(t.due.date)))) {
+    const time = t.due && isTimed(t.due) ? ` ${t.due.date.slice(11, 16)}` : "";
+    await todoistWrite(`/tasks/${id}`, "POST", { due_string: isoDate + time });
+    return;
+  }
+  await syncCommand("item_update", { id, due: movedDue(t.due, isoDate, timezone) });
+}
+
+/** A copy of a task in the same project and section, with its date (and repeat), labels, priority, deadline and notes. */
+export async function duplicateTask(id: string): Promise<unknown> {
+  const t = await getTask(id);
+  const body: Record<string, unknown> = {
+    content: t.content,
+    description: t.description,
+    priority: t.priority,
+    labels: t.labels,
+    ...(t.section_id ? { section_id: t.section_id } : { project_id: t.project_id }),
+  };
+  if (t.deadline) body.deadline_date = t.deadline.date;
+  if (t.duration) {
+    body.duration = t.duration.amount;
+    body.duration_unit = t.duration.unit;
+  }
+  const copy = (await todoistWrite("/tasks", "POST", body)) as { id: string };
+  if (t.due) {
+    await syncCommand("item_update", {
+      id: copy.id,
+      due: t.due.is_recurring
+        ? { date: t.due.date, string: t.due.string, is_recurring: true, timezone: t.due.timezone, lang: "en" }
+        : { date: t.due.date, timezone: t.due.timezone },
+    });
+  }
+  return copy;
 }
 
 export function addTask(task: NewTask): Promise<unknown> {

@@ -95,6 +95,53 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-29 — Todoist's own right-click menu on tasks
+
+**Problem** — Right-click opened the full task editor, which is a form: fine for
+editing notes, heavy for the quick things right-click is for (push to tomorrow,
+bump the priority, move it, delete it). The user lives in Todoist, so the menu
+their hand expects is Todoist's.
+
+**Decision** — Right-click now opens a copy of Todoist's task menu at the pointer:
+- Edit (opens the existing editor) and Go to project.
+- Date shortcuts: Today / Tomorrow / This weekend / Next week / No date, plus a
+  "•••" panel with natural-language entry and a day picker. The option matching
+  the current date is hidden, as in Todoist.
+- The four priority flags.
+- Deadline, Reminders, Move to… (projects and their sections, with search),
+  Duplicate, Copy link to task, and Delete (with a confirm).
+
+Todoist's keyboard shortcuts work while the menu is open: E, ⇧G, T, Y and 1–4,
+D, V, ⇧⌘C, ⌘⌫ / Delete, plus the arrow keys. Each write closes the menu only
+once Todoist confirms it.
+
+**Reasoning / details that matter**
+- **Moving a date keeps the repeat.** Todoist's shortcuts move one occurrence of
+  a repeating task and keep its time of day. A plain "due = tomorrow" would wipe
+  the "every day 3pm" rule, so the server reads the task and sends a Sync
+  `item_update` with the same repeat string and a new date. One-off tasks are
+  set by text, so Todoist names them the way the app does ("Oct 31 3:00 PM"),
+  not with a bare ISO date.
+- **Four flags, not three.** The dashboard's own priority merges P2 and P3. The
+  menu writes Todoist's P1–P4 directly (`todoistPriority`).
+- **Duplicate copies on the server.** It copies date (and repeat), labels,
+  priority, deadline, duration, notes, project and section.
+- Checked end to end against Todoist with temporary "ZZ temp test" tasks, all
+  deleted afterwards.
+
+**Alternatives considered** — Keeping the editor on right-click (a form where a
+menu is expected); a shorter menu with only dates and priority (the user asked
+for Todoist's, and the rest is cheap once the plumbing exists).
+
+**Tradeoffs / open questions**
+- **Reminders** opens the task in Todoist. Reminders need the Sync API and
+  Todoist Pro, so they aren't set here.
+- **Task Assist** (Todoist's AI) is left out. Todoist doesn't expose it through
+  its API; our own model could stand in later.
+- Duplicate doesn't copy subtasks.
+- Todoist's undo toast after a change isn't copied; the date is one more
+  right-click away.
+
 ## 2026-10-29 — Right-click a task to edit it
 
 **Problem** — The task editor opened only on a click on the task's text.
