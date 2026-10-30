@@ -2357,3 +2357,31 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .brief--rain .brief__icon { color: var(--mark-meeting, var(--accent)); }
 .brief--wind .brief__icon, .brief--sun .brief__icon { color: var(--mark-warning, var(--warning)); }
 .brief--tomorrow .brief__icon { color: var(--accent); }
+
+/* Ramble: talk → tasks, beside "+ Add task". */
+.tasks__adds { display: flex; align-items: baseline; gap: 18px; }
+.tasks__ramble { display: inline-flex; align-items: center; gap: 5px; }
+.tasks__ramble svg { align-self: center; }
+.ramble__lead { margin: 0; font-size: 13px; color: var(--ink-soft); line-height: 1.4; }
+.ramble__mic {
+  display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 14px; cursor: pointer;
+  font: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink); background: var(--surface-2);
+  border: 1px solid var(--line); border-radius: 999px;
+}
+.ramble__mic.is-on { color: #fff; background: var(--mark-negative, var(--negative)); border-color: transparent; animation: ramble-pulse 1.4s ease-in-out infinite; }
+@keyframes ramble-pulse { 50% { box-shadow: 0 0 0 6px color-mix(in srgb, var(--mark-negative, var(--negative)) 22%, transparent); } }
+@media (prefers-reduced-motion: reduce) { .ramble__mic.is-on { animation: none; } }
+.ramble__text { min-height: 96px; }
+.ramble__list { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; max-height: 320px; overflow-y: auto; }
+.ramble__task { display: flex; gap: 10px; align-items: flex-start; padding: 8px 2px; border-bottom: 1px solid var(--line); }
+.ramble__task input[type="checkbox"] { margin-top: 4px; accent-color: var(--accent); }
+.ramble__task.is-off .ramble__body { opacity: 0.45; }
+.ramble__body { display: grid; gap: 3px; min-width: 0; flex: 1; }
+.ramble__name { font: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid transparent; padding: 1px 0; outline: none; min-width: 0; }
+.ramble__name:focus { border-bottom-color: var(--accent); }
+.ramble__meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--ink-soft); }
+.ramble__none { color: var(--ink-faint); }
+.ramble__p { font-weight: 700; }
+.ramble__p--1 { color: var(--todo-p1, var(--negative)); }
+.ramble__p--2 { color: var(--todo-p2, var(--warning)); }
+.ramble__p--3 { color: var(--todo-p3, var(--ink-soft)); }

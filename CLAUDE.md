@@ -91,7 +91,9 @@
   (validated by `schedule-validate.ts`; each suggestion needs its own Block), and
   `POST /api/tasks/[id]/assist` (Task Assist in the task menu, `lib/llm/assist.ts`:
   actionable title / subtasks / tips, validated by `parseAssist`; applying one is
-  a normal task write — PATCH content/description, or POST /api/tasks with `parentId`).
+  a normal task write — PATCH content/description, or POST /api/tasks with `parentId`), and
+  `POST /api/tasks/ramble` (Ramble, `Ramble.tsx` + `lib/llm/ramble.ts`: browser speech → text →
+  tasks with date/time/P1–P4/project, validated by `parseRamble`; the user reviews and clicks Add).
   `POST /api/replies/triage` (AI triage in `ReplyQueue`, `lib/llm/triage.ts`: one call for the
   queue, one suggestion per email: trash / task / reply / file / leave + a reason, validated by
   `parseTriage`, labels checked against the live Gmail list; applying one is the existing

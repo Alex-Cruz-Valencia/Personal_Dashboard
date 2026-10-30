@@ -167,6 +167,49 @@ misses like that, and treat them as profile edits, not code changes.
 
 ---
 
+## 2026-10-30 — Ramble, our own: talk, get tasks back
+
+**Problem** — The user likes Todoist's Ramble (talk, and it becomes structured
+tasks). Ramble is an in-app beta with no public API, so the dashboard can't call
+it.
+
+**Decision** — A "Ramble" button beside "+ Add task" opens a panel:
+1. **Start talking.** The browser's own speech recognition (Web Speech API)
+   fills a text box live. The box is editable, and typing or pasting works too,
+   which is also the fallback in browsers without speech recognition.
+2. **Make tasks.** `POST /api/tasks/ramble` sends only the text and the names of
+   the user's Todoist projects to the AI model. It returns separate tasks, each
+   with a date (resolved against today: "Friday", "tomorrow at 6", "next
+   week"), a time, P1–P4, and a project matched to one that exists.
+3. **Review.** Each task has a checkbox and an editable title, with its date,
+   priority and project shown.
+4. **Add N tasks** creates the ticked ones in order (`POST /api/tasks`, which now
+   takes `todoistPriority`). If one fails, the ones before it are already marked
+   added, so a retry doesn't duplicate them.
+
+**Safety (AI route rules)** — `guardAi` (fails closed, same-origin, hourly cap);
+input capped at 3,000 characters; output validated on the server:
+- dates must be real and fall between today and a year out;
+- times must be HH:MM, and only with a date;
+- priority must be 1–4;
+- projects must match an existing project, or the task goes to the Inbox.
+
+The transcript is marked as data, not instructions. The button shows only where
+the AI is set up and tasks are live.
+
+**Privacy note** — In Chrome, speech recognition runs on Google's servers; Safari
+can do it on the device. The panel says so ("Speech is turned into text by your
+browser"). Our model only ever receives text.
+
+**Alternatives considered** — Recording audio and sending it to a speech-to-text
+API (another key and another data flow); a live audio model like Todoist's (not
+available on our model).
+
+**Tested** — With the real model: a typed ramble became three dated, prioritised,
+project-matched tasks. Adding was intercepted in the browser, and one task was
+created and deleted in real Todoist to confirm a P1 at 10:00 lands as
+"Oct 31 10:00 AM", P1.
+
 ## 2026-10-30 — A batch: click-for-menu, clickable week, resolvable conflicts, Ambient, two greeting cards
 
 **Tasks: a click opens the Todoist menu too.** Right-click and left-click now do

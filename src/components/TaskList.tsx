@@ -7,6 +7,7 @@ import { use24Hour, type ShownSettings, type Theme } from "@/lib/settings";
 import type { SliceSource, Task } from "@/lib/types";
 import { NewTaskForm } from "./NewTaskForm";
 import { Popover } from "./Popover";
+import { RambleButton } from "./Ramble";
 import { StaleTag } from "./StaleTag";
 import { useTaskDetail } from "./TaskDetail";
 
@@ -14,9 +15,11 @@ interface TaskListProps {
   tasks: Task[];
   settings: ShownSettings;
   source: SliceSource;
+  /** The AI model is set up, so Ramble (talk → tasks) is offered. */
+  ai?: boolean;
 }
 
-export function TaskList({ tasks, settings, source }: TaskListProps) {
+export function TaskList({ tasks, settings, source, ai = false }: TaskListProps) {
   const router = useRouter();
   const { openMenu, isSelected } = useTaskDetail();
   const [done, setDone] = useState<Set<string>>(new Set());
@@ -148,7 +151,10 @@ export function TaskList({ tasks, settings, source }: TaskListProps) {
           })}
         </ul>
         {error ? <p className="tasks__error">{error}</p> : null}
-        <AddTask theme={settings.theme} onAdded={() => router.refresh()} />
+        <div className="tasks__adds">
+          <AddTask theme={settings.theme} onAdded={() => router.refresh()} />
+          {ai && source === "live" ? <RambleButton theme={settings.theme} onAdded={() => router.refresh()} /> : null}
+        </div>
       </div>
     </section>
   );
