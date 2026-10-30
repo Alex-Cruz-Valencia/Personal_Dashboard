@@ -12,7 +12,8 @@ import {
 import { useRouter } from "next/navigation";
 import { decimalHourToTimeInput, formatHour } from "@/lib/format";
 import type { Theme } from "@/lib/settings";
-import type { AgendaEvent } from "@/lib/types";
+import type { AgendaEvent, EventDetails, RsvpStatus } from "@/lib/types";
+import { EventRead } from "./EventRead";
 import { flushFocus, Popover } from "./Popover";
 
 interface OpenState {
@@ -114,6 +115,27 @@ function EventDetailCard({
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [confirmDelete, setConfirmDelete] = useState(false);
+  // Opens as Google's read view; the pencil switches to the form below.
+  const [editing, setEditing] = useState(false);
+  const [details, setDetails] = useState<EventDetails | null>(null);
+  const [detailsFailed, setDetailsFailed] = useState(false);
+  const [rsvp, setRsvp] = useState<RsvpStatus | null>(null);
+
+  // Guests, repeat rule, reminders: loaded when the card opens, not on every page refresh.
+  useEffect(() => {
+    let alive = true;
+    fetch(`/api/events/${encodeURIComponent(id)}`)
+      .then((r) => (r.ok ? (r.json() as Promise<EventDetails>) : Promise.reject(new Error("details"))))
+      .then((d) => {
+        if (!alive) return;
+        setDetails(d);
+        setRsvp(d.rsvp);
+      })
+      .catch(() => alive && setDetailsFailed(true));
+    return () => {
+      alive = false;
+    };
+  }, [id]);
 
   const send = useCallback(
     async (body: Record<string, unknown>, method: "PATCH" | "DELETE" = "PATCH"): Promise<boolean> => {
@@ -168,6 +190,50 @@ function EventDetailCard({
   // saving those clipped times would cut the real event short.
   const clipped = event.start <= 0 || event.end >= 24;
 
+  const dayLabel = new Date(`${date}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", timeZone: "UTC" });
+  const when = `${dayLabel} · ${formatHour(timeInputToDecimal(startTime), use24)} – ${formatHour(timeInputToDecimal(endTime), use24)}`;
+
+  if (!editing) {
+    return (
+      <Popover
+        anchor={anchor}
+        theme={theme}
+        onClose={onClose}
+        ariaLabel={`Event: ${name}`}
+        className="gevent"
+        layoutKey={details ? "loaded" : "loading"}
+      >
+        <EventRead
+          event={event}
+          name={name}
+          location={location}
+          // The full text once it's loaded, unless it was just edited here.
+          description={description === (event.description ?? "") ? (details?.description ?? description) : description}
+          when={when}
+          details={details}
+          failed={detailsFailed}
+          rsvp={rsvp}
+          busy={saving}
+          error={error}
+          onEdit={() => {
+            // The form edits the whole description, not the shortened one the agenda carries.
+            if (details?.description && description === (event.description ?? "")) setDescription(details.description);
+            setEditing(true);
+          }}
+          onDelete={async () => {
+            if (await send({}, "DELETE")) onClose();
+          }}
+          onRsvp={async (status) => {
+            const before = rsvp;
+            setRsvp(status);
+            if (!(await send({ rsvp: status }))) setRsvp(before);
+          }}
+          onClose={onClose}
+        />
+      </Popover>
+    );
+  }
+
   return (
     <Popover
       anchor={anchor}
@@ -175,12 +241,20 @@ function EventDetailCard({
       onClose={onClose}
       ariaLabel={`Edit event: ${event.name}`}
       className="eventedit"
+      layoutKey="editing"
     >
       <div className="eventedit__head">
-        <span className={`eventedit__kind eventedit__kind--${event.kind}`}>
-          {event.kind === "focus" ? "focus block" : event.kind}
-          {saving ? " · saving…" : ""}
-        </span>
+        <button
+          type="button"
+          className="eventedit__back"
+          onClick={() => {
+            flushFocus();
+            setEditing(false);
+          }}
+        >
+          ‹ Back
+        </button>
+        {saving ? <span className="eventedit__kind">saving…</span> : null}
         <button type="button" className="eventedit__close" onClick={() => { flushFocus(); onClose(); }} aria-label="Close">
           ×
         </button>
@@ -258,24 +332,6 @@ function EventDetailCard({
         />
       </div>
 
-      {event.attendeeCount ? (
-        <div className="eventedit__row">
-          <span className="eventedit__row-key">People</span>
-          <span className="eventedit__row-val">{event.attendeeCount} invited</span>
-        </div>
-      ) : null}
-
-      {event.meetingLink ? (
-        <a
-          className="eventedit__join"
-          href={event.meetingLink}
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Join call
-        </a>
-      ) : null}
-
       <div className="eventedit__field">
         <span className="eventedit__label">Description</span>
         <textarea
@@ -285,7 +341,7 @@ function EventDetailCard({
           placeholder="Add detail…"
           onChange={(e) => setDescription(e.target.value)}
           onBlur={() =>
-            description !== (event.description ?? "") && send({ description })
+            description !== (details?.description ?? event.description ?? "") && send({ description })
           }
         />
       </div>

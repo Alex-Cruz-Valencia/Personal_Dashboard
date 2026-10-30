@@ -169,6 +169,34 @@ export interface AgendaEvent {
   htmlLink?: string;
 }
 
+export type RsvpStatus = "accepted" | "declined" | "tentative" | "needsAction";
+
+export interface EventGuest {
+  /** Their name when Google has one, else their email. */
+  name: string;
+  email?: string;
+  status: RsvpStatus;
+  organizer: boolean;
+  self: boolean;
+}
+
+/** What the event card loads when it opens: too much to carry on every refresh. */
+export interface EventDetails {
+  /** "Weekly on Monday, 9 times"; absent for a one-off. */
+  recurrence?: string;
+  guests: EventGuest[];
+  /** "10 minutes before". */
+  reminders: string[];
+  /** The calendar it's on. */
+  calendar: string;
+  /** You can change it here (not a read-only shared calendar). */
+  canEdit: boolean;
+  /** Your own answer, when you're on the guest list. */
+  rsvp: RsvpStatus | null;
+  /** The whole description; `AgendaEvent.description` is cut short. */
+  description?: string;
+}
+
 export interface Reply {
   id?: string;
   /** Display name of the sender. */

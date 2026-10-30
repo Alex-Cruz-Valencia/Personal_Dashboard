@@ -5,7 +5,8 @@
 import "server-only";
 import { config } from "@/lib/config";
 import { dayBoundsUtc, decimalHourForTimestamp } from "@/lib/time";
-import type { AgendaEvent, CalendarLegendItem, EventKind } from "@/lib/types";
+import { describeRecurrence, reminderLabel } from "@/lib/recurrence";
+import type { AgendaEvent, CalendarLegendItem, EventDetails, EventGuest, EventKind, RsvpStatus } from "@/lib/types";
 import { googleFetch } from "./tokens";
 import { colorFromHex, colorFromId, isEventColor, type EventColor } from "@/lib/event-colors";
 
@@ -32,7 +33,13 @@ interface GCalEvent {
   status?: string;
   start: GCalDateTime;
   end: GCalDateTime;
-  attendees?: { email?: string; responseStatus?: string; self?: boolean }[];
+  attendees?: { email?: string; displayName?: string; responseStatus?: string; self?: boolean; organizer?: boolean }[];
+  organizer?: { email?: string; displayName?: string; self?: boolean };
+  /** On a single occurrence: the series it belongs to, which holds the repeat rule. */
+  recurringEventId?: string;
+  /** On the series: "RRULE:FREQ=WEEKLY;BYDAY=MO", among others. */
+  recurrence?: string[];
+  reminders?: { useDefault?: boolean; overrides?: { minutes?: number }[] };
   eventType?: string;
   /** Set only when the event has its own color ("1"–"11"); otherwise it shows its calendar's. */
   colorId?: string;
@@ -55,6 +62,7 @@ interface GCalListEntry {
   /** The viewer's own rename of a calendar, when they've set one. */
   summaryOverride?: string;
   primary?: boolean;
+  defaultReminders?: { minutes?: number }[];
 }
 
 interface GCalCalendarListResponse {
@@ -68,7 +76,9 @@ interface GCalCalendarListResponse {
  * share is still included (its events just come back opaque; `classify()`
  * and the "(busy)" fallback already handle that).
  */
-async function discoverCalendars(): Promise<{ id: string; color?: EventColor; label: string }[]> {
+async function discoverCalendars(): Promise<
+  { id: string; color?: EventColor; label: string; role?: string; defaultReminders: number[] }[]
+> {
   // Writable calendars first: when the same event shows up on two calendars,
   // `dedupeEvents` keeps the first copy, and that should be one you can edit.
   const ROLE_RANK: Record<string, number> = { owner: 0, writer: 1, reader: 2, freeBusyReader: 3 };
@@ -89,7 +99,13 @@ async function discoverCalendars(): Promise<{ id: string; color?: EventColor; la
       const label = calendarLabel(c);
       // A dashboard-only override (GOOGLE_CALENDAR_COLORS), by id or legend name, beats Google's color.
       const override = config.google.calendarColors[c.id.toLowerCase()] ?? config.google.calendarColors[label.toLowerCase()];
-      return { id: c.id, label, color: isEventColor(override) ? override : colorFromHex(c.backgroundColor) };
+      return {
+        id: c.id,
+        label,
+        color: isEventColor(override) ? override : colorFromHex(c.backgroundColor),
+        role: c.accessRole,
+        defaultReminders: (c.defaultReminders ?? []).flatMap((r) => (r.minutes == null ? [] : [r.minutes])),
+      };
     });
 }
 
@@ -185,7 +201,7 @@ function meetingLinkOf(event: GCalEvent): string | undefined {
 }
 
 /** Google returns description as HTML — flatten it to plain text. */
-function toPlainText(html: string | undefined): string | undefined {
+function toPlainText(html: string | undefined, max = 800): string | undefined {
   if (!html) return undefined;
   const text = html
     .replace(/<\s*br\s*\/?\s*>/gi, "\n")
@@ -199,7 +215,20 @@ function toPlainText(html: string | undefined): string | undefined {
     .replace(/&quot;/gi, '"')
     .replace(/\n{3,}/g, "\n\n")
     .trim();
-  return text ? text.slice(0, 800) : undefined;
+  return text ? text.slice(0, max) : undefined;
+}
+
+/** The fields an event's card needs, shared by today's agenda and the week. */
+function cardFields(e: GCalEvent, kind: EventKind) {
+  const others = (e.attendees ?? []).filter((a) => !a.self).length;
+  return {
+    where: whereText(e, kind),
+    location: e.location?.trim() || undefined,
+    meetingLink: meetingLinkOf(e),
+    description: toPlainText(e.description),
+    attendeeCount: others > 0 ? others + 1 : undefined,
+    htmlLink: e.htmlLink,
+  };
 }
 
 /** One calendar's events for a time range. Thrown errors are the caller's problem. */
@@ -260,7 +289,6 @@ export async function getAgenda(
   )
     .map<AgendaEvent>(({ calendarId, calendarColor, event: e }) => {
       const kind = classify(e);
-      const others = (e.attendees ?? []).filter((a) => !a.self).length;
       return {
         // Event ids are only unique within their own calendar — the real
         // calendar id (not a positional index, which shifts if discovery
@@ -268,16 +296,11 @@ export async function getAgenda(
         // resolvable for a later edit/delete. See `parseCompositeId`.
         id: compositeId(calendarId, e.id),
         name: e.summary?.trim() || "(busy)",
-        where: whereText(e, kind),
         start: decimalHourForTimestamp(e.start.dateTime as string, todayIso, timezone),
         end: decimalHourForTimestamp(e.end.dateTime as string, todayIso, timezone),
         kind,
         color: eventColor(e, calendarColor),
-        location: e.location?.trim() || undefined,
-        meetingLink: meetingLinkOf(e),
-        description: toPlainText(e.description),
-        attendeeCount: others > 0 ? others + 1 : undefined,
-        htmlLink: e.htmlLink,
+        ...cardFields(e, kind),
       };
     })
     .filter((e) => e.end > e.start)
@@ -293,7 +316,7 @@ export async function getAgenda(
  *
  * `dayIsos` are consecutive local dates. Returns one list per day, in order;
  * an event that spans days appears in each, clipped to that day (same clamping
- * as `getAgenda`). Only what the strip needs is filled in (times, name, kind).
+ * as `getAgenda`).
  * Week-ahead data changes slowly, so it is cached longer than today's agenda.
  */
 export async function getWeekAgendas(
@@ -327,14 +350,15 @@ export async function getWeekAgendas(
         const start = decimalHourForTimestamp(startTs, day, timezone);
         const end = decimalHourForTimestamp(endTs, day, timezone);
         if (end <= start) return; // not on this day (both clamp to the same edge)
+        const kind = classify(e);
         byDay[d].push({
           id: compositeId(calendarIds[i], e.id),
           name: e.summary?.trim() || "(busy)",
-          where: "",
           start,
           end,
-          kind: classify(e),
+          kind,
           color: eventColor(e, calendars[i].color),
+          ...cardFields(e, kind),
         });
       });
     }
@@ -361,6 +385,68 @@ function eventUrl(calendarId: string, eventId: string): string {
   // The id comes back from the browser, so it's encoded: a "/" or "?" in it
   // must not be able to point the request at a different Google resource.
   return `${CAL_BASE}/calendars/${encodeURIComponent(calendarId)}/events/${encodeURIComponent(eventId)}`;
+}
+
+async function getEvent(calendarId: string, eventId: string): Promise<GCalEvent> {
+  const res = await googleFetch(eventUrl(calendarId, eventId), { cache: "no-store" });
+  if (!res.ok) throw new Error(`Google Calendar responded ${res.status}`);
+  return (await res.json()) as GCalEvent;
+}
+
+const RSVP: readonly RsvpStatus[] = ["accepted", "declined", "tentative", "needsAction"];
+const rsvpOf = (s: string | undefined): RsvpStatus => (RSVP.includes(s as RsvpStatus) ? (s as RsvpStatus) : "needsAction");
+
+/** Everything the event card shows beyond the agenda: repeat rule, guests, reminders, calendar. */
+export async function getEventDetails(id: string): Promise<EventDetails> {
+  const { calendarId, eventId } = parseCompositeId(id);
+  const [e, calendars] = await Promise.all([getEvent(calendarId, eventId), discoverCalendars().catch(() => [])]);
+  // A single occurrence doesn't carry the rule; its series does.
+  const series = e.recurringEventId ? await getEvent(calendarId, e.recurringEventId).catch(() => null) : e;
+  const rule = series?.recurrence?.find((r) => r.startsWith("RRULE:"));
+  const cal = calendars.find((c) => c.id === calendarId);
+
+  const guests: EventGuest[] = (e.attendees ?? [])
+    .map((a) => ({
+      name: a.displayName?.trim() || a.email || "Guest",
+      email: a.email,
+      status: rsvpOf(a.responseStatus),
+      organizer: Boolean(a.organizer),
+      self: Boolean(a.self),
+    }))
+    .sort((a, b) => Number(b.organizer) - Number(a.organizer));
+
+  const minutes = e.reminders?.useDefault
+    ? (cal?.defaultReminders ?? [])
+    : (e.reminders?.overrides ?? []).flatMap((r) => (r.minutes == null ? [] : [r.minutes]));
+
+  return {
+    recurrence: describeRecurrence(rule) ?? undefined,
+    guests,
+    reminders: [...minutes].sort((a, b) => a - b).map(reminderLabel),
+    calendar: cal?.label ?? "Calendar",
+    canEdit: cal ? cal.role === "owner" || cal.role === "writer" : true,
+    rsvp: guests.find((g) => g.self)?.status ?? null,
+    description: toPlainText(e.description, 6000),
+  };
+}
+
+/**
+ * Answer an invitation, for this occurrence. Google stores the answer on the guest list, so the
+ * whole list goes back with one entry changed. `sendUpdates=none`: no email goes out from this.
+ */
+export async function setRsvp(id: string, status: RsvpStatus): Promise<void> {
+  const { calendarId, eventId } = parseCompositeId(id);
+  const e = await getEvent(calendarId, eventId);
+  const attendees = e.attendees ?? [];
+  if (!attendees.some((a) => a.self)) throw new Error("You aren't on this event's guest list.");
+  const url = new URL(eventUrl(calendarId, eventId));
+  url.searchParams.set("sendUpdates", "none");
+  const res = await googleFetch(url, {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ attendees: attendees.map((a) => (a.self ? { ...a, responseStatus: status } : a)) }),
+  });
+  if (!res.ok) throw new Error(writeErrorMessage("update", res.status));
 }
 
 /**

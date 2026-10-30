@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
-import { CALENDAR_TAG, deleteEvent, updateEvent, type EventPatch } from "@/lib/google/calendar";
+import { CALENDAR_TAG, deleteEvent, getEventDetails, setRsvp, updateEvent, type EventPatch } from "@/lib/google/calendar";
 import { resolveLocation } from "@/lib/location";
 import { rejectCrossSite } from "@/lib/request-guard";
 
@@ -23,6 +23,19 @@ interface PatchBody {
   date?: string;
   startTime?: string;
   endTime?: string;
+  /** Answer the invitation (this occurrence). */
+  rsvp?: "accepted" | "declined" | "tentative";
+}
+
+/** What the event card loads when it opens: repeat rule, guests, reminders, calendar. */
+export async function GET(_request: Request, ctx: RouteContext<"/api/events/[id]">) {
+  if (!features.google) return notConfigured();
+  const { id } = await ctx.params;
+  try {
+    return NextResponse.json(await getEventDetails(id));
+  } catch (err) {
+    return NextResponse.json({ error: (err as Error).message }, { status: 502 });
+  }
 }
 
 /**
@@ -44,6 +57,19 @@ export async function PATCH(
     body = (await request.json()) as PatchBody;
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
+  }
+
+  if (body.rsvp !== undefined) {
+    if (!["accepted", "declined", "tentative"].includes(body.rsvp)) {
+      return NextResponse.json({ error: "rsvp must be accepted, declined or tentative" }, { status: 400 });
+    }
+    try {
+      await setRsvp(id, body.rsvp);
+      revalidateTag(CALENDAR_TAG, { expire: 0 });
+      return NextResponse.json({ ok: true });
+    } catch (err) {
+      return NextResponse.json({ error: (err as Error).message }, { status: 502 });
+    }
   }
 
   const text = (v: unknown, max: number) => v === undefined || (typeof v === "string" && v.length <= max);

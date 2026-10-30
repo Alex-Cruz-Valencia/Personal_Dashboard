@@ -279,8 +279,12 @@
   the only thing safe to persist across a render. `deleteEvent`/
   `updateEvent` operate on a single occurrence (the list call already used
   `singleEvents=true`), so a recurring event's other instances are
-  untouched — no "this vs. all" chooser needed. `EventDetail`'s edit form
-  (`eventedit__*` in globals.css, mirroring `taskedit__*`) covers name,
+  untouched — no "this vs. all" chooser needed. `EventDetail` opens as a
+  Google-style read view (`EventRead.tsx`, `gevent__*`), filled by
+  `GET /api/events/[id]` (`getEventDetails`: repeat text from `lib/recurrence.ts`,
+  guests + answers, reminders, calendar, `canEdit`) when it opens. "Going?" is PATCH
+  `rsvp` → `setRsvp` (this occurrence, `sendUpdates=none`). The pencil opens the
+  edit form (`eventedit__*` in globals.css, mirroring `taskedit__*`), which covers name,
   date/start/end, location, description, and delete; guests, reminders and
   recurrence are deliberately not editable here — `event.htmlLink` ("Open
   in Calendar") is the escape hatch for those.

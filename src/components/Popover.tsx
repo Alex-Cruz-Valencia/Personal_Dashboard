@@ -33,6 +33,8 @@ interface PopoverProps {
    * the anchor, like a context menu opened at the pointer.
    */
   align?: "center" | "point";
+  /** Change this when the content changes size after opening, so the card is placed again. */
+  layoutKey?: string;
   className?: string;
   ariaLabel: string;
   children: ReactNode;
@@ -49,6 +51,7 @@ export function Popover({
   onClose,
   closeOnScroll = false,
   align = "center",
+  layoutKey,
   className,
   ariaLabel,
   children,
@@ -105,7 +108,7 @@ export function Popover({
     );
 
     setPos({ top, left, maxHeight });
-  }, [anchor, align]);
+  }, [anchor, align, layoutKey]);
   /* eslint-enable react-hooks/set-state-in-effect */
 
   useEffect(() => {
