@@ -2,6 +2,7 @@
 
 import { useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
 import { formatHour, layoutOverlaps } from "@/lib/format";
+import { cascade, hourLabel, shortSpan, shortTime } from "@/lib/gcal-look";
 import type { WeekDay, WeekEvent, WeekTask } from "@/lib/types";
 import { useEventDetail } from "./EventDetail";
 
@@ -49,7 +50,7 @@ function describe(d: WeekDay): string {
  * tasks fall due, with heavy days flagged in words. "Expand" opens the same
  * week as a calendar grid with each day's events and tasks. Informational only.
  */
-export function WeekStrip({ days, use24 }: { days: WeekDay[]; use24: boolean }) {
+export function WeekStrip({ days, use24, gcal = false }: { days: WeekDay[]; use24: boolean; gcal?: boolean }) {
   const [open, setOpen] = useState(false);
   const [picked, setPicked] = useState<string | null>(null);
   const pickedDay = days.find((d) => d.iso === picked) ?? null;
@@ -66,7 +67,7 @@ export function WeekStrip({ days, use24 }: { days: WeekDay[]; use24: boolean }) 
         </div>
       </div>
       {open ? (
-        <WeekGrid days={days} use24={use24} />
+        <WeekGrid days={days} use24={use24} gcal={gcal} />
       ) : (
         <>
         <ol className="week__days">
@@ -113,7 +114,7 @@ export function WeekStrip({ days, use24 }: { days: WeekDay[]; use24: boolean }) 
 const isAllDay = (e: WeekEvent) => e.end - e.start >= ALL_DAY_HOURS;
 
 /** Seven columns: tasks due, all-day banners, then a time grid like a calendar's week view. */
-function WeekGrid({ days, use24 }: { days: WeekDay[]; use24: boolean }) {
+function WeekGrid({ days, use24, gcal }: { days: WeekDay[]; use24: boolean; gcal: boolean }) {
   const eventProps = useOpenEvent();
   const timed = days.flatMap((d) => (d.events ?? []).filter((e) => !isAllDay(e) && e.end > e.start));
   // Show 8am–6pm at least, stretching to cover whatever the week holds.
@@ -158,12 +159,12 @@ function WeekGrid({ days, use24 }: { days: WeekDay[]; use24: boolean }) {
         <div className="week__gutter" style={{ height: (to - from) * HOUR_PX }} aria-hidden="true">
           {marks.slice(1, -1).map((h) => (
             <span key={h} className="week__hour" style={{ top: y(h) }}>
-              {formatHour(h, use24)}
+              {gcal && !use24 ? hourLabel(h) : formatHour(h, use24)}
             </span>
           ))}
         </div>
         {days.map((d) => (
-          <DayColumn key={d.iso} day={d} marks={marks} y={y} height={(to - from) * HOUR_PX} use24={use24} />
+          <DayColumn key={d.iso} day={d} marks={marks} y={y} height={(to - from) * HOUR_PX} use24={use24} gcal={gcal} />
         ))}
       </div>
     </div>
@@ -193,12 +194,14 @@ function DayColumn({
   y,
   height,
   use24,
+  gcal,
 }: {
   day: WeekDay;
   marks: number[];
   y: (h: number) => number;
   height: number;
   use24: boolean;
+  gcal: boolean;
 }) {
   const eventProps = useOpenEvent();
   const events = (day.events ?? []).filter((e) => !isAllDay(e) && e.end > e.start);
@@ -212,16 +215,26 @@ function DayColumn({
         const top = y(e.start);
         const h = Math.max(16, y(e.end) - top - 2);
         const { lane, lanes: n } = lanes[i];
+        const box = gcal ? cascade(lane, n) : null;
         return (
           <div
             key={e.id ?? `${e.name}${i}`}
             {...eventProps(e, day.iso)}
             data-color={e.color} className={`week__event week__ev--${e.kind}`}
-            style={{ top, height: h, left: `calc(${(lane / n) * 100}% + 1px)`, width: `calc(${100 / n}% - 2px)` } as CSSProperties}
+            style={
+              (box
+                ? { top, height: h, left: `${box.left}%`, width: `calc(${box.width}% - 3px)`, zIndex: box.z }
+                : { top, height: h, left: `calc(${(lane / n) * 100}% + 1px)`, width: `calc(${100 / n}% - 2px)` }) as CSSProperties
+            }
             title={`${e.name}, ${formatHour(e.start, use24)} to ${formatHour(e.end, use24)}`}
           >
-            <span className="week__event-title">{e.name}</span>
-            {h >= 34 ? <span className="week__event-time">{formatHour(e.start, use24)}</span> : null}
+            <span className="week__event-title">
+              {e.name}
+              {gcal && !use24 && h < 34 ? `, ${shortTime(e.start)}` : ""}
+            </span>
+            {h >= 34 ? (
+              <span className="week__event-time">{gcal && !use24 ? shortSpan(e.start, e.end) : formatHour(e.start, use24)}</span>
+            ) : null}
           </div>
         );
       })}

@@ -167,6 +167,31 @@ misses like that, and treat them as profile edits, not code changes.
 
 ---
 
+## 2026-10-30 — A Google Calendar look for the calendars
+
+**Problem** — The user reads Google Calendar all day; the dashboard's pale tinted
+blocks ask them to learn a second way of seeing the same week.
+
+**Decision** — An opt-in look (⚙ Calendar: Dashboard / Google, `?cal=google`) for
+the day calendar and expanded week:
+- solid color blocks with dark text, a gap in the surface color, 8px corners;
+- a cascade for overlaps: later events start further right and overlap earlier
+  ones, so a block keeps enough width to read (`cascade()` in `lib/gcal-look.ts`);
+- "8 AM" hours, "10:10 – 11:15am" times, and short blocks on one line
+  ("Alex/Tim Check-in, 9:15am");
+- a plain red now line with a dot, and the weekday over a circled date.
+
+It's only a look: dragging, drawing, the event card and the pull for earlier hours
+are unchanged. Opt-in, so the two can be compared first. Dashboard stays the default.
+
+**Alternatives considered** — Replacing the look outright (no way back to compare);
+a separate calendar component (two copies of the drag and draw logic to keep in
+step).
+
+**Tradeoffs / open questions** — All-day events and deadlines (Google's red
+banners) aren't shown here, because the agenda only reads timed events. The main
+calendar still shows one day, not Google's five.
+
 ## 2026-10-30 — The event card reads like Google Calendar's
 
 **Problem** — Clicking an event opened an edit form straight away. Most of the

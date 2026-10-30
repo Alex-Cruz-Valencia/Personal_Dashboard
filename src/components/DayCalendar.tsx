@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { useRouter } from "next/navigation";
 import { upNext } from "@/lib/attention";
 import { dateLineFor, decimalHourToTimeInput, formatHour, layoutOverlaps } from "@/lib/format";
+import { cascade, hourLabel, shortSpan, shortTime } from "@/lib/gcal-look";
 import { minutesLabel } from "@/lib/plan";
 import type { ShownSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
@@ -40,6 +41,9 @@ const SNAP = 0.25;
 const DRAG_PX = 4;
 /** Within this many px of the scroller's edge a drag scrolls it. */
 const EDGE_PX = 30;
+
+const weekdayShort = (iso: string) =>
+  new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", timeZone: "UTC" }).toUpperCase();
 
 interface Span {
   start: number;
@@ -112,6 +116,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
   // How much of the calendar is visible: the end-of-day block is never taller than this.
   const [viewH, setViewH] = useState<number | null>(null);
   const collapsed = settings.pastEvents === "hide" && !showPast;
+  const gcal = settings.calLook === "google";
   // Nothing left today (events all over, or an empty day that has run out): the hours slide
   // away and "That's the day" takes the whole calendar. A firm pull up brings them back.
   // "That's the day" belongs to the evening: it appears from the wind-down hour (⚙ Wind down at,
@@ -439,6 +444,12 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
         </ul>
       ) : null}
 
+      {gcal ? (
+        <div className="gcal__dayhead">
+          <span className="gcal__dow">{weekdayShort(today.iso)}</span>
+          <span className="gcal__date">{Number(today.iso.slice(8))}</span>
+        </div>
+      ) : null}
       <div className="vcal__wrap">
       <div
         className="vcal__scroller"
@@ -470,7 +481,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
           <div className="vcal__gutter" aria-hidden="true">
             {hourMarks.map((h) => (
               <span key={h} className="vcal__hour-label" style={{ top: y(h) }}>
-                {h <= Math.ceil(viewFrom) ? "" : formatHour(h, use24)}
+                {h <= Math.ceil(viewFrom) ? "" : gcal && !use24 ? hourLabel(h) : formatHour(h, use24)}
               </span>
             ))}
           </div>
@@ -540,6 +551,7 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
               const top = y(start);
               const h = Math.max(20, y(end) - top - 2);
               const { lane, lanes: n } = lanes[i];
+              const box = gcal ? cascade(lane, n) : null;
               const state =
                 e.end <= nowHour ? "past" : e.start <= nowHour ? "now" : e.start - nowHour <= 0.25 ? "soon" : "later";
               return (
@@ -551,8 +563,9 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
                     {
                       top,
                       height: h,
-                      left: `calc(${(lane / n) * 100}% + 2px)`,
-                      width: `calc(${100 / n}% - 4px)`,
+                      left: box ? `${box.left}%` : `calc(${(lane / n) * 100}% + 2px)`,
+                      width: box ? `calc(${box.width}% - 8px)` : `calc(${100 / n}% - 4px)`,
+                      ...(box ? { zIndex: box.z } : null),
                       ...(start < viewFrom && end > viewFrom ? { paddingTop: 3 + Math.min((viewFrom - start) * HOUR_PX, Math.max(0, h - 26)) } : null),
                     } as CSSProperties
                   }
@@ -614,10 +627,14 @@ export function DayCalendar({ agenda: rawAgenda, arc, today, settings, frozen = 
                     }
                   }}
                 >
-                  <div className="vcal__event-title">{e.name}</div>
+                  <div className="vcal__event-title">
+                    {e.name}
+                    {/* Google's short block: "Alex/Tim Check-in, 9:15am" on one line. */}
+                    {gcal && h < TWO_LINE_PX && !use24 ? `, ${shortTime(start)}` : ""}
+                  </div>
                   {h >= TWO_LINE_PX ? (
                     <div className="vcal__event-time">
-                      {formatHour(start, use24)} – {formatHour(end, use24)}
+                      {gcal && !use24 ? shortSpan(start, end) : `${formatHour(start, use24)} – ${formatHour(end, use24)}`}
                     </div>
                   ) : null}
                   {dragging && h < TWO_LINE_PX ? (

@@ -28,6 +28,9 @@
   `.morning--clean` layer at the end of `globals.css` — Todoist-like structure
   page-wide (bold sentence-case headings, hairlines, a colored bar as the only
   category marker, text buttons, flat cards). Default stays "cards".
+- **Calendar look "google"** (⚙ Calendar, `settings.calLook`, `?cal=google`): `.morning--gcal` layer
+  at the end of `globals.css` plus `lib/gcal-look.ts` (`cascade()`, `hourLabel`, `shortSpan`), applied
+  in `DayCalendar` and `WeekStrip`. Default stays "dashboard".
 - **Marker vs. text colors:** `--mark-*` tokens (negative/warning/neutral/
   meeting/focus/personal) are bright hues for non-text marks only — bars,
   dots, light tints. Text uses the darker readable tokens (`--negative`,
