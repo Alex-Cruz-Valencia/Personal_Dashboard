@@ -56,10 +56,12 @@ export function WeatherScene({
   const k = variant === "page" ? 3 : 1;
   const wet = kind === "drizzle" || kind === "rain" || kind === "storm";
   const windy = windMph >= BREEZY_MPH;
+  // Partly cloudy keeps the clear sky (sun, beams, stars, meteors) with a couple of clouds passing.
+  const open = kind === "clear" || kind === "partly";
 
   return (
     <div className={`scene scene--${kind} ${isDay ? "scene--day" : "scene--night"}${variant === "page" ? " scene--page" : ""}`} aria-hidden>
-      {kind === "clear" && isDay ? (
+      {open && isDay ? (
         <>
           <span className="scene__wash" />
           {/* The sun and the moon are the weather card's: the page behind never repeats them. */}
@@ -71,19 +73,19 @@ export function WeatherScene({
           ) : null}
         </>
       ) : null}
-      {variant === "page" && kind === "clear" && isDay
+      {variant === "page" && open && isDay
         ? BEAMS.map((b, i) => (
             <span key={i} className="scene__beam" style={{ "--w": `${b.w}px`, "--a": `${b.a}deg`, "--c": b.c, "--d": `${b.d}s` } as CSSProperties} />
           ))
         : null}
-      {kind === "clear" && !isDay ? (
+      {open && !isDay ? (
         <>
           {variant === "page" ? <MeteorField /> : null}
           {variant === "card" && celestial ? <span className="scene__moon" /> : null}
           <Particles n={14 * (variant === "page" ? 5 : 1)} className="scene__star" />
         </>
       ) : null}
-      {kind === "cloudy" || kind === "fog" || wet || kind === "snow" ? (
+      {kind === "partly" || kind === "cloudy" || kind === "fog" || wet || kind === "snow" ? (
         <>
           <span className="scene__cloud scene__cloud--a" />
           <span className="scene__cloud scene__cloud--b" />

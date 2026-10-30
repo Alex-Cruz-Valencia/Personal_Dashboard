@@ -48,7 +48,8 @@ export function degreesToCompass(deg: number): string {
 /** WMO code → what the ambient scene should draw. */
 export function weatherCodeToSky(code: number): Sky["kind"] {
   if (code === 0 || code === 1) return "clear";
-  if (code === 2 || code === 3) return "cloudy";
+  if (code === 2) return "partly";
+  if (code === 3) return "cloudy";
   if (code === 45 || code === 48) return "fog";
   if (code >= 51 && code <= 57) return "drizzle";
   if ((code >= 61 && code <= 67) || (code >= 80 && code <= 82)) return "rain";
@@ -57,7 +58,7 @@ export function weatherCodeToSky(code: number): Sky["kind"] {
   return "cloudy";
 }
 
-const SKY_KINDS: readonly Sky["kind"][] = ["clear", "cloudy", "fog", "drizzle", "rain", "storm", "snow"];
+const SKY_KINDS: readonly Sky["kind"][] = ["clear", "partly", "cloudy", "fog", "drizzle", "rain", "storm", "snow"];
 
 /**
  * `/?sky=rain&wind=20` previews the ambient scene without waiting for weather.
