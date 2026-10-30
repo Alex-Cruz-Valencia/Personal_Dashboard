@@ -17,6 +17,13 @@ const BEAMS = [
   { w: 260, a: 20, c: 83, d: -47 },
 ];
 
+/** Shooting stars inside the weather card itself (the page's own are only seen between cards). */
+const CARD_METEORS = [
+  { x: 18, y: 6, a: 24, c: 17, d: -3, l: 90 },
+  { x: 64, y: 4, a: 150, c: 23, d: -12, l: 80 },
+  { x: 92, y: 14, a: 156, c: 31, d: -21, l: 100 },
+];
+
 function Particles({ n, className }: { n: number; className: string }) {
   return Array.from({ length: n }, (_, i) => (
     <i
@@ -56,7 +63,8 @@ export function WeatherScene({
   const k = variant === "page" ? 3 : 1;
   const wet = kind === "drizzle" || kind === "rain" || kind === "storm";
   const windy = windMph >= BREEZY_MPH;
-  // Partly cloudy keeps the clear sky (sun, beams, stars, meteors) with a couple of clouds passing.
+  // Partly cloudy keeps the clear sky (sun, beams) with a couple of clouds passing. At night the
+  // stars, meteors and moon always show, whatever the weather; clouds and rain drift over them.
   const open = kind === "clear" || kind === "partly";
 
   return (
@@ -78,9 +86,18 @@ export function WeatherScene({
             <span key={i} className="scene__beam" style={{ "--w": `${b.w}px`, "--a": `${b.a}deg`, "--c": b.c, "--d": `${b.d}s` } as CSSProperties} />
           ))
         : null}
-      {open && !isDay ? (
+      {!isDay ? (
         <>
           {variant === "page" ? <MeteorField /> : null}
+          {variant === "card" && celestial
+            ? CARD_METEORS.map((m, i) => (
+                <span
+                  key={i}
+                  className="scene__meteor"
+                  style={{ "--x": `calc(${m.x}% - ${m.l}px)`, "--y": `${m.y}%`, "--a": `${m.a}deg`, "--c": m.c, "--d": `${m.d}s`, "--l": `${m.l}px` } as CSSProperties}
+                />
+              ))
+            : null}
           {variant === "card" && celestial ? <span className="scene__moon" /> : null}
           <Particles n={14 * (variant === "page" ? 5 : 1)} className="scene__star" />
         </>

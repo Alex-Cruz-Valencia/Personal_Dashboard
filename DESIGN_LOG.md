@@ -184,6 +184,21 @@ are unchanged. `?sky=partly` previews it.
 weather (then the scene stops saying anything about the sky); treating code 2
 as clear (loses the hint of cloud).
 
+**Follow-up, same day: stars every night, meteors in the top card.** Even after
+that fix the user saw no night sky. Two causes:
+- Any cloudier night still went dark.
+- The page-wide stars and meteors live *behind* the solid cards, and meteors are
+  cut out wherever a card is, so on a normal screen they only show in the thin
+  gaps between cards.
+
+Now the stars, meteors and moon show on **every** night, with clouds, fog, rain
+or snow drifting over them. The top weather card also gets three meteors of its
+own, so they cross the part of the screen you're actually looking at. This
+reverses the earlier "the scene should say something about the sky" reasoning
+for nights: the user wants the night sky itself, and the weather layer on top
+still tells you what's happening. Reduced motion and ⚙ Motion → Still keep it
+still.
+
 ## 2026-10-29 — Task Assist, on our own AI model
 
 **Problem** — Todoist's menu has "Task Assist", its AI helper for a stuck task.
