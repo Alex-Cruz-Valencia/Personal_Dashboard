@@ -2513,3 +2513,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .vcal__allday-more { border: 0; background: transparent; padding: 2px 0; font: inherit; font-size: 12px; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
 .vcal__allday-more:hover { color: var(--ink); }
 .morning.morning--gcal :is(.week__banner)[data-color] { padding: 3px 8px; font-size: 12.5px; font-weight: 500; }
+/* In Clean, banners read like the calendar's blocks: a pale tint and a solid bar in the calendar's color. */
+.morning.morning--clean:not(.morning--gcal) .week__banner[data-color] {
+  background: color-mix(in srgb, var(--ev) 12%, var(--surface)); border-color: transparent; border-radius: 4px;
+  box-shadow: inset 3px 0 0 var(--ev); padding: 3px 8px 3px 11px; font-weight: 500;
+}

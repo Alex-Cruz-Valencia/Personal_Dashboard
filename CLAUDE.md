@@ -24,10 +24,10 @@
   `.morning`; its block at the end of `globals.css` only matches while light is
   showing and sets tokens on `:root` via `:has()` so popovers follow. Any new
   light-only hardcoded color needs a clay counterpart there.
-- **Style "clean"** (experiment, ⚙ Style, `settings.look`, `?look=clean`):
+- **Style "clean"** (the default since 2026-10-30, ⚙ Style, `settings.look`, `?look=clean`):
   `.morning--clean` layer at the end of `globals.css` — Todoist-like structure
   page-wide (bold sentence-case headings, hairlines, a colored bar as the only
-  category marker, text buttons, flat cards). Default stays "cards".
+  category marker, text buttons, flat cards). "cards" is the opt-in alternative.
 - **Calendar look "google"** (⚙ Calendar, `settings.calLook`, `?cal=google`): `.morning--gcal` layer
   at the end of `globals.css` plus `lib/gcal-look.ts` (`cascade()`, `hourLabel`, `shortSpan`), applied
   in `DayCalendar` and `WeekStrip`. Default stays "dashboard".

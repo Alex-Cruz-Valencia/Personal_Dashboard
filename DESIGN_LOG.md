@@ -167,6 +167,19 @@ misses like that, and treat them as profile edits, not code changes.
 
 ---
 
+## 2026-10-30 — Clean becomes the default style
+
+**Problem** — The user liked the calendar on localhost and couldn't find it on the
+live site. Style is saved per browser and per site, so Clean, the experiment they'd
+switched on locally, never reached it.
+
+**Decision** — Clean is now the default; Cards stays under ⚙ Style. All-day banners
+take the same treatment as Clean's calendar blocks (pale tint, solid bar), so they
+sit with the events rather than shouting. The public demo gets the same default.
+
+**Tradeoff** — A browser where Cards was explicitly chosen keeps it, so it needs one
+click under ⚙.
+
 ## 2026-10-30 — All-day events as banners
 
 **Problem** — Deadlines, holidays and term dates never reached the dashboard: it
