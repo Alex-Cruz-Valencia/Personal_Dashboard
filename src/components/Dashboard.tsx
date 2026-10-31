@@ -11,6 +11,7 @@ import { Footline } from "./Footline";
 import { AmbientButton } from "./Ambient";
 import { HelloCard } from "./HelloCard";
 import { TaskDetailProvider } from "./TaskDetail";
+import { SourceNotice } from "./SourceNotice";
 import { TaskList } from "./TaskList";
 import { TopUnified } from "./TopUnified";
 import { WeatherCard } from "./WeatherCard";
@@ -96,10 +97,14 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
             </div>
           )}
 
+          <SourceNotice sources={data.sources} reconnect={data.googleReconnect} />
+
+          {/* Sample rows never count as things that need you; the notice above says what's missing. */}
           <AttentionStrip
-            agenda={data.agenda}
-            tasks={data.tasks}
-            replies={data.replies}
+            agenda={data.sources.calendar === "mock" ? [] : data.agenda}
+            tasks={data.sources.tasks === "mock" ? [] : data.tasks}
+            replies={data.sources.email === "mock" ? [] : data.replies}
+            incomplete={data.sources.calendar === "mock" || data.sources.tasks === "mock" || data.sources.email === "mock"}
             nowHour={data.today.nowHour}
             theme={settings.theme}
             aiDraft={data.ai}
@@ -117,6 +122,8 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
               settings={settings}
               frozen={frozen}
               editable={data.sources.calendar === "live"}
+              source={data.sources.calendar}
+              reconnect={data.googleReconnect}
               tomorrow={data.week?.find((d) => d.iso > data.today.iso) ?? null}
               focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
               legend={data.calendars}
