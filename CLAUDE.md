@@ -108,6 +108,20 @@
   gitignored `.data/email-profile.json`, **never** in the repo; `npm run email:profile
   mine|push|show` rebuilds it (mining is Gmail GETs only).
   `npm run llm:models` lists model ids.
+- **Clarify** (`Clarify.tsx`, opened by a faint "Clarify" in the task card's footer, shown only when
+  `DashboardData.clarifyCount` is above zero, with no count on the page): `ClarifyPanel` replaces the task card's contents, with the calendar
+  still beside it, as a one-at-a-time queue of Inbox tasks
+  (`getInboxTasks`: no subtasks or repeating tasks) and threads under `GMAIL_TODO_LABEL`
+  (`config.google.todoLabel`, default `@@TO-DO`; `getTodoThreads`, threads not messages).
+  `GET /api/clarify` lists, `GET /api/clarify/message/[id]` loads the text,
+  `POST /api/clarify/thread/[id]` clears/files/trashes the thread. `POST /api/clarify/suggest`
+  (`lib/llm/clarify.ts`, `parseClarify`, six items per call) fills the form; writes are clicks
+  on the normal task/event routes. An item leaves only with a real home: a project other than
+  Inbox (`Project.inbox`), the calendar, a label, or finished. Skips last for the session.
+- **One task menu:** date, priority, deadline and project are always set with Todoist's menu.
+  `TaskMenu` is the pop-up on an existing task; `TaskFieldsMenu` (same file) is the same thing inside
+  a form, writing nothing itself (`onChange`), and is used by `NewTaskForm` ("+ Add task", the email
+  task form), `TaskDetail`, `Clarify` and Ramble rows. Any new place that makes a task uses it too.
 - **Top row "simple" / "brief" (2026-10-30):** the same `TopUnified` card without the curve
   (`topuni--simple|brief`). Simple: now, high/low, one rain-or-wind line (`simpleOutlook`). Brief:
   up to four lines from `briefLines()` (`src/lib/weather-brief.ts`): rain window against a meeting,

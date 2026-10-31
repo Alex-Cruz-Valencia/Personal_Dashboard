@@ -135,6 +135,8 @@ export interface Project {
   name: string;
   /** The project's color as hex, for the "#" mark. */
   color?: string;
+  /** Todoist's Inbox: where unclarified tasks wait, so not a place to file one. */
+  inbox?: boolean;
 }
 
 /** A Todoist section, for the task menu's "Move to…". */
@@ -295,6 +297,8 @@ export interface DashboardData {
   ai: boolean;
   /** Todoist is connected, so "Make task" on an email can write to it. */
   canAddTasks: boolean;
+  /** How much is waiting in Clarify; null when neither source answered. */
+  clarifyCount: number | null;
   /** Today's all-day events (deadlines, holidays, terms), shown as banners. Kept out of `agenda`. */
   allDay: AgendaEvent[];
   /** Connected calendars and their color family, for the calendar's legend; empty when not live. */
@@ -305,4 +309,24 @@ export interface CalendarLegendItem {
   /** "Personal", "Dartmouth", "DALI", "Evergreen 26F" … */
   label: string;
   color: EventColor;
+}
+
+/** One rough item in Clarify mode: an Inbox task or a thread under the to-do label. */
+export interface ClarifyItem {
+  kind: "task" | "email";
+  /** Todoist task id, or Gmail thread id. */
+  id: string;
+  title: string;
+  /** Task notes, or the email's preview. */
+  detail?: string;
+  /** Email: who it's from. */
+  from?: string;
+  /** Email: the newest labeled message, which the body and reply draft read from. */
+  messageId?: string;
+  /** Epoch ms, for "how long has this been sitting". */
+  addedAt: number;
+  /** Task: the date already on it, "YYYY-MM-DD". */
+  dueDate?: string;
+  /** Task: Todoist's P1–P4 (1 = urgent). */
+  priority?: 1 | 2 | 3 | 4;
 }

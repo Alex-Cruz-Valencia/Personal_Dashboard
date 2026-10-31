@@ -2,6 +2,8 @@
 
 import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { useRouter } from "next/navigation";
+import { formatHour } from "@/lib/format";
+import { loadTaskMeta, type TaskMeta } from "@/lib/task-meta";
 import type { Theme } from "@/lib/settings";
 import type { Project, Section, Task } from "@/lib/types";
 import { Popover } from "./Popover";
@@ -16,7 +18,7 @@ import { Popover } from "./Popover";
 const TODOIST = "https://app.todoist.com/app";
 
 type View = "main" | "date" | "deadline" | "move" | "assist" | "delete";
-type TodoistP = 1 | 2 | 3 | 4;
+export type TodoistP = 1 | 2 | 3 | 4;
 
 interface Meta {
   projects: Project[];
@@ -247,7 +249,7 @@ export function TaskMenu({
             onClear={() => patch({ deadline: null })}
           />
         ) : view === "move" ? (
-          <MovePanel task={task} meta={meta} query={query} setQuery={setQuery} onBack={() => setView("main")} onMove={(to) => patch(to)} />
+          <MovePanel current={task} meta={meta} query={query} setQuery={setQuery} onBack={() => setView("main")} onMove={(to) => patch(to)} />
         ) : view === "assist" ? (
           <AssistPanel task={task} busy={busy} onBack={() => setView("main")} send={send} onDone={onClose} />
         ) : (
@@ -269,6 +271,176 @@ export function TaskMenu({
         {error ? <p className="taskmenu__error" role="alert">{error}</p> : null}
       </div>
     </Popover>
+  );
+}
+
+/** What the menu sets on a task. `due` is "" (no date), an ISO date, or words ("fri 3pm"). */
+export interface TaskFields {
+  due: string;
+  priority: TodoistP;
+  deadline: string;
+  projectId: string;
+  sectionId: string;
+}
+
+const ISO_DUE = /^(\d{4}-\d{2}-\d{2})(?: (\d{2}):(\d{2}))?$/;
+
+/** A due value as the menu shows it: "Tomorrow", "Sat · 2:00pm", or the words as typed. */
+export function dueLabel(due: string, todayIso: string): string {
+  const m = ISO_DUE.exec(due);
+  if (!m) return due;
+  const day = quickDates(todayIso).find((d) => d.date === m[1] && (d.key === "today" || d.key === "tomorrow"))?.label ?? dayLabel(m[1], todayIso);
+  return m[2] ? `${day} · ${formatHour(Number(m[2]) + Number(m[3]) / 60, false)}` : day;
+}
+
+/**
+ * The same menu inside a form: every place that makes or edits a task uses it, so tasks are set
+ * up one way everywhere. It writes nothing itself; each choice goes to `onChange`.
+ */
+export function TaskFieldsMenu({
+  value,
+  onChange,
+  todayIso,
+  recurring,
+  needsProject,
+  disabled,
+}: {
+  value: TaskFields;
+  onChange: (patch: Partial<TaskFields>) => void;
+  todayIso: string;
+  /** The repeat, when the task has one. */
+  recurring?: string;
+  /** Inbox isn't an answer here (Clarify): it's left off the list and the row asks for a project. */
+  needsProject?: boolean;
+  disabled?: boolean;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [view, setView] = useState<"main" | "date" | "deadline" | "move">("main");
+  const [meta, setMeta] = useState<TaskMeta>({ projects: [], labels: [] });
+  const [query, setQuery] = useState("");
+
+  useEffect(() => {
+    let alive = true;
+    loadTaskMeta().then((m) => alive && setMeta(m));
+    return () => {
+      alive = false;
+    };
+  }, []);
+
+  const pick = (patch: Partial<TaskFields>) => {
+    onChange(patch);
+    setView("main");
+  };
+  const back = () => setView("main");
+  const dueDay = ISO_DUE.exec(value.due)?.[1];
+  const list = needsProject ? { ...meta, projects: meta.projects.filter((p) => !p.inbox) } : meta;
+  const project = meta.projects.find((p) => p.id === value.projectId);
+  const section = meta.sections?.find((s) => s.id === value.sectionId);
+  const place = project ? (section ? `${project.name} / ${section.name}` : project.name) : needsProject ? "Choose a project" : "Inbox";
+
+  const onKeyDown = (e: KeyboardEvent<HTMLDivElement>) => {
+    if (e.key === "Escape" && view !== "main") {
+      e.preventDefault();
+      e.stopPropagation();
+      setView("main");
+      return;
+    }
+    if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+      const items = [...(ref.current?.querySelectorAll<HTMLElement>("[data-mi]") ?? [])];
+      if (!items.length) return;
+      e.preventDefault();
+      const i = items.indexOf(document.activeElement as HTMLElement);
+      const next = e.key === "ArrowDown" ? (i + 1) % items.length : (i - 1 + items.length) % items.length;
+      items[i < 0 ? 0 : next].focus();
+      return;
+    }
+    if ((e.target as HTMLElement).matches("input, textarea") || view !== "main" || e.metaKey || e.ctrlKey) return;
+    const k = e.key.toLowerCase();
+    if (k === "t") setView("date");
+    else if (k === "d") setView("deadline");
+    else if (k === "v") setView("move");
+    else if (["1", "2", "3", "4"].includes(k)) onChange({ priority: Number(k) as TodoistP });
+    else return;
+    e.preventDefault();
+    e.stopPropagation();
+  };
+
+  return (
+    <div ref={ref} className="taskmenu taskmenu--inline" role="group" aria-label="Task details" aria-disabled={disabled} onKeyDown={onKeyDown}>
+      <fieldset className="taskmenu__fields" disabled={disabled}>
+        {view === "main" ? (
+          <>
+            <Group>
+              <Head label="Date" keys={value.due ? dueLabel(value.due, todayIso) : "No date"} />
+              <div className="taskmenu__icons">
+                {quickDates(todayIso)
+                  .filter((d) => d.date !== dueDay)
+                  .map((d) => (
+                    <IconBtn key={d.key} label={`${d.label} · ${dayLabel(d.date, todayIso)}`} className={`taskmenu__date--${d.key}`} onClick={() => onChange({ due: d.date })}>
+                      {d.key === "today" ? <IconToday day={Number(todayIso.slice(8))} /> : d.key === "tomorrow" ? <IconSun /> : d.key === "weekend" ? <IconCouch /> : <IconNextWeek />}
+                    </IconBtn>
+                  ))}
+                {value.due ? (
+                  <IconBtn label="No date" className="taskmenu__date--none" onClick={() => onChange({ due: "" })}>
+                    <IconNoDate />
+                  </IconBtn>
+                ) : null}
+                <IconBtn label="More dates…" className="taskmenu__date--more" onClick={() => setView("date")}>
+                  <IconMore />
+                </IconBtn>
+              </div>
+              <Head label="Priority" keys={`P${value.priority}`} />
+              <div className="taskmenu__icons">
+                {([1, 2, 3, 4] as TodoistP[]).map((p) => (
+                  <IconBtn key={p} label={`Priority ${p}`} className={`taskmenu__flag taskmenu__flag--p${p}${value.priority === p ? " is-on" : ""}`} onClick={() => onChange({ priority: p })}>
+                    <IconFlag filled={p !== 4} />
+                  </IconBtn>
+                ))}
+              </div>
+            </Group>
+            <Group>
+              <Item icon={<IconDeadline />} label="Deadline" keys={value.deadline ? dayLabel(value.deadline, todayIso) : "D"} onClick={() => setView("deadline")} />
+              <Item icon={<IconMove />} label="Move to…" keys={place} onClick={() => setView("move")} />
+            </Group>
+          </>
+        ) : view === "date" ? (
+          <DatePanel
+            title="Date"
+            todayIso={todayIso}
+            current={dueDay}
+            recurring={recurring}
+            onBack={back}
+            onPick={(due) => pick({ due })}
+            onText={(due) => pick({ due })}
+            clearLabel={value.due ? "No date" : undefined}
+            onClear={() => pick({ due: "" })}
+          />
+        ) : view === "deadline" ? (
+          <DatePanel
+            title="Deadline"
+            todayIso={todayIso}
+            current={value.deadline || undefined}
+            onBack={back}
+            onPick={(deadline) => pick({ deadline })}
+            clearLabel={value.deadline ? "Remove deadline" : undefined}
+            onClear={() => pick({ deadline: "" })}
+          />
+        ) : (
+          <MovePanel
+            current={{ projectId: value.projectId, sectionId: value.sectionId || undefined }}
+            meta={list}
+            query={query}
+            setQuery={setQuery}
+            onBack={back}
+            onMove={(to) => {
+              setQuery("");
+              if ("projectId" in to) pick({ projectId: to.projectId, sectionId: "" });
+              else pick({ sectionId: to.sectionId, projectId: meta.sections?.find((s) => s.id === to.sectionId)?.projectId ?? value.projectId });
+            }}
+          />
+        )}
+      </fieldset>
+    </div>
   );
 }
 
@@ -350,14 +522,14 @@ function DatePanel({
 }
 
 function MovePanel({
-  task,
+  current,
   meta,
   query,
   setQuery,
   onBack,
   onMove,
 }: {
-  task: Task;
+  current: { projectId?: string; sectionId?: string };
   meta: Meta;
   query: string;
   setQuery: (q: string) => void;
@@ -372,11 +544,11 @@ function MovePanel({
       const pHit = !q || p.name.toLowerCase().includes(q);
       const secHits = secs.filter((s) => !q || pHit || s.name.toLowerCase().includes(q));
       if (!pHit && !secHits.length) continue;
-      out.push({ key: p.id, label: p.name, color: p.color, section: false, on: task.projectId === p.id && !task.sectionId, to: { projectId: p.id } });
-      for (const s of secHits) out.push({ key: s.id, label: s.name, section: true, on: task.sectionId === s.id, to: { sectionId: s.id } });
+      out.push({ key: p.id, label: p.name, color: p.color, section: false, on: current.projectId === p.id && !current.sectionId, to: { projectId: p.id } });
+      for (const s of secHits) out.push({ key: s.id, label: s.name, section: true, on: current.sectionId === s.id, to: { sectionId: s.id } });
     }
     return out;
-  }, [meta, q, task.projectId, task.sectionId]);
+  }, [meta, q, current.projectId, current.sectionId]);
 
   return (
     <div className="taskmenu__panel">

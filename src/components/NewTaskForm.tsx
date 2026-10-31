@@ -1,46 +1,35 @@
 "use client";
 
 import { useEffect, useState, type ReactNode } from "react";
-import { PRIORITY_LABEL } from "@/lib/format";
 import { loadTaskMeta, type TaskMeta } from "@/lib/task-meta";
-import type { Priority } from "@/lib/types";
+import { TaskFieldsMenu, type TaskFields } from "./TaskMenu";
 
-/** Same fields as the task editor, so a new task is built the way an existing one is edited. */
-export interface TaskDraft {
+/** The Todoist menu's fields plus the rest of the task, so a new task is built the way one is edited. */
+export interface TaskDraft extends TaskFields {
   content: string;
-  priority: Priority;
-  /** Natural language ("tomorrow 9am") or an ISO date; empty = no date. */
-  due: string;
-  projectId: string;
   labels: string[];
-  deadline: string;
   durationMinutes: string;
   description: string;
 }
 
 export const EMPTY_DRAFT: TaskDraft = {
   content: "",
-  priority: 2,
+  priority: 4,
   due: "",
   projectId: "",
+  sectionId: "",
   labels: [],
   deadline: "",
   durationMinutes: "",
   description: "",
 };
 
-const DUE_CHIPS: { label: string; value: string }[] = [
-  { label: "Today", value: "today" },
-  { label: "Tomorrow", value: "tomorrow" },
-  { label: "This weekend", value: "saturday" },
-  { label: "Next week", value: "next monday" },
-  { label: "No date", value: "" },
-];
-
 const HAS_TIME = /\d\s?(am|pm)\b|\d:\d\d|\bat\s+\d|\b(noon|midnight)\b|T\d\d:/i;
 
 interface Props {
   initial?: Partial<TaskDraft>;
+  /** The dashboard's day, for the menu's date shortcuts. */
+  todayIso: string;
   submitLabel?: string;
   /** AI helper: returns fields to overwrite (content, priority, due). */
   onFill?: () => Promise<Partial<TaskDraft>>;
@@ -53,7 +42,7 @@ interface Props {
 }
 
 /** Fill in a task the way Todoist does, then add it. Nothing is written until Add. */
-export function NewTaskForm({ initial, submitLabel = "Add task", onFill, autoFill, extra, onCancel, onAdded }: Props) {
+export function NewTaskForm({ initial, todayIso, submitLabel = "Add task", onFill, autoFill, extra, onCancel, onAdded }: Props) {
   const [d, setD] = useState<TaskDraft>({ ...EMPTY_DRAFT, ...initial });
   const [meta, setMeta] = useState<TaskMeta | null>(null);
   const [labelDraft, setLabelDraft] = useState("");
@@ -116,9 +105,9 @@ export function NewTaskForm({ initial, submitLabel = "Add task", onFill, autoFil
         headers: { "content-type": "application/json" },
         body: JSON.stringify({
           content,
-          priority: d.priority,
+          todoistPriority: d.priority,
           ...(d.due.trim() ? { due: d.due.trim() } : {}),
-          ...(d.projectId ? { projectId: d.projectId } : {}),
+          ...(d.sectionId ? { sectionId: d.sectionId } : d.projectId ? { projectId: d.projectId } : {}),
           ...(d.labels.length ? { labels: d.labels } : {}),
           ...(d.deadline ? { deadline: d.deadline } : {}),
           ...(minutes > 0 ? { durationMinutes: Math.round(minutes) } : {}),
@@ -155,63 +144,7 @@ export function NewTaskForm({ initial, submitLabel = "Add task", onFill, autoFil
         }}
       />
 
-      <div className="taskedit__field">
-        <span className="taskedit__label">Priority</span>
-        <div className="taskedit__seg">
-          {([1, 2, 3] as Priority[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              disabled={busy}
-              className={`taskedit__seg-btn taskedit__seg-btn--p${p}${d.priority === p ? " is-on" : ""}`}
-              onClick={() => set("priority", p)}
-            >
-              {PRIORITY_LABEL[p]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="taskedit__field">
-        <span className="taskedit__label">
-          Due <span className="taskedit__cur">{d.due || "—"}</span>
-        </span>
-        <div className="taskedit__chips">
-          {DUE_CHIPS.map((c) => (
-            <button
-              key={c.label}
-              type="button"
-              disabled={busy}
-              className={`taskedit__chip${d.due === c.value ? " is-on" : ""}`}
-              onClick={() => set("due", c.value)}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-        <input
-          className="taskedit__text"
-          value={d.due}
-          disabled={busy}
-          placeholder="or type a date — “fri 3pm”, “in 2 weeks”"
-          onChange={(e) => set("due", e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter") submit();
-          }}
-        />
-      </div>
-
-      <div className="taskedit__field">
-        <span className="taskedit__label">Project</span>
-        <select className="taskedit__select" value={d.projectId} disabled={busy} onChange={(e) => set("projectId", e.target.value)}>
-          <option value="">Inbox (default)</option>
-          {(meta?.projects ?? []).map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <TaskFieldsMenu value={d} onChange={(patch) => setD((s) => ({ ...s, ...patch }))} todayIso={todayIso} disabled={busy} />
 
       <div className="taskedit__field">
         <span className="taskedit__label">Labels</span>
@@ -244,25 +177,19 @@ export function NewTaskForm({ initial, submitLabel = "Add task", onFill, autoFil
         </div>
       </div>
 
-      <div className="taskedit__row2">
-        <label className="taskedit__field">
-          <span className="taskedit__label">Deadline</span>
-          <input type="date" className="taskedit__text" value={d.deadline} disabled={busy} onChange={(e) => set("deadline", e.target.value)} />
-        </label>
-        <label className="taskedit__field">
-          <span className="taskedit__label">Duration</span>
-          <input
-            type="number"
-            min={0}
-            step={5}
-            className="taskedit__text"
-            value={d.durationMinutes}
-            disabled={busy}
-            placeholder="min"
-            onChange={(e) => set("durationMinutes", e.target.value)}
-          />
-        </label>
-      </div>
+      <label className="taskedit__field">
+        <span className="taskedit__label">Duration</span>
+        <input
+          type="number"
+          min={0}
+          step={5}
+          className="taskedit__text"
+          value={d.durationMinutes}
+          disabled={busy}
+          placeholder="min"
+          onChange={(e) => set("durationMinutes", e.target.value)}
+        />
+      </label>
       {d.durationMinutes && !HAS_TIME.test(d.due) ? (
         <p className="taskedit__hint">Todoist only keeps a duration on tasks with a due time (e.g. “tomorrow 9am”).</p>
       ) : null}

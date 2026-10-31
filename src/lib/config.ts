@@ -94,6 +94,8 @@ export const config = {
     gmailQuery:
       str("GMAIL_QUERY") ??
       "in:inbox -from:me -category:promotions -category:social newer_than:10d",
+    /** Gmail label for mail that needs an action but hasn't been clarified (Clarify mode reads it). */
+    todoLabel: str("GMAIL_TODO_LABEL") ?? "@@TO-DO",
   },
 
   /** Any OpenAI-compatible chat API (e.g. Dartmouth Chat). Server-side only. */

@@ -9,7 +9,7 @@ import { config, features, forceMock, isDemoMode } from "./config";
 import { deterministicDayNote, WIND_DOWN_HOUR } from "./day-note";
 import type { NoteStyle } from "./settings";
 import { getAgenda, getAllDayEvents, getCalendarLegend } from "./google/calendar";
-import { getReplies } from "./google/gmail";
+import { getReplies, getTodoCount } from "./google/gmail";
 import { GoogleAuthError } from "./google/oauth";
 import { resolveLocation, type LocationOverride } from "./location";
 import {
@@ -22,7 +22,7 @@ import {
   MOCK_USER,
   MOCK_WEATHER,
 } from "./mock-data";
-import { getTasks, getWeekTasks } from "./tasks/todoist";
+import { getInboxTasks, getTasks, getWeekTasks } from "./tasks/todoist";
 import { buildWeek, fetchWeekAgendas } from "./week";
 import { decimalHourInZone, isoDateInZone } from "./time";
 import type {
@@ -123,6 +123,7 @@ export async function getDashboardData(
       week: null,
       ai: false,
       canAddTasks: false,
+      clarifyCount: null,
       allDay: [],
       calendars: [],
       sources: {
@@ -156,6 +157,12 @@ export async function getDashboardData(
   const allDayEvents = features.google
     ? getAllDayEvents(today.iso, location.timezone).catch(() => [] as AgendaEvent[])
     : Promise.resolve([] as AgendaEvent[]);
+
+  // The count on the Clarify button; a source that fails just isn't counted.
+  const clarifyCounts = Promise.all([
+    features.todoist ? getInboxTasks(location.timezone).then((t) => t.length).catch(() => null) : null,
+    features.google ? getTodoCount().catch(() => null) : null,
+  ]);
 
   const [weather, tasks, agenda, replies, geocoded]: [
     Settled<Weather>,
@@ -237,6 +244,8 @@ export async function getDashboardData(
   const place =
     geocoded ?? timezoneCity(location.timezone) ?? weather.value.place;
 
+  const counted = (await clarifyCounts).filter((n) => n !== null);
+
   return {
     user,
     today,
@@ -252,6 +261,7 @@ export async function getDashboardData(
     week,
     ai: features.llm && features.google,
     canAddTasks: features.todoist,
+    clarifyCount: counted.length ? counted.reduce((a, b) => a + b, 0) : null,
     allDay,
     calendars: agenda.live ? await calendarLegend : [],
   };

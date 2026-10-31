@@ -9,12 +9,11 @@ import {
   type ReactNode,
 } from "react";
 import { useRouter } from "next/navigation";
-import { PRIORITY_LABEL } from "@/lib/format";
 import type { Theme } from "@/lib/settings";
-import type { Priority, Project, Section, Task } from "@/lib/types";
+import type { Project, Section, Task } from "@/lib/types";
 import { useFocus } from "./Focus";
 import { flushFocus, Popover } from "./Popover";
-import { TaskMenu } from "./TaskMenu";
+import { TaskFieldsMenu, TaskMenu, type TaskFields } from "./TaskMenu";
 
 interface Meta {
   projects: Project[];
@@ -102,6 +101,7 @@ export function TaskDetailProvider({
           task={state.task}
           anchor={state.anchor}
           theme={theme}
+          todayIso={todayIso}
           meta={meta ?? { projects: [], labels: [] }}
           onClose={close}
         />
@@ -123,24 +123,18 @@ export function TaskDetailProvider({
   );
 }
 
-const DUE_CHIPS: { label: string; value: string }[] = [
-  { label: "Today", value: "today" },
-  { label: "Tomorrow", value: "tomorrow" },
-  { label: "This weekend", value: "saturday" },
-  { label: "Next week", value: "next monday" },
-  { label: "No date", value: "" },
-];
-
 function TaskDetailCard({
   task,
   anchor,
   theme,
+  todayIso,
   meta,
   onClose,
 }: {
   task: Task;
   anchor: DOMRect;
   theme: Theme;
+  todayIso: string;
   meta: Meta;
   onClose: () => void;
 }) {
@@ -157,9 +151,10 @@ function TaskDetailCard({
 
   // Local optimistic copy so the UI reflects edits before the refresh lands.
   const [local, setLocal] = useState({
-    priority: task.priority,
-    due: task.due,
-    projectId: task.projectId,
+    priority: task.todoistPriority ?? 4,
+    due: task.dueDate ?? "",
+    projectId: task.projectId ?? "",
+    sectionId: task.sectionId ?? "",
     labels: task.labels ?? [],
     deadline: task.deadline ?? "",
     durationMinutes: task.durationMinutes,
@@ -188,17 +183,14 @@ function TaskDetailCard({
     [id, router],
   );
 
-  const setPriority = (p: Priority) => {
-    setLocal((s) => ({ ...s, priority: p }));
-    send({ priority: p });
-  };
-  const setDue = (value: string) => {
-    setLocal((s) => ({ ...s, due: value || "—" }));
-    send({ due: value || null });
-  };
-  const setProject = (projectId: string) => {
-    setLocal((s) => ({ ...s, projectId }));
-    send({ projectId });
+  const setFields = (patch: Partial<TaskFields>) => {
+    setLocal((s) => ({ ...s, ...patch }));
+    // A picked day keeps the task's time and repeat; typed words replace the whole due.
+    if (patch.due !== undefined) send(!patch.due ? { date: null } : /^\d{4}-\d{2}-\d{2}$/.test(patch.due) ? { date: patch.due } : { due: patch.due });
+    if (patch.priority !== undefined) send({ todoistPriority: patch.priority });
+    if (patch.deadline !== undefined) send({ deadline: patch.deadline || null });
+    if (patch.sectionId) send({ sectionId: patch.sectionId });
+    else if (patch.projectId) send({ projectId: patch.projectId });
   };
   const setLabels = (labels: string[]) => {
     setLocal((s) => ({ ...s, labels }));
@@ -251,75 +243,12 @@ function TaskDetailCard({
         }}
       />
 
-      <div className="taskedit__field">
-        <span className="taskedit__label">Priority</span>
-        <div className="taskedit__seg">
-          {([1, 2, 3] as Priority[]).map((p) => (
-            <button
-              key={p}
-              type="button"
-              className={`taskedit__seg-btn taskedit__seg-btn--p${p}${
-                local.priority === p ? " is-on" : ""
-              }`}
-              onClick={() => setPriority(p)}
-            >
-              {PRIORITY_LABEL[p]}
-            </button>
-          ))}
-        </div>
-      </div>
-
-      <div className="taskedit__field">
-        <span className="taskedit__label">
-          Due <span className="taskedit__cur">{local.due}</span>
-          {task.isRecurring ? (
-            <span className="taskedit__recur">🔁 {task.recurrence}</span>
-          ) : null}
-        </span>
-        <div className="taskedit__chips">
-          {DUE_CHIPS.map((c) => (
-            <button
-              key={c.label}
-              type="button"
-              className="taskedit__chip"
-              onClick={() => setDue(c.value)}
-            >
-              {c.label}
-            </button>
-          ))}
-        </div>
-        <input
-          className="taskedit__text"
-          placeholder="or type a date — “fri 3pm”, “in 2 weeks”"
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && e.currentTarget.value.trim()) {
-              setDue(e.currentTarget.value.trim());
-              e.currentTarget.value = "";
-            }
-          }}
-        />
-        {task.isRecurring ? (
-          <p className="taskedit__hint">Setting a specific date removes the repeat.</p>
-        ) : null}
-      </div>
-
-      <div className="taskedit__field">
-        <span className="taskedit__label">Project</span>
-        <select
-          className="taskedit__select"
-          value={local.projectId ?? ""}
-          onChange={(e) => setProject(e.target.value)}
-        >
-          {!meta.projects.some((p) => p.id === local.projectId) && local.projectId ? (
-            <option value={local.projectId}>{task.meta}</option>
-          ) : null}
-          {meta.projects.map((p) => (
-            <option key={p.id} value={p.id}>
-              {p.name}
-            </option>
-          ))}
-        </select>
-      </div>
+      <TaskFieldsMenu
+        value={local}
+        onChange={setFields}
+        todayIso={todayIso}
+        recurring={task.isRecurring ? task.recurrence : undefined}
+      />
 
       <div className="taskedit__field">
         <span className="taskedit__label">Labels</span>
@@ -357,19 +286,6 @@ function TaskDetailCard({
         </div>
       </div>
 
-      <div className="taskedit__row2">
-        <label className="taskedit__field">
-          <span className="taskedit__label">Deadline</span>
-          <input
-            type="date"
-            className="taskedit__text"
-            value={local.deadline}
-            onChange={(e) => {
-              setLocal((s) => ({ ...s, deadline: e.target.value }));
-              send({ deadline: e.target.value || null });
-            }}
-          />
-        </label>
         <label className="taskedit__field">
           <span className="taskedit__label">Duration</span>
           <input
@@ -390,7 +306,6 @@ function TaskDetailCard({
             }}
           />
         </label>
-      </div>
 
       <div className="taskedit__field">
         <span className="taskedit__label">Notes</span>

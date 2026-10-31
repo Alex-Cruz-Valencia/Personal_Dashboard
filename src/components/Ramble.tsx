@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { formatHour } from "@/lib/format";
+import { loadTaskMeta, type TaskMeta } from "@/lib/task-meta";
 import type { Theme } from "@/lib/settings";
 import { Popover } from "./Popover";
+import { dueLabel, TaskFieldsMenu } from "./TaskMenu";
 
 /**
  * Ramble: talk (or type) everything on your mind, get it back as separate tasks with dates,
@@ -38,11 +39,7 @@ function speechApi(): (new () => Recognition) | null {
   return w.SpeechRecognition ?? w.webkitSpeechRecognition ?? null;
 }
 
-function dayLabel(iso: string): string {
-  return new Date(`${iso}T12:00:00Z`).toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" });
-}
-
-export function RambleButton({ theme, onAdded }: { theme: Theme; onAdded: () => void }) {
+export function RambleButton({ theme, todayIso, onAdded }: { theme: Theme; todayIso: string; onAdded: () => void }) {
   const btn = useRef<HTMLButtonElement>(null);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
   return (
@@ -59,6 +56,7 @@ export function RambleButton({ theme, onAdded }: { theme: Theme; onAdded: () => 
       {anchor ? (
         <Popover anchor={anchor} theme={theme} onClose={() => setAnchor(null)} ariaLabel="Ramble" className="taskedit ramble">
           <RamblePanel
+            todayIso={todayIso}
             onClose={() => setAnchor(null)}
             onAdded={() => {
               setAnchor(null);
@@ -71,17 +69,31 @@ export function RambleButton({ theme, onAdded }: { theme: Theme; onAdded: () => 
   );
 }
 
-function RamblePanel({ onClose, onAdded }: { onClose: () => void; onAdded: () => void }) {
+/** Words typed into the menu's date replace the heard date; a deadline and section are menu-only. */
+type Row = RambleTask & { on: boolean; dueText?: string; deadline?: string; sectionId?: string };
+
+const rowDue = (t: Row) => t.dueText ?? (t.dueDate ? (t.time ? `${t.dueDate} ${t.time}` : t.dueDate) : "");
+
+function RamblePanel({ todayIso, onClose, onAdded }: { todayIso: string; onClose: () => void; onAdded: () => void }) {
   const [text, setText] = useState("");
   const [interim, setInterim] = useState("");
   const [listening, setListening] = useState(false);
   const [thinking, setThinking] = useState(false);
   const [adding, setAdding] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [tasks, setTasks] = useState<(RambleTask & { on: boolean })[] | null>(null);
+  const [tasks, setTasks] = useState<Row[] | null>(null);
+  const [menuAt, setMenuAt] = useState<number | null>(null);
+  const [meta, setMeta] = useState<TaskMeta>({ projects: [], labels: [] });
   const rec = useRef<Recognition | null>(null);
   // Read after mount: the server doesn't know whether this browser can listen.
   const [canListen, setCanListen] = useState(false);
+  useEffect(() => {
+    let alive = true;
+    loadTaskMeta().then((m) => alive && setMeta(m));
+    return () => {
+      alive = false;
+    };
+  }, []);
   useEffect(() => {
     setCanListen(Boolean(speechApi())); // eslint-disable-line react-hooks/set-state-in-effect
     return () => rec.current?.stop();
@@ -150,8 +162,9 @@ function RamblePanel({ onClose, onAdded }: { onClose: () => void; onAdded: () =>
         body: JSON.stringify({
           content: t.content.trim(),
           todoistPriority: t.priority,
-          ...(t.projectId ? { projectId: t.projectId } : {}),
-          ...(t.dueDate ? (t.time ? { due: `${t.dueDate} ${t.time}` } : { dueDate: t.dueDate }) : {}),
+          ...(t.sectionId ? { sectionId: t.sectionId } : t.projectId ? { projectId: t.projectId } : {}),
+          ...(rowDue(t) ? { due: rowDue(t) } : {}),
+          ...(t.deadline ? { deadline: t.deadline } : {}),
         }),
       }).catch(() => null);
       if (!res?.ok) {
@@ -194,11 +207,20 @@ function RamblePanel({ onClose, onAdded }: { onClose: () => void; onAdded: () =>
                     value={t.content}
                     onChange={(e) => setTasks((l) => l && l.map((x, j) => (j === i ? { ...x, content: e.target.value } : x)))}
                   />
-                  <div className="ramble__meta">
-                    {t.dueDate ? <span>{dayLabel(t.dueDate)}{t.time ? ` · ${formatHour(Number(t.time.slice(0, 2)) + Number(t.time.slice(3)) / 60, false)}` : ""}</span> : <span className="ramble__none">No date</span>}
+                  <button type="button" className="ramble__meta" aria-expanded={menuAt === i} title="Change the date, priority or project" onClick={() => setMenuAt(menuAt === i ? null : i)}>
+                    {rowDue(t) ? <span>{dueLabel(rowDue(t), todayIso)}</span> : <span className="ramble__none">No date</span>}
                     {t.priority < 4 ? <span className={`ramble__p ramble__p--${t.priority}`}>P{t.priority}</span> : null}
-                    {t.projectName ? <span># {t.projectName}</span> : <span className="ramble__none">Inbox</span>}
-                  </div>
+                    {t.projectId ? <span># {meta.projects.find((p) => p.id === t.projectId)?.name ?? t.projectName}</span> : <span className="ramble__none">Inbox</span>}
+                  </button>
+                  {menuAt === i ? (
+                    <TaskFieldsMenu
+                      value={{ due: rowDue(t), priority: t.priority, deadline: t.deadline ?? "", projectId: t.projectId ?? "", sectionId: t.sectionId ?? "" }}
+                      todayIso={todayIso}
+                      onChange={({ due, ...patch }) =>
+                        setTasks((l) => l && l.map((x, j) => (j === i ? { ...x, ...patch, ...(due === undefined ? {} : { dueText: due }) } : x)))
+                      }
+                    />
+                  ) : null}
                 </div>
               </li>
             ))}

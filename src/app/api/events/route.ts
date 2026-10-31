@@ -15,6 +15,8 @@ interface PostBody {
   endTime?: string;
   /** When blocking a Todoist task — tagged in the description so the Plan card skips it next time. */
   taskId?: string;
+  /** Notes on the event, such as where it came from. */
+  description?: string;
 }
 
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
@@ -22,7 +24,7 @@ const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 /**
  * Create an event on the primary calendar, in the viewer's own timezone.
- * Body: { name, date, startTime, endTime, taskId? }.
+ * Body: { name, date, startTime, endTime, taskId?, description? }.
  */
 export async function POST(request: Request) {
   const blocked = rejectCrossSite(request);
@@ -54,10 +56,14 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "End time must be after start time" }, { status: 400 });
   }
 
+  if (body.description !== undefined && (typeof body.description !== "string" || body.description.length > 2000)) {
+    return NextResponse.json({ error: "description is too long" }, { status: 400 });
+  }
+
   const { timezone } = await resolveLocation();
   const description = body.taskId
     ? `Planned from the dashboard for a Todoist task. ${taskMarker(body.taskId)}`
-    : undefined;
+    : body.description?.trim() || undefined;
 
   try {
     const id = await createEvent({

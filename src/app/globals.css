@@ -2358,7 +2358,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .brief--tomorrow .brief__icon { color: var(--accent); }
 
 /* Ramble: talk → tasks, beside "+ Add task". */
-.tasks__adds { display: flex; align-items: baseline; gap: 18px; }
+/* Under the list, not in it: stays in view however long the list scrolls. */
+.tasks__adds { flex: none; display: flex; align-items: center; gap: 18px; padding: 8px 24px 12px; border-top: 1px solid var(--line); }
+.tasks__adds .tasks__add { margin: 0; padding: 2px 0; }
 .tasks__ramble { display: inline-flex; align-items: center; gap: 5px; }
 .tasks__ramble svg { align-self: center; }
 .ramble__lead { margin: 0; font-size: 13px; color: var(--ink-soft); line-height: 1.4; }
@@ -2378,7 +2380,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .ramble__body { display: grid; gap: 3px; min-width: 0; flex: 1; }
 .ramble__name { font: inherit; font-size: 13.5px; font-weight: 600; color: var(--ink); background: transparent; border: 0; border-bottom: 1px solid transparent; padding: 1px 0; outline: none; min-width: 0; }
 .ramble__name:focus { border-bottom-color: var(--accent); }
-.ramble__meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font-size: 12px; color: var(--ink-soft); }
+.ramble__meta { display: flex; flex-wrap: wrap; gap: 4px 10px; font: inherit; font-size: 12px; color: var(--ink-soft); width: 100%; padding: 2px 0; border: 0; background: none; text-align: left; cursor: pointer; }
+.ramble__meta:hover { color: var(--ink); }
 .ramble__none { color: var(--ink-faint); }
 .ramble__p { font-weight: 700; }
 .ramble__p--1 { color: var(--todo-p1, var(--negative)); }
@@ -2518,3 +2521,63 @@ a:hover { color: var(--ink); text-decoration: underline; }
   background: color-mix(in srgb, var(--ev) 12%, var(--surface)); border-color: transparent; border-radius: 4px;
   box-shadow: inset 3px 0 0 var(--ev); padding: 3px 8px 3px 11px; font-weight: 500;
 }
+
+/* ===================== CLARIFY (a mode: rough tasks and to-do emails, one at a time) ===================== */
+.tasks__adds .tasks__clarify { margin-left: auto; color: var(--ink-faint); font-weight: 500; }
+.tasks__adds .tasks__clarify:hover { color: var(--ink); }
+.clarify .card__head { justify-content: flex-start; }
+.clarify__back { margin: 0 0 0 auto; padding: 0; }
+.clarify { flex: 1; min-height: 0; display: flex; flex-direction: column; outline: none; }
+.clarify__bar { display: grid; gap: 10px; padding: 0 24px 12px; }
+.clarify__tabs { display: flex; gap: 4px; }
+.clarify__tab { font: inherit; font-size: 13px; font-weight: 600; padding: 4px 9px; border-radius: var(--radius-sm); border: 1px solid transparent; background: none; color: var(--ink-soft); cursor: pointer; }
+.clarify__tab span { font-weight: 400; }
+.clarify__tab.is-on { color: var(--ink); border-color: var(--line); background: var(--surface-2); font-weight: 700; }
+.clarify__progress { height: 3px; border-radius: 2px; background: var(--line); overflow: hidden; }
+.clarify__progress i { display: block; height: 100%; background: var(--accent); transition: width 0.25s ease; }
+.clarify__grid { display: grid; gap: 14px; }
+.clarify__item { min-width: 0; }
+.clarify__meta { display: flex; flex-wrap: wrap; gap: 4px 12px; font-size: 12.5px; color: var(--ink-soft); }
+.clarify__meta a { color: inherit; }
+.clarify__kind { font-weight: 700; color: var(--ink); }
+.clarify__raw { margin: 6px 0 2px; font-size: 16px; line-height: 1.35; font-weight: 700; overflow-wrap: anywhere; }
+.clarify__from { margin: 0; font-size: 13px; color: var(--ink-soft); }
+.clarify__body { margin-top: 8px; padding: 8px 10px; border-radius: var(--radius-sm); background: var(--surface-2); font-size: 13px; line-height: 1.45; white-space: pre-wrap; overflow-wrap: anywhere; max-height: 170px; overflow-y: auto; }
+.clarify__decide { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--line); }
+.clarify__seg { display: flex; gap: 4px; }
+.clarify__seg-btn { flex: 1; font: inherit; font-size: 13px; font-weight: 600; padding: 6px 8px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: none; color: var(--ink-soft); cursor: pointer; }
+.clarify__seg-btn.is-on { color: var(--ink); border-color: var(--ink-faint); background: var(--surface-2); font-weight: 700; }
+.clarify__others { display: flex; flex-wrap: wrap; gap: 6px; padding-top: 10px; border-top: 1px solid var(--line); }
+.clarify__skip { margin-left: auto; }
+.clarify__note { margin: 8px 0 0; font-size: 13.5px; color: var(--ink-soft); }
+.clarify__end { display: grid; justify-items: center; gap: 10px; padding: 48px 0; text-align: center; }
+.clarify__end-big { margin: 0; font-size: 21px; font-weight: 700; }
+/* Stacked layouts scroll the page, not the card (as the task list does), so the card grows to fit. */
+@media (max-width: 900px) { .twocol > .column--tasks:has(.clarify) { max-height: none; } }
+
+/* ===================== TASK MENU INSIDE A FORM (TaskFieldsMenu) =====================
+   The same rows as the right-click menu, in the flow of the form. Its colors come from the theme of
+   the card it sits in, since it has no data-theme of its own. */
+.taskmenu--inline { position: static; z-index: auto; width: auto; overflow: visible; box-shadow: none; background: none; border-radius: var(--radius-sm); }
+.taskmenu--inline .taskmenu__keys { max-width: 62%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.taskmenu--inline .taskmenu__label { flex: 0 0 auto; overflow: visible; margin-right: auto; }
+.taskmenu--inline .taskmenu__row { justify-content: space-between; }
+.taskmenu__fields { min-width: 0; margin: 0; padding: 0; border: 0; }
+.taskmenu__fields:disabled { opacity: 0.6; }
+.taskmenu__fields > .taskmenu__panel { padding-bottom: 8px; }
+[data-theme="light"] .taskmenu--inline {
+  --todo-p1: #D1453B; --todo-p2: #EB8909; --todo-p3: #246FE0; --todo-p4: #808080;
+  --tm-today: #058527; --tm-tomorrow: #AD6200; --tm-weekend: #246FE0; --tm-nextweek: #692EC2;
+}
+[data-theme="dark"] .taskmenu--inline {
+  --todo-p1: #FF7066; --todo-p2: #FF9A14; --todo-p3: #5297FF; --todo-p4: #9A9A9A;
+  --tm-today: #25B84C; --tm-tomorrow: #FF9A14; --tm-weekend: #5297FF; --tm-nextweek: #A970FF;
+}
+
+/* ===================== QUIET TASK FIELDS (Todoist's) =====================
+   Task forms have many fields and the caret already shows where you are, so focus only firms up
+   the hairline: no ring, no accent. */
+.taskedit__name, .ramble__name { border: 0; border-radius: 0; padding: 2px 0 6px; background: none; }
+.taskedit__name:focus, .taskedit__name:focus-visible, .ramble__name:focus, .ramble__name:focus-visible { outline: none; box-shadow: none; }
+.taskedit__text:focus-visible, .taskedit__select:focus-visible, .taskedit__textarea:focus-visible, .taskedit__label-input:focus-visible, .taskmenu__input:focus-visible { outline: none; }
+.taskedit__text:focus, .taskedit__select:focus, .taskedit__textarea:focus, .taskedit__label-input:focus, .taskmenu__input:focus { border-color: var(--ink-faint); }
