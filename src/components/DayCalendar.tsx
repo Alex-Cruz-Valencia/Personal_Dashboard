@@ -8,12 +8,13 @@ import { cascade, hourLabel, shortSpan, shortTime } from "@/lib/gcal-look";
 import { minutesLabel } from "@/lib/plan";
 import type { ShownSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
-import type { AgendaEvent, ArcWindow, CalendarLegendItem, TodayInfo, WeekDay } from "@/lib/types";
+import type { AgendaEvent, ArcWindow, CalendarLegendItem, SliceSource, TodayInfo, WeekDay } from "@/lib/types";
 import { useNowSeconds } from "@/lib/use-now";
 import { EndOfDay } from "./EndOfDay";
 import { useEventDetail } from "./EventDetail";
 import { formatClock, useFocus } from "./Focus";
 import { Popover } from "./Popover";
+import { StaleTag } from "./StaleTag";
 import { DayDetail } from "./WeekStrip";
 
 /** Pixels per hour. A 30-minute event is 28px: room for a one-line title. */
@@ -65,6 +66,9 @@ interface DayCalendarProps {
   focusTask?: string;
   /** Google is connected: events can be dragged, resized and drawn. */
   editable?: boolean;
+  source?: SliceSource;
+  /** Google's stored sign-in is dead — offer a reconnect link on the tag. */
+  reconnect?: boolean;
   /** Tomorrow's agenda and tasks, for "Plan tomorrow" (null when neither source is readable). */
   tomorrow?: WeekDay | null;
   /** Which color is which connected calendar; the legend shows when there are two or more. */
@@ -78,7 +82,7 @@ interface DayCalendarProps {
  * Google is connected, drag one to move it, drag its bottom edge to resize it,
  * or drag on an empty stretch to add a new one. Nothing is saved until you let go.
  */
-export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settings, frozen = false, focusTask, editable = false, tomorrow = null, legend = [] }: DayCalendarProps) {
+export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settings, frozen = false, focusTask, editable = false, source = "live", reconnect = false, tomorrow = null, legend = [] }: DayCalendarProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const focus = useFocus();
@@ -382,6 +386,7 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
         <h2 className="card__title">
           Today
           <span className="vcal__date">{dateLineFor(today.iso)}</span>
+          <StaleTag source={source} reconnect={reconnect} />
         </h2>
         {focus.session ? (
           <div className="vcal__status vcal__focus-status" aria-live="polite">

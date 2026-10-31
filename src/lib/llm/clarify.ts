@@ -74,7 +74,8 @@ export function parseClarify(text: string, items: ClarifyInput[], projects: Proj
     return [];
   }
   if (!Array.isArray(raw.items)) return [];
-  const projectByName = new Map(projects.map((p) => [p.name.trim().toLowerCase(), p]));
+  // Inbox is where the item already is, so it can't be the home that clears it.
+  const projectByName = new Map(projects.filter((p) => !p.inbox).map((p) => [p.name.trim().toLowerCase(), p]));
   const labelByName = new Map(labels.map((l) => [l.toLowerCase(), l]));
   const out = new Map<string, ClarifySuggestion>();
   for (const entry of raw.items) {

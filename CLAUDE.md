@@ -214,7 +214,9 @@
   `h % 24` before computing am/pm — needed once `dayEnd` can legitimately
   be `24` (midnight), which used to collide with noon's "12:00pm" label.
 - `dashboard-data.ts` marks each slice `live` / `mock` (configured but the
-  fetch failed — `StaleTag` shows) / `off` (nothing configured — silent).
+  fetch failed — `SourceNotice` under the top row and `StaleTag` show, and
+  `Dashboard` keeps those rows out of `AttentionStrip`) / `off` (nothing
+  configured — silent).
 - `Popover` (`src/components/Popover.tsx`) is the shared portalled-card shell
   (anchored positioning + viewport clamp + outside-click/Esc close); it carries
   its own `data-theme` since it renders outside `.morning`. Both
