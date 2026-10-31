@@ -4,7 +4,7 @@ import { features } from "@/lib/config";
 import { addTask, TODOIST_TAG, type NewTask } from "@/lib/tasks/todoist";
 import { rejectCrossSite, validTaskId } from "@/lib/request-guard";
 
-/** Create a task. Body: { content, projectId?, parentId? (a subtask), priority? (1–3), due?, dueDate?, labels?, deadline?, durationMinutes?, description? }. */
+/** Create a task. Body: { content, projectId?, sectionId?, parentId? (a subtask), priority? (1–3), due?, dueDate?, labels?, deadline?, durationMinutes?, description? }. */
 export async function POST(request: Request) {
   const blocked = rejectCrossSite(request);
   if (blocked) return blocked;
@@ -60,6 +60,9 @@ export async function POST(request: Request) {
   }
   if (body.parentId !== undefined && !(typeof body.parentId === "string" && validTaskId(body.parentId))) {
     return NextResponse.json({ error: "parentId must be a task id" }, { status: 400 });
+  }
+  if (body.sectionId !== undefined && !(typeof body.sectionId === "string" && validTaskId(body.sectionId))) {
+    return NextResponse.json({ error: "sectionId must be an id" }, { status: 400 });
   }
   if (body.projectId !== undefined && typeof body.projectId !== "string") {
     return NextResponse.json({ error: "projectId must be a string" }, { status: 400 });

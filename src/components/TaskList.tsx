@@ -10,6 +10,7 @@ import { Popover } from "./Popover";
 import { RambleButton } from "./Ramble";
 import { StaleTag } from "./StaleTag";
 import { useTaskDetail } from "./TaskDetail";
+import { ClarifyPanel } from "./Clarify";
 
 interface TaskListProps {
   tasks: Task[];
@@ -17,14 +18,19 @@ interface TaskListProps {
   source: SliceSource;
   /** The AI model is set up, so Ramble (talk → tasks) is offered. */
   ai?: boolean;
+  /** What's waiting in Clarify; null hides it (nothing connected). */
+  clarifyCount?: number | null;
+  /** The dashboard's day, for the task menu's date shortcuts. */
+  todayIso: string;
 }
 
-export function TaskList({ tasks, settings, source, ai = false }: TaskListProps) {
+export function TaskList({ tasks, settings, source, ai = false, clarifyCount = null, todayIso }: TaskListProps) {
   const router = useRouter();
   const { openMenu, isSelected } = useTaskDetail();
   const [done, setDone] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
+  const [clarifying, setClarifying] = useState(false);
 
   // Sample tasks keep their reference labels ("EOD"); live ones follow ⚙ Time.
   const use24 = use24Hour(settings); // a plain function, but named like a hook: call it unconditionally
@@ -57,6 +63,14 @@ export function TaskList({ tasks, settings, source, ai = false }: TaskListProps)
         });
       });
   };
+
+  if (clarifying) {
+    return (
+      <section className="card column--tasks">
+        <ClarifyPanel ai={ai} onExit={() => setClarifying(false)} />
+      </section>
+    );
+  }
 
   return (
     <section className="card column--tasks">
@@ -151,16 +165,21 @@ export function TaskList({ tasks, settings, source, ai = false }: TaskListProps)
           })}
         </ul>
         {error ? <p className="tasks__error">{error}</p> : null}
-        <div className="tasks__adds">
-          <AddTask theme={settings.theme} onAdded={() => router.refresh()} />
-          {ai && source === "live" ? <RambleButton theme={settings.theme} onAdded={() => router.refresh()} /> : null}
-        </div>
+      </div>
+      <div className="tasks__adds">
+        <AddTask theme={settings.theme} todayIso={todayIso} onAdded={() => router.refresh()} />
+        {ai && source === "live" ? <RambleButton theme={settings.theme} todayIso={todayIso} onAdded={() => router.refresh()} /> : null}
+        {clarifyCount ? (
+          <button type="button" className="tasks__add tasks__clarify" title={`${clarifyCount} in your Inbox and to-do emails to go through`} onClick={() => setClarifying(true)}>
+            Clarify
+          </button>
+        ) : null}
       </div>
     </section>
   );
 }
 
-function AddTask({ theme, onAdded }: { theme: Theme; onAdded: () => void }) {
+function AddTask({ theme, todayIso, onAdded }: { theme: Theme; todayIso: string; onAdded: () => void }) {
   const btn = useRef<HTMLButtonElement>(null);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
 
@@ -183,6 +202,7 @@ function AddTask({ theme, onAdded }: { theme: Theme; onAdded: () => void }) {
             </button>
           </div>
           <NewTaskForm
+            todayIso={todayIso}
             onCancel={() => setAnchor(null)}
             onAdded={() => {
               setAnchor(null);

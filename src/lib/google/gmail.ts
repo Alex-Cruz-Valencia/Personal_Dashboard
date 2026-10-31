@@ -14,7 +14,7 @@
 import "server-only";
 import { config } from "@/lib/config";
 import { relativeAge } from "@/lib/time";
-import type { Reply, Urgency } from "@/lib/types";
+import type { ClarifyItem, Reply, Urgency } from "@/lib/types";
 import { googleFetch } from "./tokens";
 
 const BASE = "https://gmail.googleapis.com/gmail/v1/users/me";
@@ -360,4 +360,95 @@ export async function saveReplyDraft(id: string, text: string): Promise<{ url: s
   const created = (await res.json()) as { message?: { id?: string } };
   const draftMsg = created.message?.id;
   return { url: draftMsg ? `https://mail.google.com/mail/u/0/#drafts?compose=${draftMsg}` : "https://mail.google.com/mail/u/0/#drafts" };
+}
+
+/* ---------- the to-do label (Clarify mode) ---------- */
+
+interface GmailThread {
+  id: string;
+  messages?: (GmailMessage & { snippet?: string })[];
+}
+
+/** The to-do label's id, or null when the account has no such label. */
+async function todoLabelId(): Promise<string | null> {
+  const wanted = config.google.todoLabel.toLowerCase();
+  return (await fetchAllLabels()).find((l) => l.name.toLowerCase() === wanted)?.id ?? null;
+}
+
+/**
+ * Threads under the to-do label. Threads, not messages: a label on two messages of one
+ * conversation is one thing to clarify, and clearing it has to clear both.
+ */
+export async function getTodoThreads(): Promise<ClarifyItem[]> {
+  const label = await todoLabelId();
+  if (!label) return [];
+  const listUrl = new URL(`${BASE}/threads`);
+  listUrl.searchParams.set("labelIds", label);
+  listUrl.searchParams.set("maxResults", "50");
+  const listRes = await googleFetch(listUrl, { cache: "no-store" });
+  if (!listRes.ok) throw new Error(`Gmail threads responded ${listRes.status}`);
+  const ids = (((await listRes.json()) as { threads?: { id: string }[] }).threads ?? []).map((t) => t.id);
+
+  const settled = await Promise.allSettled(
+    ids.map(async (id) => {
+      const url = new URL(`${BASE}/threads/${id}`);
+      url.searchParams.set("format", "metadata");
+      for (const h of ["From", "Subject"]) url.searchParams.append("metadataHeaders", h);
+      const res = await googleFetch(url, { cache: "no-store" });
+      if (!res.ok) throw new Error(`Gmail thread ${id} responded ${res.status}`);
+      return (await res.json()) as GmailThread;
+    }),
+  );
+  return settled.flatMap<ClarifyItem>((r) => {
+    if (r.status !== "fulfilled") return [];
+    const msg = r.value.messages?.filter((m) => m.labelIds?.includes(label)).at(-1);
+    if (!msg) return [];
+    return [
+      {
+        kind: "email",
+        id: r.value.id,
+        messageId: msg.id,
+        title: header(msg, "Subject") || "(no subject)",
+        from: displayName(header(msg, "From")),
+        detail: msg.snippet,
+        addedAt: Number(msg.internalDate),
+      },
+    ];
+  });
+}
+
+/** How many threads wait under the to-do label; the page shows this on every render, so it's cached. */
+export async function getTodoCount(): Promise<number> {
+  const label = await todoLabelId();
+  if (!label) return 0;
+  const res = await googleFetch(`${BASE}/labels/${label}`, { next: { revalidate: 90, tags: [GMAIL_TAG] } });
+  if (!res.ok) throw new Error(`Gmail label responded ${res.status}`);
+  return ((await res.json()) as { threadsTotal?: number }).threadsTotal ?? 0;
+}
+
+async function modifyThread(id: string, change: { addLabelIds?: string[]; removeLabelIds?: string[] }): Promise<void> {
+  const res = await googleFetch(`${BASE}/threads/${id}/modify`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify(change),
+  });
+  if (!res.ok) throw new Error(`Gmail modify responded ${res.status}`);
+}
+
+/** Clarified: the thread leaves the to-do label. Everything else about it stays as it was. */
+export async function clearTodoLabel(id: string): Promise<void> {
+  const label = await todoLabelId();
+  if (label) await modifyThread(id, { removeLabelIds: [label] });
+}
+
+/** Filed: under `labelName` (created if new), out of the to-do label and out of the inbox. */
+export async function fileTodoThread(id: string, labelName: string): Promise<void> {
+  const [target, todo] = await Promise.all([findOrCreateLabelId(labelName), todoLabelId()]);
+  await modifyThread(id, { addLabelIds: [target], removeLabelIds: [...(todo ? [todo] : []), "INBOX"] });
+}
+
+/** The whole conversation goes to Trash, recoverable in Gmail for 30 days. */
+export async function trashThread(id: string): Promise<void> {
+  const res = await googleFetch(`${BASE}/threads/${id}/trash`, { method: "POST" });
+  if (!res.ok) throw new Error(`Gmail trash responded ${res.status}`);
 }

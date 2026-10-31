@@ -95,6 +95,136 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-30 — Clarify stays out of the way
+
+**Problem / trigger** — A Clarify button in the card header, then a tab with a count in the title,
+both asked for attention on days it wasn't wanted. Clarifying is something you sit down to do, not
+something the dashboard should keep offering.
+
+**Decision** — One faint word, "Clarify", at the right of the task card's footer. There's no count
+on the page (it's in the tooltip), and the word only appears when something is waiting. Inside,
+the card shows "N left" and "Back to tasks".
+
+**Reasoning** — The morning view is about today. An Inbox count is a small standing nag, so it's
+left for when you've chosen to go in.
+
+**Alternatives considered** — The header button and the tab, both tried and dropped for being too
+present. Only reaching it from the settings panel (too hidden for something used weekly).
+
+**Tradeoffs / open questions** — With no count, nothing tells you the pile is growing.
+
+## 2026-10-30 — Add task and Ramble stay in view
+
+**Problem / trigger** — "+ Add task" and Ramble came after the last task, so on a full day they
+were scrolled out of the card.
+
+**Decision** — Both sit in a footer pinned under the list. The list scrolls above it.
+
+**Reasoning** — Adding is the card's most frequent action, and the footer keeps it where Todoist
+users expect it, under the list, without having to scroll there.
+
+**Alternatives considered** — The card header, with Clarify (too crowded beside the title and
+counts in a narrow column).
+
+**Tradeoffs / open questions** — The footer takes a little height from the list. On stacked
+layouts the card doesn't scroll on its own, so the footer simply follows the list.
+
+## 2026-10-30 — Quiet task fields; Clarify moves to the card header
+
+**Problem / trigger** — The name field in a task form showed a thick accent ring around an accent
+underline, loud on a form you use repeatedly. The Clarify button sat at the bottom of the task
+list, below whatever the list scrolled past, and read as a third way to add a task.
+
+**Decision** — Task fields follow Todoist: the name is plain bold text with no box or ring, and
+other fields firm up their hairline on focus instead of showing the accent ring. Clarify is a
+small button in the task card's header, beside the counts (later replaced; see "Clarify stays out of the way").
+
+**Reasoning** — The caret already shows where you are typing. Clarify is a mode for the whole card,
+so its control belongs with the card's title, and there it's always visible.
+
+**Alternatives considered** — A softer accent ring (still competes with the content). Putting
+Clarify in the "Needs attention" strip (that strip is for what's urgent, and an Inbox isn't).
+
+**Tradeoffs / open questions** — The global accent focus ring stays everywhere else, including
+buttons. Task fields rely on the caret and hairline, which is a quieter focus cue.
+
+## 2026-10-30 — Clarify moves into the task card
+
+**Problem / trigger** — The full-screen Clarify mode was a harsh jump: the dashboard disappeared to
+do something that is really part of working through tasks.
+
+**Decision** — Clarify now takes over the task card and "Back to tasks" returns it. The item sits
+above the decision in one column, the email text scrolls in a short box, and everything else on
+the page keeps working. Clearing an item refreshes the page, so a new event appears on the calendar
+beside it. S and Esc only count while focus is inside the card.
+
+**Reasoning** — It feels like the same place in a different state, not a trip elsewhere. It's also
+more useful: choosing a day or time for an event is easier with the calendar in view, which the
+full screen hid.
+
+**Alternatives considered** — A drawer sliding over the right side (softer, but still covers the
+page and adds a layer). Softening the full screen (still leaves the dashboard).
+
+**Tradeoffs / open questions** — Long emails get much less room than they had, so "Open in Gmail"
+matters more. On layouts under 900px wide the card stacks under the calendar.
+
+## 2026-10-30 — One task menu everywhere
+
+**Problem / trigger** — Trying Clarify, its task form was yet another way of setting up a task.
+There were already three: Todoist's menu on existing tasks, an older form of chips and a
+three-level priority in "+ Add task" and the email task form, and Clarify's own fields.
+
+**Decision** — The Todoist menu is the one way to set a task's date, priority, deadline and
+project. `TaskFieldsMenu` is that menu inside a form: Clarify, "+ Add task", the email task form,
+the full editor and each Ramble row all use it. It has the same icons, flags, date panel and
+searchable Move to… with sections. New tasks now start at P4 (they started at P2), and they can
+land directly in a section.
+
+**Reasoning** — Setting up a task is a habit, so the controls should be the same wherever it
+happens. It also brings real P1–P4 to every path; the old form could never set P3.
+
+**Alternatives considered** — Popping the right-click menu open from a form button (two layers
+where one will do, and that menu saves at once, which a task that doesn't exist yet can't do).
+Restyling each form separately (three copies to keep in step).
+
+**Tradeoffs / open questions** — Labels, duration and notes aren't in Todoist's menu, so they stay
+as fields under it. Clarify keeps to the menu plus the name, so labels and duration there still
+mean opening the task afterward. In Clarify, Inbox isn't offered, because moving an item out of
+it is the point.
+
+## 2026-10-30 — Clarify: a mode for what isn't a task yet
+
+**Problem / trigger** — The Todoist Inbox and the Gmail `@@TO-DO` label hold rough
+things: captured fast, not yet real tasks. 16 tasks and 15 threads were sitting in
+two apps, with nothing that made anyone decide what each one was.
+
+**Decision** — A full-screen Clarify mode, opened from the task card with a count
+beside it. One item at a time, both sources in one queue (filter tabs for Inbox or
+Email), anything urgent or due first, then oldest. The left side shows the item as
+captured; the right side turns it into a task, an event, a reply draft or a filed
+email, or sends it to Waiting on or Someday, marks it Done, deletes it, or skips it.
+With AI on, the form arrives filled in, including a rewritten next action.
+
+**Reasoning** — Clarifying is a different kind of attention from reading a dashboard,
+so it gets its own screen and one decision at a time. A single queue means the work
+gets done without choosing which pile to start. The rule that an item only leaves
+when it has a real home is what makes the queue shrink honestly: a task can't be
+saved without a project other than Inbox, and an email leaves `@@TO-DO` only once
+what it became exists. Skips last for the session and come back at the end, so
+"not now" is allowed without being lost.
+
+**Alternatives considered** — Two separate passes (simpler, but it's two chores); a
+popover like the reply queue (too small to read an email and fill in a form); a card
+on the page (always visible, and it would push actionable content down); bulk
+triage in a list (faster to scan, but it encourages sorting instead of deciding).
+
+**Tradeoffs / open questions** — AI suggestions arrive in batches of six so a full
+queue costs about five calls, not thirty, against the hourly cap. Emails work on
+whole threads, so a label on two messages is one item. An event made from a task
+completes the task, since the calendar now holds it. There's no undo: Delete and
+Trash need a second click, a completed task can be reopened in Todoist, and a cleared
+email can be relabeled in Gmail. One rough item can't yet split into several tasks.
+
 ## 2026-10-30 — AI email triage that learned how I handle mail
 
 **Problem / trigger** — The reply queue showed each email with a row of

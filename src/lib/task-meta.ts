@@ -1,7 +1,8 @@
-import type { Project } from "@/lib/types";
+import type { Project, Section } from "@/lib/types";
 
 export interface TaskMeta {
   projects: Project[];
+  sections?: Section[];
   labels: string[];
 }
 

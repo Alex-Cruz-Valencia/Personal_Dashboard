@@ -268,7 +268,7 @@ function Suggestion({
 }
 
 /** "Draft reply": optional one-line steer, then an editable draft to save to Gmail. Never sends. */
-function DraftPanel({
+export function DraftPanel({
   id,
   fileAfter,
   onFile,
@@ -429,13 +429,15 @@ function TaskPanel({
       error?: string;
     };
     if (!res.ok || !body.suggestion) throw new Error(body.error || "Couldn't read a task from that.");
-    return { content: body.suggestion.content, priority: body.suggestion.priority, due: body.suggestion.dueDate ?? "" };
+    // The email task reader answers on the dashboard's three levels; "someday" is plain P4.
+    return { content: body.suggestion.content, priority: body.suggestion.priority === 3 ? 4 : body.suggestion.priority, due: body.suggestion.dueDate ?? "" };
   };
 
   if (saved) return <p className="rq__hint rq__saved">Added to Todoist.</p>;
   return (
     <div className="rq__draft rq__task">
       <NewTaskForm
+        todayIso={todayIso}
         initial={{
           content: defaultTaskTitle(reply),
           description: `From ${reply.from}: ${reply.subject}\n${gmailLink(id)}`,

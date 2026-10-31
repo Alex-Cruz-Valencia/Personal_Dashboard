@@ -13,7 +13,7 @@ import "server-only";
 import { config } from "@/lib/config";
 import { formatHour } from "@/lib/format";
 import { decimalHourForTimestamp, isoDateInZone } from "@/lib/time";
-import type { Priority, Project, Section, Task, WeekTask } from "@/lib/types";
+import type { ClarifyItem, Priority, Project, Section, Task, WeekTask } from "@/lib/types";
 
 const API = "https://api.todoist.com/api/v1";
 /** A hung Todoist call would hold the whole page render; give up instead. */
@@ -39,6 +39,7 @@ interface TodoistTask {
   priority: 1 | 2 | 3 | 4;
   project_id: string;
   section_id: string | null;
+  added_at?: string;
   labels: string[];
   due: TodoistDue | null;
   deadline: { date: string } | null;
@@ -51,6 +52,7 @@ interface TodoistProject {
   /** Todoist color name, e.g. "berry_red" — see PROJECT_COLORS. */
   color?: string;
   is_archived?: boolean;
+  inbox_project?: boolean;
 }
 
 interface TodoistSection {
@@ -216,6 +218,26 @@ export async function getTasks(
     );
 }
 
+/**
+ * The rough tasks Clarify works through: the Inbox, minus subtasks (they belong to their parent)
+ * and repeating tasks (something already decided those).
+ */
+export async function getInboxTasks(timezone: string): Promise<ClarifyItem[]> {
+  if (!config.todoist.token) throw new Error("Todoist not configured");
+  const page = await todoistGet<TodoistTask>(
+    `/tasks/filter?query=${encodeURIComponent("#Inbox & !subtask & !recurring")}&limit=200`,
+  );
+  return page.results.map((t) => ({
+    kind: "task",
+    id: t.id,
+    title: t.content,
+    detail: t.description || undefined,
+    addedAt: t.added_at ? Date.parse(t.added_at) : 0,
+    dueDate: t.due ? dueDayOf(t.due, timezone) : undefined,
+    priority: (5 - t.priority) as 1 | 2 | 3 | 4,
+  }));
+}
+
 /* ---------- projects & labels (for the task editor) ---------- */
 
 function metaTtl(): NextFetchRequestConfig {
@@ -233,7 +255,7 @@ export async function listProjects(): Promise<Project[]> {
   const page = (await res.json()) as Page<TodoistProject>;
   return page.results
     .filter((p) => !p.is_archived)
-    .map((p) => ({ id: p.id, name: p.name, color: PROJECT_COLORS[p.color ?? ""] }));
+    .map((p) => ({ id: p.id, name: p.name, color: PROJECT_COLORS[p.color ?? ""], ...(p.inbox_project ? { inbox: true } : {}) }));
 }
 
 export async function listSections(): Promise<Section[]> {
@@ -287,6 +309,8 @@ export interface TaskPatch {
 export interface NewTask {
   content: string;
   projectId?: string;
+  /** Lands in this section (and so its project). Wins over `projectId`. */
+  sectionId?: string;
   /** Make it a subtask of this task (it lands in the parent's project). */
   parentId?: string;
   /** Todoist's own P1–P4 (1 = urgent). Wins over `priority`. */
@@ -470,6 +494,7 @@ export async function duplicateTask(id: string): Promise<unknown> {
 export function addTask(task: NewTask): Promise<unknown> {
   const body: Record<string, unknown> = { content: task.content };
   if (task.parentId) body.parent_id = task.parentId;
+  else if (task.sectionId) body.section_id = task.sectionId;
   else if (task.projectId) body.project_id = task.projectId;
   if (task.priority !== undefined) {
     body.priority = TO_TODOIST_PRIORITY[task.priority];
