@@ -89,7 +89,7 @@ From the bug hunt's suspected list. Each needs a real case before it's worth fix
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
-| B-1 | Undo after writes | pending | 2026-11-01 |
-| B-2 | Finish the bug hunt, add a test suite | pending | 2026-11-01 |
+| B-1 | Undo after writes | #78 | 2026-11-01 |
+| B-2 | Finish the bug hunt, add a test suite | #78 | 2026-11-01 |
 | — | Needs attention as one line of counts | #77 | 2026-11-01 |
 | — | Top three bug hunt fixes | #76 | 2026-11-01 |
