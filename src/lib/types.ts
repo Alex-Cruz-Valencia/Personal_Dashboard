@@ -14,7 +14,7 @@ import type { EventColor } from "./event-colors";
 /** 1 = urgent, 2 = normal, 3 = someday. Matches the task-list priority ramp. */
 export type Priority = 1 | 2 | 3;
 
-/** Drives the calendar color language across the arc, agenda and legend. */
+/** Drives the calendar color language across the arc and agenda. */
 export type EventKind = "meeting" | "focus" | "personal";
 
 /** 1 = blocking someone, 2 = needs an answer, 3 = can wait. */
@@ -303,14 +303,6 @@ export interface DashboardData {
   clarifyCount: number | null;
   /** Today's all-day events (deadlines, holidays, terms), shown as banners. Kept out of `agenda`. */
   allDay: AgendaEvent[];
-  /** Connected calendars and their color family, for the calendar's legend; empty when not live. */
-  calendars: CalendarLegendItem[];
-}
-
-export interface CalendarLegendItem {
-  /** "Personal", "Dartmouth", "DALI", "Evergreen 26F" … */
-  label: string;
-  color: EventColor;
 }
 
 /** One rough item in Clarify mode: an Inbox task or a thread under the to-do label. */

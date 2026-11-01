@@ -18,6 +18,39 @@ Newest first. Each entry:
 **Tradeoffs / open questions** — what this costs, or what's still unresolved
 ```
 
+## 2026-11-01 — Hiding an all-day banner from the dashboard
+
+**Problem** — All-day events like "Daylight Saving Time ends" sit above the calendar and take up
+first-screen space, even though nothing needs doing about them.
+
+**Decision** — Each banner gets an × on hover that hides it from the day calendar, with undo. It's
+remembered in this browser only. Nothing changes in Google, and the event stays in the week view.
+A multi-day banner stays hidden for its whole run; a repeating one returns at its next occurrence.
+
+**Reasoning** — The clutter is a dashboard problem, not a calendar problem, so the fix shouldn't touch
+the calendar. Other people on a shared calendar can't be affected.
+
+**Alternatives considered** — Hiding only for today would bring a multi-week banner back every morning.
+A ⚙ filter by calendar is broader but blunter, since the same calendar holds useful banners.
+
+**Tradeoffs / open questions** — There's no list of hidden banners, so one is only recoverable by
+Undo or by clearing site data. Hiding doesn't carry over to another browser.
+
+## 2026-11-01 — Removing the calendar legend
+
+**Problem** — The row of colored dots above the calendar named each calendar, but read as a key to
+categories. It isn't one: an event's calendar says little about what kind of thing it is.
+
+**Decision** — Remove the legend. Events keep their colors.
+
+**Reasoning** — A key that doesn't match how I think about my day takes up first-screen space to
+mislead. Function over polish cuts both ways.
+
+**Alternatives considered** — An option under ⚙ keeps it for nobody. Coloring by real category
+would need a way to categorize events, which is a much bigger idea.
+
+**Tradeoffs / open questions** — Which calendar an event came from now only shows when you open it.
+
 ## 2026-11-01 — Event alerts, while a tab is open
 
 **Problem** — Living in the dashboard all day doesn't help if a meeting starts while I'm heads-down

@@ -6,7 +6,7 @@ import "server-only";
 import { config } from "@/lib/config";
 import { dayBoundsUtc, decimalHourForTimestamp } from "@/lib/time";
 import { describeRecurrence, reminderLabel } from "@/lib/recurrence";
-import type { AgendaEvent, CalendarLegendItem, EventDetails, EventGuest, EventKind, RsvpStatus } from "@/lib/types";
+import type { AgendaEvent, EventDetails, EventGuest, EventKind, RsvpStatus } from "@/lib/types";
 import { googleFetch } from "./tokens";
 import { colorFromHex, colorFromId, isEventColor, type EventColor } from "@/lib/event-colors";
 
@@ -129,18 +129,6 @@ function calendarLabel(c: GCalListEntry): string {
     return word.length <= 4 ? word.toUpperCase() : word[0].toUpperCase() + word.slice(1);
   }
   return (c.summary ?? "Calendar").replace(/\[[^\]]*\]/g, "").trim() || "Calendar";
-}
-
-/** Google's built-in calendars (holidays, birthdays, week numbers) — not worth a legend entry. */
-const BUILT_IN = /#(holiday|contacts|weeknum)@group\.v\.calendar\.google\.com$/;
-
-/** Which color is which calendar, for the day calendar's legend. Reuses the cached calendar list. */
-export async function getCalendarLegend(): Promise<CalendarLegendItem[]> {
-  const seen = new Set<string>();
-  return (await discoverCalendars())
-    .filter((c) => c.color && !BUILT_IN.test(c.id))
-    .filter((c) => (seen.has(c.label) ? false : (seen.add(c.label), true)))
-    .map((c) => ({ label: c.label, color: c.color as EventColor }));
 }
 
 /** An event's color family: its own color if set, else its calendar's. */

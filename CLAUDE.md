@@ -31,6 +31,8 @@
 - **Calendar look "google"** (⚙ Calendar, `settings.calLook`, `?cal=google`): `.morning--gcal` layer
   at the end of `globals.css` plus `lib/gcal-look.ts` (`cascade()`, `hourLabel`, `shortSpan`), applied
   in `DayCalendar` and `WeekStrip`. Default stays "dashboard".
+- **Hiding banners:** × on an all-day banner hides it from `DayCalendar` only (`lib/banner-state.ts`,
+  localStorage `dashboard_hidden_banners`, 90 days, with undo). Never writes to Google.
 - **All-day events**: `getAllDayEvents()` → `DashboardData.allDay` (banners in `DayCalendar`), and
   `allDay: true` entries (start 0, end 24) in `WeekDay.events`. Never put them in `agenda`: conflicts,
   next-up and free gaps read it.
@@ -43,15 +45,10 @@
   name (`src/lib/event-colors.ts`), never Google's hex. Blocks carry it as
   `data-color` and the page paints it with `--ev-<family>` (light and dark
   sets in `globals.css`). It overrides the meeting/focus/personal color only;
-  `kind` still drives labels and "where" text. The day calendar shows a legend
-  (`.vcal__legend`, `DashboardData.calendars` from `getCalendarLegend()`, two or
-  more calendars only): names come from `calendarLabel()` — the viewer's rename,
-  else primary → "Personal", another account → its domain ("Dartmouth",
-  "DALI"), a shared calendar → its title minus "[TEAM]" tags; Google's built-in
-  holiday/birthday/week-number calendars are left out. `GOOGLE_CALENDAR_COLORS`
-  (`config.google.calendarColors`, "Name=family,…" by calendar id or legend
-  name) overrides a calendar's color on the dashboard only — the env keeps
-  the viewer's calendar names out of the repo. 12/8/6px radii; no card shadow in dark,
+  `kind` still drives labels and "where" text.
+  `GOOGLE_CALENDAR_COLORS` (`config.google.calendarColors`, "Name=family,…" by calendar id or name)
+  overrides a calendar's color on the dashboard only — the env keeps the viewer's calendar names out of
+  the repo. There's no legend: it was removed on 2026-11-01 because calendars don't match categories. 12/8/6px radii; no card shadow in dark,
   two soft levels in light (`--shadow` cards, `--shadow-pop` popovers); light
   secondary text held to ~6–8:1 for daylight; selected chips carry a border +
   bold, not tint alone; a flat day-arc band, a global accent-colored focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →

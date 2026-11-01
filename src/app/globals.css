@@ -2157,9 +2157,6 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .morning:not(.morning--clean) .vcal__event[data-color] { background: color-mix(in srgb, var(--ev) 18%, var(--surface)); border-color: color-mix(in srgb, var(--ev) 55%, var(--surface)); }
 .morning :is(.week__event, .week__banner)[data-color] { background: color-mix(in srgb, var(--ev) 18%, var(--surface)); border-color: color-mix(in srgb, var(--ev) 55%, var(--surface)); }
 /* the day calendar's legend: which color is which connected calendar */
-.vcal__legend { list-style: none; margin: 0; padding: 0 22px 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; font-weight: 500; color: var(--ink-soft); }
-.vcal__legend li { display: inline-flex; align-items: center; gap: 6px; }
-.vcal__legend li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ev); }
 
 /* ===================== TASK MENU (right-click on a task, modelled on Todoist's) =====================
    Portalled outside .morning, so it carries Todoist's flag + date colors itself (light, dark, and
@@ -2529,6 +2526,16 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .vcal__allday { list-style: none; margin: 0; padding: 0 22px 10px; display: grid; gap: 3px; }
 .vcal__banner { display: block; width: 100%; box-sizing: border-box; border: 1px solid transparent; text-align: left; font-family: inherit; cursor: pointer; }
 .vcal__banner:hover { filter: brightness(0.97); }
+.vcal__allday-item { position: relative; }
+.vcal__allday-item .vcal__banner { padding-right: 28px; }
+.vcal__banner-hide {
+  position: absolute; top: 50%; right: 3px; transform: translateY(-50%); width: 22px; height: 22px; padding: 0;
+  border: 0; border-radius: 4px; background: none; color: var(--ink-soft); font: inherit; font-size: 15px; line-height: 1; cursor: pointer; opacity: 0;
+}
+.vcal__allday-item:hover .vcal__banner-hide, .vcal__banner-hide:focus-visible { opacity: 1; }
+.vcal__banner-hide:hover { color: var(--ink); background: var(--row-hover); }
+.vcal__banner-hide:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+@media (hover: none) { .vcal__banner-hide { opacity: 1; } }
 .vcal__banner:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .vcal__allday-more { border: 0; background: transparent; padding: 2px 0; font: inherit; font-size: 12px; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
 .vcal__allday-more:hover { color: var(--ink); }
