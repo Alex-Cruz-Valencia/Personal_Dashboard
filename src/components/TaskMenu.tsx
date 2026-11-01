@@ -284,6 +284,8 @@ export interface TaskFields {
 }
 
 const ISO_DUE = /^(\d{4}-\d{2}-\d{2})(?: (\d{2}):(\d{2}))?$/;
+/** A whole date, not a year still being typed (a date input reads "2" as the year 0002). */
+const TYPED_DAY = /^[2-9]\d{3}-\d{2}-\d{2}$/;
 
 /** A due value as the menu shows it: "Tomorrow", "Sat · 2:00pm", or the words as typed. */
 export function dueLabel(due: string, todayIso: string): string {
@@ -479,6 +481,11 @@ function DatePanel({
   onClear: () => void;
 }) {
   const [text, setText] = useState("");
+  // A typed date is valid after one keystroke, so it waits for Enter or "Set to…".
+  // A day clicked in the browser's calendar has no keystroke before it and applies at once.
+  const typing = useRef(false);
+  const [typed, setTyped] = useState("");
+  const ready = TYPED_DAY.test(typed) && typed !== current ? typed : "";
   return (
     <div className="taskmenu__panel">
       <PanelHead title={title} onBack={onBack} />
@@ -513,10 +520,32 @@ function DatePanel({
           </button>
         ) : null}
       </div>
-      <label className="taskmenu__pick">
-        <span>Pick a day</span>
-        <input type="date" data-mi className="taskmenu__input" defaultValue={current} onChange={(e) => e.target.value && onPick(e.target.value)} />
-      </label>
+      <div className="taskmenu__pick">
+        <label className="taskmenu__pickfield">
+          <span>Pick a day</span>
+          <input
+            type="date"
+            data-mi
+            className="taskmenu__input"
+            defaultValue={current}
+            onKeyDown={(e) => {
+              if (/^\d$/.test(e.key) || e.key === "Backspace" || e.key === "Delete") typing.current = true;
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              if (ready) onPick(ready);
+            }}
+            onChange={(e) => {
+              if (typing.current) setTyped(e.target.value);
+              else if (e.target.value) onPick(e.target.value);
+            }}
+          />
+        </label>
+        {ready ? (
+          <button type="button" data-mi className="taskmenu__row" onClick={() => onPick(ready)}>
+            <span className="taskmenu__label">Set to {dayLabel(ready, todayIso)}</span>
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

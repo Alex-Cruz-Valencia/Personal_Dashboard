@@ -95,6 +95,30 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
 
+## 2026-10-31 — Sample data has to say it's sample data
+
+**Problem / trigger** — When a Google sign-in died, the dashboard quietly fell back to made-up events and replies. The "Reconnect Google" link lived on `PlanCard` and `EmailList`, both archived, so nothing on the page said anything was wrong, and the attention strip could raise conflicts between fake events.
+
+**Decision** — A one-line notice under the top row names what's sample and carries the Reconnect link; the calendar carries the same tag. Sample rows no longer feed the attention strip, and "Nothing missed" hides while a source is down.
+
+**Reasoning** — A dashboard you decide from must never present invented data as yours. One notice is seen at once, wherever the failure is, and it survives future layout changes because it isn't tied to a card.
+
+**Alternatives considered** — Only a tag on each card: easy to miss, and the weather has no good spot for one. Showing nothing instead of samples: more honest but looks like a free day, which is worse without a notice.
+
+**Tradeoffs / open questions** — Sample events still show in the calendar and the day note can still mention them; the notice is what keeps that honest.
+
+## 2026-10-31 — Typing a date no longer moves the task
+
+**Problem / trigger** — A date input is valid after one keystroke, so typing "1" in the task menu's "Pick a day" moved the task to January and closed the menu.
+
+**Decision** — A typed date waits for Enter or a "Set to Sat, Jan 31" row. A day clicked in the browser's calendar still applies at once. Leaving the field drops a typed date rather than saving it.
+
+**Reasoning** — A click on a day is a finished choice; a keystroke isn't. The row states the result before it happens.
+
+**Alternatives considered** — Saving on blur, the convention for our editors: one stray keystroke then a click away would still move the task, the same bug more slowly. Always requiring "Set": safe, but an extra click for the common case.
+
+**Tradeoffs / open questions** — This is a deliberate exception to "editors save on blur", because here a half-typed value is a valid and wrong one. Applies to Date and Deadline in the task menu and in every form using it.
+
 ## 2026-10-30 — Clarify stays out of the way
 
 **Problem / trigger** — A Clarify button in the card header, then a tab with a count in the title,

@@ -39,8 +39,11 @@ export function AttentionStrip({
   canTask,
   todayIso,
   use24,
+  incomplete = false,
 }: {
   use24: boolean;
+  /** A source is down, so an empty list doesn't mean everything is clear. */
+  incomplete?: boolean;
   aiDraft: boolean;
   canTask: boolean;
   todayIso: string;
@@ -66,6 +69,7 @@ export function AttentionStrip({
     : [];
 
   if (items.length === 0) {
+    if (incomplete) return null;
     return (
       <section className="attn attn--clear" aria-label="Needs attention">
         <span className="attn__clear">Nothing missed. Overdue tasks, conflicts and replies are all clear.</span>
