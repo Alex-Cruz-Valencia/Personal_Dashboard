@@ -5,6 +5,7 @@ import { attentionChips, buildAttention, type AttentionChip, type AttentionItem 
 import { dismissConflict, useDismissedConflicts } from "@/lib/conflict-state";
 import { formatHour } from "@/lib/format";
 import { useHiddenReplyIds } from "@/lib/reply-state";
+import { setReviewOpen } from "@/lib/review-state";
 import type { Theme } from "@/lib/settings";
 import type { AgendaEvent, Reply, Task } from "@/lib/types";
 import { useEventDetail } from "./EventDetail";
@@ -94,6 +95,7 @@ export function AttentionStrip({
                 aria-haspopup={first.replyIds?.length || first.events ? "dialog" : undefined}
                 onClick={(e) => {
                   if (first.replyIds?.length) setOpen({ item: first, anchor: e.currentTarget.getBoundingClientRect() });
+                  else if (first.kind === "overdue") setReviewOpen(true);
                   else if (chip.items.length > 1) setPicking({ chip, el: e.currentTarget });
                   else if (first.events && first.okKey) setResolving({ item: first, el: e.currentTarget });
                   else jump(first.target);

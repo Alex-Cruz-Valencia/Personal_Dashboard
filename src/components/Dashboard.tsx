@@ -1,5 +1,6 @@
 import { shownTheme, use24Hour, type DashboardSettings, type ShownSettings } from "@/lib/settings";
 import type { DashboardData } from "@/lib/types";
+import { reviewMode, reviewTasks } from "@/lib/day-review";
 import { MOCK_TODAY } from "@/lib/mock-data";
 import { AttentionStrip } from "./AttentionStrip";
 import { SkyTint } from "./SkyTint";
@@ -11,6 +12,7 @@ import { Footline } from "./Footline";
 import { AmbientButton } from "./Ambient";
 import { HelloCard } from "./HelloCard";
 import { TaskDetailProvider } from "./TaskDetail";
+import { ReviewPrompt } from "./ReviewPrompt";
 import { SourceNotice } from "./SourceNotice";
 import { TaskList } from "./TaskList";
 import { TopUnified } from "./TopUnified";
@@ -37,6 +39,8 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
   const frozen = data.today.iso === MOCK_TODAY.iso && data.today.nowHour === MOCK_TODAY.nowHour;
   const use24 = use24Hour(settings);
   // The weather scene across the whole page (cards turn frosted so it shows through).
+  const review = reviewMode(data.today.nowHour, settings.windDown);
+  const tomorrow = data.week?.find((d) => d.iso > data.today.iso) ?? null;
   const pageScene = settings.motion === "on" && settings.background === "scene";
   return (
     <FocusProvider nowHour={data.today.nowHour}>
@@ -102,6 +106,10 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
 
           <SourceNotice sources={data.sources} reconnect={data.googleReconnect} connectFailed={connectFailed} />
 
+          {data.sources.tasks === "live" ? (
+            <ReviewPrompt count={reviewTasks(data.tasks, review).length} mode={review} todayIso={data.today.iso} />
+          ) : null}
+
           {/* Sample rows never count as things that need you; the notice above says what's missing. */}
           <AttentionStrip
             agenda={data.sources.calendar === "mock" ? [] : data.agenda}
@@ -127,11 +135,11 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
               editable={data.sources.calendar === "live"}
               source={data.sources.calendar}
               reconnect={data.googleReconnect}
-              tomorrow={data.week?.find((d) => d.iso > data.today.iso) ?? null}
+              tomorrow={tomorrow}
               focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
               legend={data.calendars}
             />
-            <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} ai={data.ai} clarifyCount={data.clarifyCount} todayIso={data.today.iso} />
+            <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} ai={data.ai} clarifyCount={data.clarifyCount} todayIso={data.today.iso} nowHour={data.today.nowHour} tomorrow={tomorrow} />
           </div>
 
           {data.week ? <WeekStrip days={data.week} use24={use24} gcal={settings.calLook === "google"} /> : null}

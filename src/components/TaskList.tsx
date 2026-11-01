@@ -3,16 +3,19 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildTasks, taskCountLabel } from "@/lib/format";
+import { reviewMode, reviewTasks } from "@/lib/day-review";
+import { setReviewOpen, useReviewOpen } from "@/lib/review-state";
 import { uncompleteRequest } from "@/lib/task-undo";
 import { offerUndo, write } from "@/lib/undo";
 import { use24Hour, type ShownSettings, type Theme } from "@/lib/settings";
-import type { SliceSource, Task } from "@/lib/types";
+import type { SliceSource, Task, WeekDay } from "@/lib/types";
 import { NewTaskForm } from "./NewTaskForm";
 import { Popover } from "./Popover";
 import { RambleButton } from "./Ramble";
 import { StaleTag } from "./StaleTag";
 import { useTaskDetail } from "./TaskDetail";
 import { ClarifyPanel } from "./Clarify";
+import { DayReview } from "./DayReview";
 
 interface TaskListProps {
   tasks: Task[];
@@ -24,15 +27,19 @@ interface TaskListProps {
   clarifyCount?: number | null;
   /** The dashboard's day, for the task menu's date shortcuts. */
   todayIso: string;
+  /** For the day review's mode, and what its end says about tomorrow. */
+  nowHour: number;
+  tomorrow: WeekDay | null;
 }
 
-export function TaskList({ tasks, settings, source, ai = false, clarifyCount = null, todayIso }: TaskListProps) {
+export function TaskList({ tasks, settings, source, ai = false, clarifyCount = null, todayIso, nowHour, tomorrow }: TaskListProps) {
   const router = useRouter();
   const { openMenu, isSelected } = useTaskDetail();
   const [done, setDone] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [clarifying, setClarifying] = useState(false);
+  const reviewing = useReviewOpen();
 
   // Sample tasks keep their reference labels ("EOD"); live ones follow ⚙ Time.
   const use24 = use24Hour(settings); // a plain function, but named like a hook: call it unconditionally
@@ -75,6 +82,15 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
         });
       });
   };
+
+  if (reviewing) {
+    const mode = reviewMode(nowHour, settings.windDown);
+    return (
+      <section className="card column--tasks">
+        <DayReview tasks={reviewTasks(tasks, mode)} mode={mode} todayIso={todayIso} tomorrow={tomorrow} use24={use24} onExit={() => setReviewOpen(false)} />
+      </section>
+    );
+  }
 
   if (clarifying) {
     return (

@@ -2571,6 +2571,25 @@ a:hover { color: var(--ink); text-decoration: underline; }
 /* Stacked layouts scroll the page, not the card (as the task list does), so the card grows to fit. */
 @media (max-width: 900px) { .twocol > .column--tasks:has(.clarify) { max-height: none; } }
 
+/* Day review: the Clarify panel's shape, with one decision and a row of choices. */
+.review__card { display: grid; gap: 12px; }
+.review__choices, .review__pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.review__pick .taskedit__text { width: auto; }
+.review__rest { justify-self: start; }
+
+.review-prompt {
+  --bar: var(--mark-negative);
+  justify-content: space-between; padding: 10px 20px; border-left: 3px solid var(--bar);
+  font-size: 14px; font-weight: 500; color: var(--ink);
+}
+.review-prompt--night { --bar: var(--accent); }
+.review-prompt__actions { display: flex; align-items: center; gap: 6px; }
+.review-prompt button { font: inherit; font-weight: 600; padding: 5px 10px; border: 0; border-radius: 6px; background: none; cursor: pointer; }
+.review-prompt__go { color: var(--accent); }
+.review-prompt__later { color: var(--ink-soft); }
+.review-prompt button:hover { background: var(--row-hover); }
+.review-prompt button:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
 /* ===================== TASK MENU INSIDE A FORM (TaskFieldsMenu) =====================
    The same rows as the right-click menu, in the flow of the form. Its colors come from the theme of
    the card it sits in, since it has no data-theme of its own. */

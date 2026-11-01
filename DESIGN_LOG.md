@@ -9,6 +9,32 @@ for retrospectives, write-ups, and interview prep.
 Newest first. Each entry:
 
 ```
+## 2026-11-01 — One day review for overdue tasks and closing the day
+
+**Problem** — "14 overdue" was a number with nothing to do but open each task. And the moment a task
+could be planned most easily, the night before, passed without a prompt, so it went overdue anyway.
+
+**Decision** — Overdue reset and End-of-day shutdown became one feature with two modes, taking over
+the task card one task at a time. Morning covers what's overdue, with Today as the main choice. From
+⚙ Wind down it covers everything still open, with Tomorrow as the main choice. Each task offers
+Tomorrow, Next week, Pick a day, Someday, Done, Delete and Skip, and "Move the remaining N to
+tomorrow" handles tired nights, with one undo for the whole group. A banner offers it both times
+until it's finished or put off with Later. The night review ends with what was finished and moved,
+and tomorrow's first event.
+
+**Reasoning** — They're the same job at different times: give each unfinished task a next step.
+Catching it at night stops overdue tasks being created at all, which matters more than clearing them.
+This came from how I actually work: I do this often, usually late. One Wind down setting keeps the
+evening in one place.
+
+**Alternatives considered** — Two separate features would repeat the same screen. A checklist is
+faster but less considered. A quiet entry with no banner was the first suggestion, but this is a
+daily habit, so it should be offered rather than remembered.
+
+**Tradeoffs / open questions** — A banner both times adds to the page, so Later hides it until the
+next review. "What got done" counts only what was finished in the review, not the whole day. Tasks
+with a time later tonight still appear in the night list.
+
 ## 2026-11-01 — Correctness before new features: testing suspicions before fixing them
 
 **Problem** — The bug hunt left ten suspected problems nobody had reproduced. Fixing all of them

@@ -69,11 +69,11 @@
   solid under `prefers-reduced-transparency` / `prefers-contrast: more`).
 - **"What did I miss?" layer** (all pure logic is server/client-safe):
   - `AttentionStrip` (`src/lib/attention.ts`): conflicts, tight turnarounds (<10
-    min), overdue tasks (one rolled-up line; `Task.overdueDays` is date-based, set
+    min), overdue tasks (one rolled-up line, its chip opens the day review; `Task.overdueDays` is date-based, set
     in `todoist.ts`), replies. One line beside the heading: `attentionChips()` rolls
     them into a count per kind (`.attn__chip`; a colored bar in clean, a dot in cards).
     Reply chips open `ReplyQueue` (Reply in Gmail, Wait a day, Move, Trash); a chip
-    with several conflicts lists them first (`ChipItems`); overdue scrolls to its card.
+    with several conflicts lists them first (`ChipItems`).
     The same meeting on two calendars (`sameMeeting`) isn't a conflict.
   - Reply visibility is shared client state in `src/lib/reply-state.ts`
     (session-cleared + "Wait" snoozes in localStorage `dashboard_snoozed`, 24h);
@@ -121,6 +121,10 @@
   (`lib/llm/clarify.ts`, `parseClarify`, six items per call) fills the form; writes are clicks
   on the normal task/event routes. An item leaves only with a real home: a project other than
   Inbox (`Project.inbox`), the calendar, a label, or finished. Skips last for the session.
+- **Day review** (`DayReview.tsx`, `ReviewPrompt.tsx`, `lib/day-review.ts`, open state in `lib/review-state.ts`):
+  takes over the task card like Clarify. Before `settings.windDown` it's "morning" (overdue tasks, Today
+  first); from then it's "night" (all open tasks, Tomorrow first). Opened by the banner or the Overdue
+  chip; Later hides the banner until the next `<date>:<mode>`, in localStorage `dashboard_review_later`.
 - **One task menu:** date, priority, deadline and project are always set with Todoist's menu.
   `TaskMenu` is the pop-up on an existing task; `TaskFieldsMenu` (same file) is the same thing inside
   a form, writing nothing itself (`onChange`), and is used by `NewTaskForm` ("+ Add task", the email
