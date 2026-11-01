@@ -70,8 +70,11 @@
 - **"What did I miss?" layer** (all pure logic is server/client-safe):
   - `AttentionStrip` (`src/lib/attention.ts`): conflicts, tight turnarounds (<10
     min), overdue tasks (one rolled-up line; `Task.overdueDays` is date-based, set
-    in `todoist.ts`), replies. Reply items open `ReplyQueue` (Reply in Gmail,
-    Wait a day, Move, Trash); other items scroll to their card.
+    in `todoist.ts`), replies. One line beside the heading: `attentionChips()` rolls
+    them into a count per kind (`.attn__chip`; a colored bar in clean, a dot in cards).
+    Reply chips open `ReplyQueue` (Reply in Gmail, Wait a day, Move, Trash); a chip
+    with several conflicts lists them first (`ChipItems`); overdue scrolls to its card.
+    The same meeting on two calendars (`sameMeeting`) isn't a conflict.
   - Reply visibility is shared client state in `src/lib/reply-state.ts`
     (session-cleared + "Wait" snoozes in localStorage `dashboard_snoozed`, 24h);
     `EmailList`, the strip and the queue all filter by it. Snooze never touches Gmail.
