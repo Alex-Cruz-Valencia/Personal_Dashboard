@@ -18,6 +18,27 @@ Newest first. Each entry:
 **Tradeoffs / open questions** — what this costs, or what's still unresolved
 ```
 
+## 2026-11-01 — Event alerts, while a tab is open
+
+**Problem** — Living in the dashboard all day doesn't help if a meeting starts while I'm heads-down
+in something else.
+
+**Decision** — An opt-in ⚙ Event alerts setting sends a system notification 10 minutes before each
+event while a dashboard tab is open. Clicking it opens the video link if there is one. Declined and
+free events stay silent, each event alerts once, and moving an event alerts again at the new time.
+
+**Reasoning** — The cheap version answers most of the need, since the tab is usually open, and adds
+nothing on the server. Real push needs a service worker, stored subscriptions and a scheduler, which
+isn't worth it until missed alerts prove to be a problem.
+
+**Alternatives considered** — Web push works with the page closed, and is in the backlog as B-13.
+Google's own notifications already exist, but can't be told apart from the dashboard's rules, such as
+staying quiet for free events.
+
+**Tradeoffs / open questions** — No tab, no alert. Throttled background tabs can run up to a minute
+late. If Google's notifications stay on, an event alerts twice. The setting lives per browser, since
+the permission does too.
+
 ## 2026-11-01 — Plan the day: drag a task onto the calendar
 
 **Problem** — Tasks and the calendar sat side by side with nothing joining them, so the plan for a

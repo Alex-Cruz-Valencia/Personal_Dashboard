@@ -8,6 +8,7 @@ import { SkyTint } from "./SkyTint";
 import { ClockCard } from "./ClockCard";
 import { DayCalendar } from "./DayCalendar";
 import { FocusProvider } from "./Focus";
+import { EventAlerts } from "./EventAlerts";
 import { EventDetailProvider } from "./EventDetail";
 import { Footline } from "./Footline";
 import { AmbientButton } from "./Ambient";
@@ -161,6 +162,7 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
             }
           />
           <UndoToast />
+          {data.sources.calendar === "live" ? <EventAlerts agenda={data.agenda} today={data.today} use24={use24} /> : null}
         </div>
       </TaskDetailProvider>
     </EventDetailProvider>

@@ -26,6 +26,7 @@ import {
   type ThemeChoice,
   type TimeFormat,
 } from "@/lib/settings";
+import { EventAlertsField } from "./EventAlerts";
 import { Popover } from "./Popover";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -261,6 +262,7 @@ export function SettingsPanel({ settings, shownTheme }: { settings: DashboardSet
             onPick={(timeFormat) => update({ timeFormat })}
           />
 
+          <EventAlertsField />
           <div className="settings__row2">
             <HourField
               label="Day starts"

@@ -131,6 +131,9 @@
   It never writes to Todoist. HTML5 drag, so mouse only. Dragging a block (`isTaskBlock`, marked events
   only) past the calendar's edge pops it off as `.vcal__ghost` (portalled, so it carries `data-theme`);
   over `.column--tasks` a release deletes the event, not the task, with undo; elsewhere it goes back.
+- **Event alerts** (`EventAlerts.tsx`, `lib/event-alerts.ts`): opt-in per browser in ⚙ (localStorage
+  `dashboard_alerts`, sent keys in `dashboard_alerted`). Runs off the real clock in `today.timezone`, not
+  `today.nowHour`, so `?now=` previews can't fire one. Tab must be open; hidden tabs refresh every 5 min.
 - **One task menu:** date, priority, deadline and project are always set with Todoist's menu.
   `TaskMenu` is the pop-up on an existing task; `TaskFieldsMenu` (same file) is the same thing inside
   a form, writing nothing itself (`onChange`), and is used by `NewTaskForm` ("+ Add task", the email

@@ -633,6 +633,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .settings__seg-btn.is-on {
   color: var(--accent); background: var(--accent-tint); border-color: transparent;
 }
+.settings__hint { margin: 0; font-size: 12px; line-height: 1.35; color: var(--ink-soft); }
 .settings__row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .settings__hour { display: flex; align-items: center; gap: 8px; }
 .settings__number {
