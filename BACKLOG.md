@@ -61,20 +61,6 @@ Nothing in progress.
 - **Why later:** depends on B-3, and it feeds the next morning.
 - **Impact / effort:** Medium / M
 
-### B-8. Suspected bugs, not reproduced
-From the bug hunt's suspected list. Each needs a real case before it's worth fixing. Impact unknown / S each.
-- Gmail message reads that fail are dropped with no marker, so a count could quietly run low.
-- Clarify replies to the latest *labeled* message, so a thread ending with your own message could
-  draft to yourself.
-- Non-ASCII sender names in a draft's `To:` may come out garbled.
-- Gmail links assume `/u/0`, the wrong account if another Google account is signed in first.
-- HTML-only email loses its link addresses, and only `&nbsp;` is decoded.
-- A label's thread total may count trashed threads, so Clarify could open empty.
-- `rejectCrossSite` could be passed by DNS rebinding on localhost; a host allowlist would close it.
-- Parallel token refreshes can interleave writes to the local token file in development.
-- Setting a duration on a date-only task shows Todoist's raw error.
-- `GET /api/summary` has no guard and would call Anthropic on each hit if a key were set.
-
 ### B-9. Better undo reach
 - **Problem:** undo covers the latest action only, and edits made in an open editor aren't covered.
 - **Why later:** wait to see whether that's ever missed in daily use.
@@ -89,7 +75,25 @@ From the bug hunt's suspected list. Each needs a real case before it's worth fix
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
+| B-8 | Suspected bugs checked: 7 fixed, 3 closed (below) | #79 | 2026-11-01 |
 | B-1 | Undo after writes | #78 | 2026-11-01 |
 | B-2 | Finish the bug hunt, add a test suite | #78 | 2026-11-01 |
 | — | Needs attention as one line of counts | #77 | 2026-11-01 |
 | — | Top three bug hunt fixes | #76 | 2026-11-01 |
+
+### What B-8 found
+
+Correctness work: each suspicion was tested on real data before anything changed.
+
+| Suspicion | Result | Evidence |
+| --- | --- | --- |
+| DNS rebinding past the write guard | Fixed | A forged host got through the guard (400, not 403). Now 403 on every route |
+| Clarify draft addressed to yourself | Fixed | No live case today, but the logic allows it. Now continues to the original recipient |
+| Non-ASCII names in a draft's `To:` | Fixed | Sent unencoded. Now encodes the name only; unit tested, no real draft saved |
+| Gmail links fixed to `/u/0` | Fixed | Now name the connected account. Not tried with several accounts signed in |
+| HTML email loses links and entities | Fixed | Unit tested |
+| Parallel token refreshes | Fixed | From reading the code. One shared refresh, and an atomic file write |
+| `GET /api/summary` unguarded | Fixed | No UI uses it. Other sites now get 403 |
+| Failed Gmail reads dropped quietly | Not reproduced | 240 parallel reads, 0 failures. Now logs a count if it happens |
+| Label total counts trashed threads | Closed | Total and list matched, 14 and 14. Worst case is an empty Clarify |
+| Duration on a date-only task errors | Closed | Real test task accepted it (200) |

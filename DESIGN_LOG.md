@@ -9,6 +9,28 @@ for retrospectives, write-ups, and interview prep.
 Newest first. Each entry:
 
 ```
+## 2026-11-01 — Correctness before new features: testing suspicions before fixing them
+
+**Problem** — The bug hunt left ten suspected problems nobody had reproduced. Fixing all of them
+blind risks adding code for problems that don't exist; ignoring them risks wrong data on a page
+that's only useful if it can be trusted.
+
+**Decision** — Put this ahead of new features, test each one on real data first, fix what's real
+and close what isn't, recording the evidence in `BACKLOG.md`. Seven were fixed and three closed. The
+largest change is that a local dashboard now refuses any host name it doesn't recognize.
+
+**Reasoning** — A dashboard that decides what gets your attention is worthless if its counts or
+links are sometimes wrong. A closed item with evidence is worth as much as a fix: it says the
+question was answered, rather than leaving it open forever.
+
+**Alternatives considered** — Starting with Overdue reset, the quickest visible win, would have
+built on unverified ground. Fixing all ten without testing is faster, but would have added code for
+two problems that turned out not to exist.
+
+**Tradeoffs / open questions** — The host check means opening a local dashboard from a phone by its
+network address needs `ALLOWED_HOSTS`. A Gmail link now names the account, so one saved in a Todoist
+task carries that email address.
+
 ## 2026-11-01 — Undo after writes
 
 **Problem** — The dashboard does more and more in one click: completing tasks, trashing and

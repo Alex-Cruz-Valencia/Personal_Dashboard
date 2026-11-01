@@ -15,6 +15,7 @@ import "server-only";
 import { config } from "@/lib/config";
 import { relativeAge } from "@/lib/time";
 import type { ClarifyItem, Reply, Urgency } from "@/lib/types";
+import { encodeAddresses, htmlToText, mimeHeader, replyRecipient } from "./mail-text";
 import { googleFetch } from "./tokens";
 
 const BASE = "https://gmail.googleapis.com/gmail/v1/users/me";
@@ -145,6 +146,8 @@ export async function getReplies(): Promise<Reply[]> {
   );
   const messages = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
   if (messages.length === 0) throw new Error("No Gmail message could be read");
+  // Counts only, never content. A quiet shortfall here would just look like less mail.
+  if (messages.length < ids.length) console.warn(`Gmail: read ${messages.length} of ${ids.length} messages`);
 
   return messages
     .filter((msg) => !looksLikeBulk(msg))
@@ -314,9 +317,7 @@ function bodyText(part: GmailPart | undefined): string {
   const plain = find(part, "text/plain");
   if (plain) return plain.trim();
   const html = find(part, "text/html");
-  return html
-    ? html.replace(/<(style|script)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()
-    : "";
+  return html ? htmlToText(html) : "";
 }
 
 const headerOf = (part: GmailPart | undefined, name: string) =>
@@ -341,9 +342,16 @@ export async function getMessageForDraft(
 }
 
 const oneLine = (v: string) => v.replace(/[\r\n]+/g, " ").trim();
-/** RFC 2047 for headers with non-ASCII characters. */
-const mimeHeader = (v: string) =>
-  /^[\x20-\x7e]*$/.test(v) ? v : `=?UTF-8?B?${Buffer.from(v, "utf8").toString("base64")}?=`;
+
+/** The connected account's address. It can't change while the page runs, so it's cached. */
+export async function getAccountEmail(): Promise<string> {
+  const res = await googleFetch(`${BASE}/profile`, { next: { revalidate: 3600 } });
+  if (!res.ok) throw new Error(`Gmail profile responded ${res.status}`);
+  return ((await res.json()) as { emailAddress?: string }).emailAddress ?? "";
+}
+
+/** A Gmail address in this account, not whichever account is signed in first in the browser. */
+const mailUrl = (account: string, hash: string) => `https://mail.google.com/mail/u/${account || "0"}/#${hash}`;
 
 /**
  * Save `text` as a threaded reply DRAFT to message `id`. Nothing is sent — the
@@ -351,8 +359,13 @@ const mimeHeader = (v: string) =>
  * already covers creating drafts, so no new permission is needed.)
  */
 export async function saveReplyDraft(id: string, text: string): Promise<{ url: string }> {
-  const msg = await getFull(id);
-  const to = oneLine(headerOf(msg.payload, "Reply-To") || headerOf(msg.payload, "From"));
+  const [msg, me] = await Promise.all([getFull(id), getAccountEmail().catch(() => "")]);
+  const to = oneLine(
+    replyRecipient(
+      { from: headerOf(msg.payload, "From"), replyTo: headerOf(msg.payload, "Reply-To"), to: headerOf(msg.payload, "To") },
+      me,
+    ),
+  );
   if (!to) throw new Error("The message has no sender to reply to.");
   const subjectRaw = oneLine(headerOf(msg.payload, "Subject"));
   const subject = /^re:/i.test(subjectRaw) ? subjectRaw : `Re: ${subjectRaw}`;
@@ -360,7 +373,7 @@ export async function saveReplyDraft(id: string, text: string): Promise<{ url: s
   const refs = oneLine(headerOf(msg.payload, "References"));
 
   const lines = [
-    `To: ${to}`,
+    `To: ${encodeAddresses(to)}`,
     `Subject: ${mimeHeader(subject)}`,
     ...(messageId ? [`In-Reply-To: ${messageId}`, `References: ${[refs, messageId].filter(Boolean).join(" ")}`] : []),
     "MIME-Version: 1.0",
@@ -379,7 +392,7 @@ export async function saveReplyDraft(id: string, text: string): Promise<{ url: s
   if (!res.ok) throw new Error(`Gmail draft responded ${res.status}`);
   const created = (await res.json()) as { message?: { id?: string } };
   const draftMsg = created.message?.id;
-  return { url: draftMsg ? `https://mail.google.com/mail/u/0/#drafts?compose=${draftMsg}` : "https://mail.google.com/mail/u/0/#drafts" };
+  return { url: mailUrl(me, draftMsg ? `drafts?compose=${draftMsg}` : "drafts") };
 }
 
 /* ---------- the to-do label (Clarify mode) ---------- */

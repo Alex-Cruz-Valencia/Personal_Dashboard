@@ -260,6 +260,10 @@
   throws `GoogleAuthError` (`oauth.ts`); `settle` in `dashboard-data.ts`
   surfaces it as `DashboardData.googleReconnect`, and `StaleTag`'s `reconnect`
   prop turns the "Sample" pill into a "Reconnect Google" link.
+- `src/proxy.ts` refuses any `Host` that isn't local (`lib/allowed-hosts.ts`, DNS rebinding, reads too),
+  unless on Vercel or listed in `ALLOWED_HOSTS`, so reaching `next dev` by LAN address needs that env.
+- Email text helpers are pure in `lib/google/mail-text.ts`. Gmail links name the connected account
+  (`getAccountEmail`, `account` from `/api/replies/meta`), never `/u/0`, once labels have loaded.
 - **Every write route calls `rejectCrossSite(request)`** (`src/lib/request-guard.ts`)
   first — 403 for requests from another site (`localhost` has no login in front
   of it). Path ids are validated before they reach a URL (`validTaskId`,
