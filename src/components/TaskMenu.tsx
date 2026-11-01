@@ -43,7 +43,7 @@ function dayLabel(iso: string, todayIso: string): string {
 }
 
 /** Todoist's date shortcuts, as days from today. */
-function quickDates(todayIso: string) {
+export function quickDates(todayIso: string) {
   const dow = weekday(todayIso);
   return [
     { key: "today", label: "Today", date: todayIso },

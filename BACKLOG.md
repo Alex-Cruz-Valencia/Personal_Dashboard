@@ -26,19 +26,12 @@ Nothing in progress.
   unused.
 - **Idea:** show free hours against estimated task hours, and let a task be dragged onto the calendar
   to block time.
-- **Why first:** highest impact for the least new work. `PlanCard`, `buildPlan()`,
+- **Why first:** highest impact for the least new work, and the day review now keeps the task list
+  honest. `PlanCard`, `buildPlan()`,
   `/api/plan/suggest` and `freeSpans()` already exist; "Plan with AI" just has no UI.
 - **Done when:** I can tell in five seconds whether today is realistic, and a block takes one drag.
 - **Risk:** it could turn into a second calendar. Keep it to blocking time.
 - **Impact / effort:** High / M
-
-### B-4. Overdue reset
-- **Problem:** "14 overdue" is a number I can't act on quickly, so it soon gets ignored.
-- **Idea:** a one-at-a-time pass like Clarify: today, a new date, someday or delete.
-- **Why here:** reuses most of `ClarifyPanel`, and clears the way for B-3, which is only honest once
-  the task list is.
-- **Done when:** a backlog of that size clears in under five minutes, and the overdue count stays low.
-- **Impact / effort:** High / S
 
 ## Later
 
@@ -55,11 +48,18 @@ Nothing in progress.
   with plain search and no AI.
 - **Impact / effort:** Medium to high on busy days / L
 
-### B-7. End-of-day shutdown
-- **Problem:** "That's the day" says the day is over but doesn't close it out.
-- **Idea:** a two-minute review of what got done, what moves to tomorrow and tomorrow's first block.
-- **Why later:** depends on B-3, and it feeds the next morning.
-- **Impact / effort:** Medium / M
+### B-10. Small gaps left from the bug hunt
+- Clarify's event form can't end an event at midnight.
+- The task menu inside forms doesn't manage keyboard focus when its view changes.
+- Stray-click protection doesn't cover the task form in the reply queue.
+- A saved reply draft can't be edited from the dashboard, only in Gmail.
+- **Impact / effort:** Low / S
+
+### B-11. Try the undo and Gmail link paths on real data
+- **Problem:** undo for real Gmail and Calendar writes, and Gmail links with several accounts signed
+  in, have only been tested with intercepted requests or unit tests.
+- **Done when:** each has been used once on something unimportant.
+- **Impact / effort:** High if broken / S
 
 ### B-9. Better undo reach
 - **Problem:** undo covers the latest action only, and edits made in an open editor aren't covered.
@@ -75,6 +75,7 @@ Nothing in progress.
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
+| B-4, B-7 | Day review: Overdue reset and End-of-day shutdown as one feature | pending | 2026-11-01 |
 | B-8 | Suspected bugs checked: 7 fixed, 3 closed (below) | #79 | 2026-11-01 |
 | B-1 | Undo after writes | #78 | 2026-11-01 |
 | B-2 | Finish the bug hunt, add a test suite | #78 | 2026-11-01 |
