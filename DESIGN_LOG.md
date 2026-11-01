@@ -9,6 +9,33 @@ for retrospectives, write-ups, and interview prep.
 Newest first. Each entry:
 
 ```
+## 2026-11-01 — Needs attention: one line of counts instead of a row of cards
+
+**Problem** — Each attention item was its own tinted card with three lines of text. Long
+titles wrapped, cards in a row came out uneven, a fifth item sat alone on a second row, and
+the section took about 230px at the top of the page, pushing the calendar and tasks down.
+
+**Decision** — One line beside the heading: a count and a word per kind ("2 conflicts",
+"14 overdue", "1 blocking someone", "3 replies waiting"). Each takes the look of the style
+it's in: under Clean, a text button with the calendar's thin colored bar and a normal row
+hover; under Cards, a small tile with a dot, like that style's count pills. The names moved
+to a tooltip and to what a click opens. A chip with several conflicts or turnarounds lists
+them first, then opens the existing resolve card. A meeting with the same name and times on
+two calendars no longer counts as conflicting with itself.
+
+**Reasoning** — The strip's job is to say whether anything needs you, and a count answers
+that at a glance. Clean's rule is no pills and a bar as the only category marker, so literal
+chips would have looked foreign on the default style. Red and amber stay on the bar and the
+text stays plain, so a busy day doesn't turn the top of the page into a row of warnings.
+
+**Alternatives considered** — Single-line rows keep the names visible but stay about 150px
+tall. Three columns by source are tidy but taller, and look unbalanced when only one source
+has anything. Literal rounded pills were the first mockup and don't match Clean.
+
+**Tradeoffs / open questions** — You see counts, not names, until you hover or click, and
+hover doesn't exist on a phone. "Same meeting" is an exact match on name, start and end, so
+a copy with a renamed title or shifted time still shows as a conflict.
+
 ## YYYY-MM-DD — Short title
 
 **Problem / trigger** — what prompted this
