@@ -9,6 +9,15 @@ for retrospectives, write-ups, and interview prep.
 Newest first. Each entry:
 
 ```
+## YYYY-MM-DD — Short title
+
+**Problem / trigger** — what prompted this
+**Decision** — what we did
+**Reasoning** — why this over the alternatives
+**Alternatives considered** — what else was on the table, and why not (if any)
+**Tradeoffs / open questions** — what this costs, or what's still unresolved
+```
+
 ## 2026-11-01 — Plan the day: drag a task onto the calendar
 
 **Problem** — Tasks and the calendar sat side by side with nothing joining them, so the plan for a
@@ -168,15 +177,6 @@ has anything. Literal rounded pills were the first mockup and don't match Clean.
 **Tradeoffs / open questions** — You see counts, not names, until you hover or click, and
 hover doesn't exist on a phone. "Same meeting" is an exact match on name, start and end, so
 a copy with a renamed title or shifted time still shows as a conflict.
-
-## YYYY-MM-DD — Short title
-
-**Problem / trigger** — what prompted this
-**Decision** — what we did
-**Reasoning** — why this over the alternatives
-**Alternatives considered** — what else was on the table, and why not (if any)
-**Tradeoffs / open questions** — what this costs, or what's still unresolved
-```
 
 ---
 

@@ -2571,7 +2571,6 @@ a:hover { color: var(--ink); text-decoration: underline; }
 /* Stacked layouts scroll the page, not the card (as the task list does), so the card grows to fit. */
 @media (max-width: 900px) { .twocol > .column--tasks:has(.clarify) { max-height: none; } }
 
-/* Day review: the Clarify panel's shape, with one decision and a row of choices. */
 /* A task's block dragged past the calendar: it lifts off and follows the pointer. */
 .vcal__event--popped { opacity: 0.3; box-shadow: none; }
 .vcal__ghost {
@@ -2596,6 +2595,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .task__block { font-size: 12.5px; font-weight: 500; color: var(--accent); white-space: nowrap; }
 .task[draggable="true"]:active { cursor: grabbing; }
 
+/* Day review: the Clarify panel's shape, with one decision and a row of choices. */
 .review__card { display: grid; gap: 12px; }
 .review__choices, .review__pick { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
 .review__pick .taskedit__text { width: auto; }
