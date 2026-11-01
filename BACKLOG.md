@@ -75,7 +75,7 @@ Nothing in progress.
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
-| B-4, B-7 | Day review: Overdue reset and End-of-day shutdown as one feature | pending | 2026-11-01 |
+| B-4, B-7 | Day review: Overdue reset and End-of-day shutdown as one feature | #80 | 2026-11-01 |
 | B-8 | Suspected bugs checked: 7 fixed, 3 closed (below) | #79 | 2026-11-01 |
 | B-1 | Undo after writes | #78 | 2026-11-01 |
 | B-2 | Finish the bug hunt, add a test suite | #78 | 2026-11-01 |
