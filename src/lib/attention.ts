@@ -22,6 +22,8 @@ export interface AttentionItem {
   label: string;
   title: string;
   detail: string;
+  /** How many things it stands for, when one item rolls up several. */
+  count?: number;
   /** Where clicking it scrolls to. */
   target: "arc" | "tasks" | "replies";
   /** For reply items: the messages it counts, so the strip can open them. */
@@ -37,6 +39,10 @@ export interface AttentionItem {
 
 const pairKey = (todayIso: string, a: AgendaEvent, b: AgendaEvent) =>
   [todayIso, ...[a, b].map((e) => `${e.id ?? e.name}@${e.start}-${e.end}`)].join("|");
+
+/** One meeting on two calendars comes back as two events; it doesn't conflict with itself. */
+const sameMeeting = (a: AgendaEvent, b: AgendaEvent) =>
+  a.start === b.start && a.end === b.end && a.name.trim().toLowerCase() === b.name.trim().toLowerCase();
 
 /** "18h" → 0.75, "3d" → 3, anything unparseable → 0. */
 function ageDays(age: string): number {
@@ -68,7 +74,7 @@ export function buildAttention(input: {
 
   // Only what's still ahead (or underway) matters for conflicts and gaps.
   const upcoming = agenda
-    .filter((e) => e.end > nowHour && e.end - e.start < ALL_DAY_HOURS)
+    .filter((e) => e.end > nowHour && e.end - e.start < ALL_DAY_HOURS && !e.free)
     .sort((a, b) => a.start - b.start || a.end - b.end);
 
   // Conflicts: each event against every later one that starts before it ends.
@@ -78,6 +84,7 @@ export function buildAttention(input: {
       const a = upcoming[i];
       const b = upcoming[j];
       if (b.start >= a.end) break;
+      if (sameMeeting(a, b)) continue;
       const key = `${a.name}|${b.name}|${a.start}`;
       if (seen.has(key)) continue;
       seen.add(key);
@@ -125,6 +132,7 @@ export function buildAttention(input: {
       label: "Overdue",
       title: plural(overdue.length, "task") + " past due",
       detail: `Oldest: ${oldest.name} (${plural(oldest.overdueDays ?? 0, "day")})`,
+      count: overdue.length,
       target: "tasks",
     });
   }
@@ -143,6 +151,7 @@ export function buildAttention(input: {
       label: "Blocking",
       title: `${plural(blocking.length, "reply", "replies")} holding someone up`,
       detail: `${o.from}, ${o.age}`,
+      count: blocking.length,
       target: "replies",
       replyIds: ids(blocking),
     });
@@ -155,6 +164,7 @@ export function buildAttention(input: {
       label: "Waiting",
       title: `${rest.length} ${rest.length === 1 ? "reply" : "replies"} waiting`,
       detail: `Longest: ${o.from}, ${o.age}`,
+      count: rest.length,
       target: "replies",
       replyIds: ids(rest),
     });
@@ -163,9 +173,39 @@ export function buildAttention(input: {
   return items;
 }
 
-/** Real, timed events only (all-day banners don't block time). */
+/** One chip in the strip: a count, what it counts, and the items behind it. */
+export interface AttentionChip {
+  id: string;
+  kind: AttentionKind;
+  count: number;
+  label: string;
+  items: AttentionItem[];
+}
+
+function chipLabel(id: string, n: number): string {
+  if (id === "conflict") return n === 1 ? "conflict" : "conflicts";
+  if (id === "tight") return n === 1 ? "tight turnaround" : "tight turnarounds";
+  if (id === "overdue") return "overdue";
+  if (id === "reply-blocking") return "blocking someone";
+  return n === 1 ? "reply waiting" : "replies waiting";
+}
+
+/** Rolls the items into one chip per kind, so the strip stays a single line. */
+export function attentionChips(items: AttentionItem[]): AttentionChip[] {
+  const chips = new Map<string, AttentionChip>();
+  for (const it of items) {
+    const id = it.kind === "reply" ? it.id : it.kind;
+    const chip = chips.get(id) ?? { id, kind: it.kind, count: 0, label: "", items: [] };
+    chip.count += it.count ?? 1;
+    chip.items.push(it);
+    chips.set(id, chip);
+  }
+  return [...chips.values()].map((c) => ({ ...c, label: chipLabel(c.id, c.count) }));
+}
+
+/** Real, timed events that take up time (not all-day banners, not ones marked free). */
 function timed(agenda: AgendaEvent[]): AgendaEvent[] {
-  return agenda.filter((e) => e.end - e.start < ALL_DAY_HOURS);
+  return agenda.filter((e) => e.end - e.start < ALL_DAY_HOURS && !e.free);
 }
 
 /** Open stretches in [from, to] at least `minMinutes` long, for the arc's "free" labels. */
@@ -200,6 +240,7 @@ export function conflictSpans(agenda: AgendaEvent[]): { start: number; end: numb
   for (let i = 0; i < ev.length; i++) {
     for (let j = i + 1; j < ev.length; j++) {
       if (ev[j].start >= ev[i].end) break;
+      if (sameMeeting(ev[i], ev[j])) continue;
       out.push({
         start: ev[j].start,
         end: Math.min(ev[i].end, ev[j].end),

@@ -18,6 +18,166 @@ Newest first. Each entry:
 **Tradeoffs / open questions** — what this costs, or what's still unresolved
 ```
 
+## 2026-11-01 — Plan the day: drag a task onto the calendar
+
+**Problem** — Tasks and the calendar sat side by side with nothing joining them, so the plan for a
+day lived in my head.
+
+**Decision** — Drag a task from the list onto the day. It lands on a 15-minute grid at the task's
+Todoist duration, or 30 minutes, and creates a linked calendar block. The task isn't changed. Its row
+then shows "2:00pm on calendar", and the block can be moved, resized or undone like any event.
+
+**Reasoning** — Dragging is the planning: you see the day and put something on it, which is how the
+calendar already works. Keeping the Todoist task untouched means there's one place each thing lives,
+and moving a block never quietly rewrites a task.
+
+**Alternatives considered** — A "3h free · 6h of tasks" capacity line was the original headline of
+this item. I cut it: I rarely need telling whether there's enough time, so the value is in placing
+tasks, and it would have added a number to the page. Writing the time to the Todoist task as well
+leaves two copies to drift apart. "Plan with AI" stays ready, but is held until dragging proves slow.
+
+Dragging a block back onto the task list takes it off the calendar, and leaves the task alone.
+That came from trying it: dragging one out was the first instinct, so the gesture should work both
+ways. Only task blocks do this, so a real meeting can't be deleted by a sloppy drag. Inside the calendar a
+block still snaps to times; past its edge the card pops off and follows the pointer, so the gesture
+looks like what it does. Let go anywhere but the list and it returns to its slot.
+
+**Tradeoffs / open questions** — Dragging needs a mouse, so phones can't plan yet. A block doesn't
+disappear when its task is finished. Today only, for now.
+
+## 2026-11-01 — One day review for overdue tasks and closing the day
+
+**Problem** — "14 overdue" was a number with nothing to do but open each task. And the moment a task
+could be planned most easily, the night before, passed without a prompt, so it went overdue anyway.
+
+**Decision** — Overdue reset and End-of-day shutdown became one feature with two modes, taking over
+the task card one task at a time. Morning covers what's overdue, with Today as the main choice. From
+⚙ Wind down it covers everything still open, with Tomorrow as the main choice. Each task offers
+Tomorrow, Next week, Pick a day, Someday, Done, Delete and Skip, and "Move the remaining N to
+tomorrow" handles tired nights, with one undo for the whole group. A banner offers it both times
+until it's finished or put off with Later. The night review ends with what was finished and moved,
+and tomorrow's first event.
+
+**Reasoning** — They're the same job at different times: give each unfinished task a next step.
+Catching it at night stops overdue tasks being created at all, which matters more than clearing them.
+This came from how I actually work: I do this often, usually late. One Wind down setting keeps the
+evening in one place.
+
+**Alternatives considered** — Two separate features would repeat the same screen. A checklist is
+faster but less considered. A quiet entry with no banner was the first suggestion, but this is a
+daily habit, so it should be offered rather than remembered.
+
+**Tradeoffs / open questions** — A banner both times adds to the page, so Later hides it until the
+next review. "What got done" counts only what was finished in the review, not the whole day. Tasks
+with a time later tonight still appear in the night list.
+
+## 2026-11-01 — Correctness before new features: testing suspicions before fixing them
+
+**Problem** — The bug hunt left ten suspected problems nobody had reproduced. Fixing all of them
+blind risks adding code for problems that don't exist; ignoring them risks wrong data on a page
+that's only useful if it can be trusted.
+
+**Decision** — Put this ahead of new features, test each one on real data first, fix what's real
+and close what isn't, recording the evidence in `BACKLOG.md`. Seven were fixed and three closed. The
+largest change is that a local dashboard now refuses any host name it doesn't recognize.
+
+**Reasoning** — A dashboard that decides what gets your attention is worthless if its counts or
+links are sometimes wrong. A closed item with evidence is worth as much as a fix: it says the
+question was answered, rather than leaving it open forever.
+
+**Alternatives considered** — Starting with Overdue reset, the quickest visible win, would have
+built on unverified ground. Fixing all ten without testing is faster, but would have added code for
+two problems that turned out not to exist.
+
+**Tradeoffs / open questions** — The host check means opening a local dashboard from a phone by its
+network address needs `ALLOWED_HOSTS`. A Gmail link now names the account, so one saved in a Todoist
+task carries that email address.
+
+## 2026-11-01 — Undo after writes
+
+**Problem** — The dashboard does more and more in one click: completing tasks, trashing and
+filing email, moving events. A slip meant opening Gmail, Todoist or Calendar to repair it, and the
+more actions moved into one click, the more care each click needed.
+
+**Decision** — One small "Task completed · Undo" sheet at the bottom of the page for eight seconds
+(hover holds it, ⌘Z works). It's offered for completing a task; date, priority, deadline and move
+from the task menu; trash, move and "Wait a day" on email; everything in Clarify that has a reverse;
+and moving, adding or deleting an event. Only the latest action can be undone. Every undo is a real
+reverse write, not a delayed send.
+
+**Reasoning** — Undo removes the fear from fast actions without adding a confirm step, which is what
+keeps triage quick. One slot matches Gmail and keeps the page calm. Doing the write at once means a
+closed tab can't lose it, and the state shown is always the real one.
+
+**Alternatives considered** — Delaying each write until the toast expires is simpler to reverse,
+but a closed laptop would silently drop actions. A history list of past actions is more powerful
+and more to look at. Confirm dialogs on everything would slow the thing this page is for.
+
+**Tradeoffs / open questions** — Deleting a Todoist task has no reverse, so it keeps its confirm
+and offers no undo. Edits typed in an open editor aren't covered: the old value is on screen and can
+be changed back there. Completing a repeating task is undone by putting its date back, because
+reopening one does nothing; Todoist's completion history keeps the entry. Saving a Clarify task puts
+it back in the Inbox with its old fields, and undoing a date clear on a repeating task restores the
+rule from today rather than the exact next date.
+
+## 2026-11-01 — Declined and "free" events stop counting as busy
+
+**Problem** — A declined meeting still drew on the calendar, raised conflicts and used up free
+time. So did anything marked "free" in Google, like a hold or a reminder.
+
+**Decision** — Declined events and timed working-location markers are hidden. Free events stay
+drawn but can't conflict, don't use up free time and don't count as booked.
+
+**Reasoning** — The page answers "what do I have to be at". A declined meeting is a no, and a free
+event is a note to self that's still worth seeing.
+
+**Alternatives considered** — Drawing declined events faintly, as Google does, keeps the option of
+changing your mind, at the cost of clutter on the first screen.
+
+**Tradeoffs / open questions** — Saying "Not going" makes an event disappear from the dashboard, so
+changing your mind later happens in Google Calendar.
+
+## 2026-11-01 — A stray click no longer loses a new task or a ramble
+
+**Problem** — The new task form and Ramble closed on any outside click or Esc, taking what you'd
+typed or said with them.
+
+**Decision** — Once there's content, only their own buttons close them. In Clarify, Esc from a field
+leaves the field, and a second Esc leaves Clarify.
+
+**Reasoning** — Losing a thought is far worse than one extra click to close. It extends the rule
+that an in-progress edit must never vanish, which until now covered only the editors.
+
+**Alternatives considered** — Keeping a saved draft would survive a closed tab too, but adds a state
+to explain for something that's rarely worth keeping past the moment.
+
+## 2026-11-01 — Needs attention: one line of counts instead of a row of cards
+
+**Problem** — Each attention item was its own tinted card with three lines of text. Long
+titles wrapped, cards in a row came out uneven, a fifth item sat alone on a second row, and
+the section took about 230px at the top of the page, pushing the calendar and tasks down.
+
+**Decision** — One line beside the heading: a count and a word per kind ("2 conflicts",
+"14 overdue", "1 blocking someone", "3 replies waiting"). Each takes the look of the style
+it's in: under Clean, a text button with the calendar's thin colored bar and a normal row
+hover; under Cards, a small tile with a dot, like that style's count pills. The names moved
+to a tooltip and to what a click opens. A chip with several conflicts or turnarounds lists
+them first, then opens the existing resolve card. A meeting with the same name and times on
+two calendars no longer counts as conflicting with itself.
+
+**Reasoning** — The strip's job is to say whether anything needs you, and a count answers
+that at a glance. Clean's rule is no pills and a bar as the only category marker, so literal
+chips would have looked foreign on the default style. Red and amber stay on the bar and the
+text stays plain, so a busy day doesn't turn the top of the page into a row of warnings.
+
+**Alternatives considered** — Single-line rows keep the names visible but stay about 150px
+tall. Three columns by source are tidy but taller, and look unbalanced when only one source
+has anything. Literal rounded pills were the first mockup and don't match Clean.
+
+**Tradeoffs / open questions** — You see counts, not names, until you hover or click, and
+hover doesn't exist on a phone. "Same meeting" is an exact match on name, start and end, so
+a copy with a renamed title or shifted time still shows as a conflict.
+
 ---
 
 ## 2026-10-31 — The sky follows the day
@@ -152,6 +312,30 @@ dismissed; how often "Nothing missed" shows (is the strip too noisy or right?).
 **Open questions / next** — Click a week day to load it in the arc; server-side
 snoozes and timer so a second screen shares them; make the "heavy day" threshold
 and the 30-minute task default settings; evaluate draft quality across models.
+
+## 2026-10-31 — Sample data has to say it's sample data
+
+**Problem / trigger** — When a Google sign-in died, the dashboard quietly fell back to made-up events and replies. The "Reconnect Google" link lived on `PlanCard` and `EmailList`, both archived, so nothing on the page said anything was wrong, and the attention strip could raise conflicts between fake events.
+
+**Decision** — A one-line notice under the top row names what's sample and carries the Reconnect link; the calendar carries the same tag. Sample rows no longer feed the attention strip, and "Nothing missed" hides while a source is down.
+
+**Reasoning** — A dashboard you decide from must never present invented data as yours. One notice is seen at once, wherever the failure is, and it survives future layout changes because it isn't tied to a card.
+
+**Alternatives considered** — Only a tag on each card: easy to miss, and the weather has no good spot for one. Showing nothing instead of samples: more honest but looks like a free day, which is worse without a notice.
+
+**Tradeoffs / open questions** — Sample events still show in the calendar and the day note can still mention them; the notice is what keeps that honest.
+
+## 2026-10-31 — Typing a date no longer moves the task
+
+**Problem / trigger** — A date input is valid after one keystroke, so typing "1" in the task menu's "Pick a day" moved the task to January and closed the menu.
+
+**Decision** — A typed date waits for Enter or a "Set to Sat, Jan 31" row. A day clicked in the browser's calendar still applies at once. Leaving the field drops a typed date rather than saving it.
+
+**Reasoning** — A click on a day is a finished choice; a keystroke isn't. The row states the result before it happens.
+
+**Alternatives considered** — Saving on blur, the convention for our editors: one stray keystroke then a click away would still move the task, the same bug more slowly. Always requiring "Set": safe, but an extra click for the common case.
+
+**Tradeoffs / open questions** — This is a deliberate exception to "editors save on blur", because here a half-typed value is a valid and wrong one. Applies to Date and Deadline in the task menu and in every form using it.
 
 ## 2026-10-30 — Clarify stays out of the way
 

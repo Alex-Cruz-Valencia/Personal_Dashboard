@@ -1,6 +1,7 @@
 import { shownTheme, use24Hour, type DashboardSettings, type ShownSettings } from "@/lib/settings";
 import { sceneSky, skyHour } from "@/lib/day-part";
 import type { DashboardData } from "@/lib/types";
+import { reviewMode, reviewTasks } from "@/lib/day-review";
 import { MOCK_TODAY } from "@/lib/mock-data";
 import { AttentionStrip } from "./AttentionStrip";
 import { SkyTint } from "./SkyTint";
@@ -12,8 +13,11 @@ import { Footline } from "./Footline";
 import { AmbientButton } from "./Ambient";
 import { HelloCard } from "./HelloCard";
 import { TaskDetailProvider } from "./TaskDetail";
+import { ReviewPrompt } from "./ReviewPrompt";
+import { SourceNotice } from "./SourceNotice";
 import { TaskList } from "./TaskList";
 import { TopUnified } from "./TopUnified";
+import { UndoToast } from "./UndoToast";
 import { WeatherCard } from "./WeatherCard";
 import { WeatherScene } from "./WeatherScene";
 import { WeekStrip } from "./WeekStrip";
@@ -21,13 +25,15 @@ import { WeekStrip } from "./WeekStrip";
 interface DashboardProps {
   data: DashboardData;
   settings: DashboardSettings;
+  /** Coming back from a Google sign-in that didn't work. */
+  connectFailed?: boolean;
 }
 
 /**
  * The full morning view. Layout and class names mirror the Claude Design
  * source exactly — see `globals.css` for the ported stylesheet.
  */
-export function Dashboard({ data, settings: chosen }: DashboardProps) {
+export function Dashboard({ data, settings: chosen, connectFailed = false }: DashboardProps) {
   // "timed" resolves to light or dark by the sun for this render; AutoRefresh's
   // minute re-render flips it at sunrise / sunset. The panel still sees the choice.
   // Picking Night under ⚙ Sky time always shows the dark page, since that's what the night sky is made for.
@@ -37,6 +43,8 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
   const use24 = use24Hour(settings);
   // The weather scene across the whole page (cards turn frosted so it shows through).
   const scene = sceneSky(data.today.nowHour, data.weather, settings);
+  const review = reviewMode(data.today.nowHour, settings.windDown);
+  const tomorrow = data.week?.find((d) => d.iso > data.today.iso) ?? null;
   const pageScene = settings.motion === "on" && settings.background === "scene";
   return (
     <FocusProvider nowHour={data.today.nowHour}>
@@ -101,10 +109,18 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
             </div>
           )}
 
+          <SourceNotice sources={data.sources} reconnect={data.googleReconnect} connectFailed={connectFailed} />
+
+          {data.sources.tasks === "live" ? (
+            <ReviewPrompt count={reviewTasks(data.tasks, review).length} mode={review} todayIso={data.today.iso} />
+          ) : null}
+
+          {/* Sample rows never count as things that need you; the notice above says what's missing. */}
           <AttentionStrip
-            agenda={data.agenda}
-            tasks={data.tasks}
-            replies={data.replies}
+            agenda={data.sources.calendar === "mock" ? [] : data.agenda}
+            tasks={data.sources.tasks === "mock" ? [] : data.tasks}
+            replies={data.sources.email === "mock" ? [] : data.replies}
+            incomplete={data.sources.calendar === "mock" || data.sources.tasks === "mock" || data.sources.email === "mock"}
             nowHour={data.today.nowHour}
             theme={settings.theme}
             aiDraft={data.ai}
@@ -122,11 +138,13 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
               settings={settings}
               frozen={frozen}
               editable={data.sources.calendar === "live"}
-              tomorrow={data.week?.find((d) => d.iso > data.today.iso) ?? null}
+              source={data.sources.calendar}
+              reconnect={data.googleReconnect}
+              tomorrow={tomorrow}
               focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
               legend={data.calendars}
             />
-            <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} ai={data.ai} clarifyCount={data.clarifyCount} todayIso={data.today.iso} />
+            <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} ai={data.ai} clarifyCount={data.clarifyCount} todayIso={data.today.iso} nowHour={data.today.nowHour} tomorrow={tomorrow} agenda={data.agenda} canPlan={data.sources.calendar === "live"} />
           </div>
 
           {data.week ? <WeekStrip days={data.week} use24={use24} gcal={settings.calLook === "google"} /> : null}
@@ -142,6 +160,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
               )
             }
           />
+          <UndoToast />
         </div>
       </TaskDetailProvider>
     </EventDetailProvider>

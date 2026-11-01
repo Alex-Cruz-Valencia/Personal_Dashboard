@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { gmailLink, loadLabels, type LabelInfo } from "@/lib/reply-actions";
 import { loadTaskMeta } from "@/lib/task-meta";
+import { offerUndo, write } from "@/lib/undo";
 import type { ClarifyItem, Project } from "@/lib/types";
 import { DraftPanel } from "./ReplyQueue";
 import { TaskFieldsMenu, type TaskFields } from "./TaskMenu";
@@ -31,10 +32,15 @@ interface Suggestion {
 }
 
 const BATCH = 6;
-const LINK = /\[([^\]]+)\]\((https?:[^)\s]+)\)|(https?:\/\/[^\s)]+)/g;
+const LINK = /\[([^\]]+)\]\((https?:[^)\s]+)\)|(https?:\/\/[^\s)<>]+)/g;
+/** Punctuation right after a bare link belongs to the sentence, not the address. */
+const bareUrl = (u: string) => u.replace(/[.,;:!?'"]+$/, "");
+/** The most a new event's description can hold. */
+const EVENT_NOTES_MAX = 8000;
+const fitNotes = (s: string) => (s.length > EVENT_NOTES_MAX ? `${s.slice(0, EVENT_NOTES_MAX - 1)}…` : s);
 /** Todoist titles and notes can be markdown links; this reads as their text. */
 const plain = (s: string) => s.replace(/\[([^\]]+)\]\((https?:[^)\s]+)\)/g, "$1");
-const linksIn = (s: string) => [...s.matchAll(LINK)].map((m) => m[2] ?? m[3]);
+const linksIn = (s: string) => [...s.matchAll(LINK)].map((m) => m[2] ?? bareUrl(m[3]));
 
 /** Text with its links clickable. Everything else stays plain text. */
 function Linked({ text }: { text: string }) {
@@ -42,13 +48,13 @@ function Linked({ text }: { text: string }) {
   let at = 0;
   for (const m of text.matchAll(LINK)) {
     parts.push(text.slice(at, m.index));
-    const url = m[2] ?? m[3];
+    const url = m[2] ?? bareUrl(m[3]);
     parts.push(
       <a key={m.index} href={url} target="_blank" rel="noreferrer">
         {m[1] ?? url}
       </a>,
     );
-    at = m.index + m[0].length;
+    at = m.index + (m[2] ? m[0].length : url.length);
   }
   parts.push(text.slice(at));
   return <>{parts}</>;
@@ -67,6 +73,12 @@ async function send(url: string, method: string, body?: unknown) {
     body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error || "That didn't go through. Try again.");
+  return (await res.json().catch(() => ({}))) as { id?: string; inbox?: boolean; task?: { id?: string } };
+}
+
+interface Taken {
+  text: string;
+  undo: () => Promise<void>;
 }
 
 export function ClarifyPanel({ ai, onExit }: { ai: boolean; onExit: () => void }) {
@@ -83,6 +95,8 @@ export function ClarifyPanel({ ai, onExit }: { ai: boolean; onExit: () => void }
   const [suggestions, setSuggestions] = useState<ReadonlyMap<string, Suggestion | null>>(new Map());
   const [aiFailed, setAiFailed] = useState(false);
   const [projects, setProjects] = useState<Project[]>([]);
+  const [inboxId, setInboxId] = useState("");
+  const [nowHour, setNowHour] = useState(9);
   const [labels, setLabels] = useState<LabelInfo[]>([]);
   const asked = useRef(new Set<string>());
 
@@ -90,16 +104,21 @@ export function ClarifyPanel({ ai, onExit }: { ai: boolean; onExit: () => void }
     let alive = true;
     fetch("/api/clarify")
       .then((r) => (r.ok ? r.json() : Promise.reject(new Error())))
-      .then((b: { items: ClarifyItem[]; todayIso: string; todoLabel: string; partial: boolean }) => {
+      .then((b: { items: ClarifyItem[]; todayIso: string; nowHour: number; todoLabel: string; partial: boolean }) => {
         if (!alive) return;
         setItems(b.items);
         setTodayIso(b.todayIso);
+        setNowHour(b.nowHour);
         setPartial(b.partial);
         // The to-do label itself is no place to file something out of it.
         loadLabels().then((l) => alive && setLabels(l.filter((x) => x.name.toLowerCase() !== b.todoLabel.toLowerCase())));
       })
       .catch(() => alive && setFailed(true));
-    loadTaskMeta().then((m) => alive && setProjects(m.projects.filter((p) => !p.inbox)));
+    loadTaskMeta().then((m) => {
+      if (!alive) return;
+      setProjects(m.projects.filter((p) => !p.inbox));
+      setInboxId(m.projects.find((p) => p.inbox)?.id ?? "");
+    });
     return () => {
       alive = false;
     };
@@ -124,7 +143,12 @@ export function ClarifyPanel({ ai, onExit }: { ai: boolean; onExit: () => void }
     const onKey = (e: KeyboardEvent) => {
       // The rest of the page is still in use, so only keys pressed in here count.
       const el = e.target as HTMLElement;
-      if (!root.current?.contains(el) || el.matches("input, textarea, select") || e.metaKey || e.ctrlKey) return;
+      if (!root.current?.contains(el) || e.metaKey || e.ctrlKey) return;
+      // In a field, Esc only leaves the field, so a half-typed title isn't lost to one key.
+      if (el.matches("input, textarea, select")) {
+        if (e.key === "Escape") root.current.focus({ preventScroll: true });
+        return;
+      }
       if (e.key === "Escape") onExit();
       else if (e.key.toLowerCase() === "s") skip();
     };
@@ -162,11 +186,17 @@ export function ClarifyPanel({ ai, onExit }: { ai: boolean; onExit: () => void }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ai, aiFailed, nextId]);
 
-  const remove = (item: ClarifyItem) => {
+  const remove = (item: ClarifyItem, taken?: Taken | void) => {
     setItems((list) => list && list.filter((i) => i.id !== item.id));
     setCleared((n) => n + 1);
     // What it became shows up on the calendar and task list right away.
     router.refresh();
+    if (!taken) return;
+    offerUndo(taken.text, async () => {
+      await taken.undo();
+      setItems((list) => (list ? [item, ...list] : list));
+      setCleared((n) => n - 1);
+    });
   };
 
   const total = (items ?? []).length;
@@ -209,7 +239,10 @@ export function ClarifyPanel({ ai, onExit }: { ai: boolean; onExit: () => void }
           projects={projects}
           labels={labels}
           todayIso={todayIso}
-          onCleared={() => remove(current)}
+          nowHour={nowHour}
+          inboxId={inboxId}
+          ai={ai}
+          onCleared={(taken) => remove(current, taken)}
           onSkip={skip}
         />
       ) : items && !failed ? (
@@ -237,8 +270,8 @@ export function ClarifyPanel({ ai, onExit }: { ai: boolean; onExit: () => void }
   );
 }
 
-function nextHour(): string {
-  return `${String(Math.min(new Date().getHours() + 1, 22)).padStart(2, "0")}:00`;
+function nextHour(nowHour: number): string {
+  return `${String(Math.min(Math.floor(nowHour) + 1, 22)).padStart(2, "0")}:00`;
 }
 const plusHour = (t: string) => `${String(Math.min(Number(t.slice(0, 2)) + 1, 23)).padStart(2, "0")}:${t.slice(3)}`;
 
@@ -249,6 +282,9 @@ function ClarifyCard({
   projects,
   labels,
   todayIso,
+  nowHour,
+  inboxId,
+  ai,
   onCleared,
   onSkip,
 }: {
@@ -258,7 +294,10 @@ function ClarifyCard({
   projects: Project[];
   labels: LabelInfo[];
   todayIso: string;
-  onCleared: () => void;
+  nowHour: number;
+  inboxId: string;
+  ai: boolean;
+  onCleared: (taken?: Taken | void) => void;
   onSkip: () => void;
 }) {
   const isEmail = item.kind === "email";
@@ -266,8 +305,8 @@ function ClarifyCard({
   const [title, setTitle] = useState(plain(item.title));
   const [fields, setFields] = useState<TaskFields>({ due: item.dueDate ?? "", priority: item.priority ?? 4, deadline: "", projectId: "", sectionId: "" });
   const [date, setDate] = useState(item.dueDate ?? "");
-  const [start, setStart] = useState(nextHour);
-  const [end, setEnd] = useState(() => plusHour(nextHour()));
+  const [start, setStart] = useState(() => nextHour(nowHour));
+  const [end, setEnd] = useState(() => plusHour(nextHour(nowHour)));
   const [body, setBody] = useState<string | null>(isEmail ? null : (item.detail ?? ""));
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -275,6 +314,7 @@ function ClarifyCard({
   const touched = useRef(false);
   // A two-step finish (add the task, then clear the email) must not repeat its first step on a retry.
   const firstStepDone = useRef(false);
+  const madeUndo = useRef<(() => Promise<void>) | null>(null);
 
   useEffect(() => {
     if (!isEmail || !item.messageId) return;
@@ -292,7 +332,7 @@ function ClarifyCard({
   useEffect(() => {
     if (!s || touched.current) return;
     /* eslint-disable react-hooks/set-state-in-effect */
-    if (s.outcome === "task" || s.outcome === "event" || s.outcome === "reply" || s.outcome === "file") setOutcome(s.outcome);
+    if (s.outcome === "task" || s.outcome === "event" || (s.outcome === "reply" && ai) || s.outcome === "file") setOutcome(s.outcome);
     if (s.title) setTitle(s.title);
     if (s.date) setDate(s.date);
     if (s.outcome === "event" && s.start) {
@@ -306,19 +346,18 @@ function ClarifyCard({
       priority: s.priority < 4 ? s.priority : f.priority,
     }));
     /* eslint-enable react-hooks/set-state-in-effect */
-  }, [s]);
+  }, [s, ai]);
 
   const touch = () => {
     touched.current = true;
     setError(null);
   };
 
-  const run = async (work: () => Promise<void>) => {
+  const run = async (work: () => Promise<Taken | void>) => {
     setBusy(true);
     setError(null);
     try {
-      await work();
-      onCleared();
+      onCleared(await work());
     } catch (e) {
       setError((e as Error).message);
       setBusy(false);
@@ -326,12 +365,36 @@ function ClarifyCard({
   };
 
   /** Finish the source item once what it became exists elsewhere. */
-  const finishSource = () =>
-    isEmail ? send(`/api/clarify/thread/${item.id}`, "POST", { action: "clear" }) : send(`/api/tasks/${item.id}/complete`, "POST");
+  const finishSource = async (): Promise<Taken> => {
+    await (isEmail ? send(`/api/clarify/thread/${item.id}`, "POST", { action: "clear" }) : send(`/api/tasks/${item.id}/complete`, "POST"));
+    return {
+      text: isEmail ? "Email cleared" : "Task completed",
+      undo: () => (isEmail ? write(`/api/clarify/thread/${item.id}`, "POST", { action: "restore" }) : write(`/api/tasks/${item.id}/reopen`, "POST")),
+    };
+  };
 
-  const once = async (step: () => Promise<void>) => {
-    if (!firstStepDone.current) await step();
+  const once = async (step: () => Promise<(() => Promise<void>) | void>) => {
+    if (!firstStepDone.current) madeUndo.current = (await step()) ?? null;
     firstStepDone.current = true;
+  };
+
+  /** Finish the source, with an undo that also removes what it just became. */
+  const finishMade = async (text: string): Promise<Taken> => {
+    const finished = await finishSource();
+    return {
+      text,
+      undo: async () => {
+        await madeUndo.current?.();
+        await finished.undo();
+      },
+    };
+  };
+
+  // A link in the rough title would vanish with the rewrite, so it moves to the notes.
+  const notes = item.detail ?? "";
+  const keptNotes = () => {
+    const lost = linksIn(item.title).filter((u) => !notes.includes(u) && !title.includes(u));
+    return lost.length ? [notes, ...lost].filter(Boolean).join("\n") : null;
   };
 
   const source = isEmail ? `From ${item.from}: ${item.title}\n${gmailLink(item.id)}` : "";
@@ -341,45 +404,75 @@ function ClarifyCard({
       const { due, deadline, priority, projectId, sectionId } = fields;
       const place = sectionId ? { sectionId } : { projectId };
       if (isEmail) {
-        await once(() =>
-          send("/api/tasks", "POST", { content: title.trim(), ...place, todoistPriority: priority, ...(due ? { due } : {}), ...(deadline ? { deadline } : {}), description: source }),
-        );
-        await send(`/api/clarify/thread/${item.id}`, "POST", { action: "clear" });
-        return;
+        await once(async () => {
+          const { task } = await send("/api/tasks", "POST", { content: title.trim(), ...place, todoistPriority: priority, ...(due ? { due } : {}), ...(deadline ? { deadline } : {}), description: source });
+          return task?.id ? () => write(`/api/tasks/${task.id}`, "DELETE") : undefined;
+        });
+        return finishMade("Task added, email cleared");
       }
-      // A link in the rough title would vanish with the rewrite, so it moves to the notes.
-      const notes = item.detail ?? "";
-      const lost = linksIn(item.title).filter((u) => !notes.includes(u) && !title.includes(u));
+      const kept = keptNotes();
+      const dueChanged = due !== (item.dueDate ?? "");
       await send(`/api/tasks/${item.id}`, "PATCH", {
         content: title.trim(),
         ...place,
         todoistPriority: priority,
         ...(deadline ? { deadline } : {}),
-        ...(lost.length ? { description: [notes, ...lost].filter(Boolean).join("\n") } : {}),
+        ...(kept ? { description: kept } : {}),
         // An untouched date stays as it is, along with any time it already has.
-        ...(due === (item.dueDate ?? "") ? {} : { due: due || null }),
+        ...(dueChanged ? { due: due || null } : {}),
       });
+      return {
+        text: "Task saved",
+        undo: () =>
+          write(`/api/tasks/${item.id}`, "PATCH", {
+            content: item.title,
+            ...(inboxId ? { projectId: inboxId } : {}),
+            todoistPriority: item.priority ?? 4,
+            deadline: null,
+            ...(kept ? { description: notes } : {}),
+            ...(dueChanged ? { due: item.dueDate ?? null } : {}),
+          }),
+      };
     });
 
   const saveEvent = () => {
     if (end <= start) return setError("End time must be after start time.");
     run(async () => {
-      await once(() =>
-        send("/api/events", "POST", {
+      await once(async () => {
+        const { id } = await send("/api/events", "POST", {
           name: title.trim(),
           date,
           startTime: start,
           endTime: end,
-          description: isEmail ? source : item.detail || undefined,
-        }),
-      );
-      await finishSource();
+          description: isEmail ? source : fitNotes(keptNotes() ?? notes) || undefined,
+        });
+        return id ? () => write(`/api/events/${encodeURIComponent(id)}`, "DELETE") : undefined;
+      });
+      return finishMade(isEmail ? "Event added, email cleared" : "Event added, task finished");
     });
   };
 
   const home = (name: string) => projects.find((p) => p.name.toLowerCase() === name)?.id;
-  const moveTo = (id: string) => run(() => send(`/api/tasks/${item.id}`, "PATCH", { projectId: id }));
-  const file = (label: string) => run(() => send(`/api/clarify/thread/${item.id}`, "POST", { action: "file", label }));
+  const moveTo = (id: string) =>
+    run(async () => {
+      await send(`/api/tasks/${item.id}`, "PATCH", { projectId: id });
+      if (!inboxId) return;
+      return { text: "Task moved", undo: () => write(`/api/tasks/${item.id}`, "PATCH", { projectId: inboxId }) };
+    });
+  const file = (label: string) =>
+    run(async () => {
+      const { inbox } = await send(`/api/clarify/thread/${item.id}`, "POST", { action: "file", label });
+      return { text: `Filed to ${label}`, undo: () => write(`/api/clarify/thread/${item.id}`, "POST", { action: "restore", label, inbox }) };
+    });
+  const trash = () =>
+    run(async () => {
+      if (!isEmail) {
+        await send(`/api/tasks/${item.id}`, "DELETE");
+        return;
+      }
+      await send(`/api/clarify/thread/${item.id}`, "POST", { action: "trash" });
+      return { text: "Email moved to Trash", undo: () => write(`/api/clarify/thread/${item.id}`, "POST", { action: "untrash" }) };
+    });
   const waitingId = home("waiting on");
   const somedayId = home("someday");
   const hasWaitingLabel = labels.some((l) => l.name === "Waiting On");
@@ -399,7 +492,7 @@ function ClarifyCard({
   const tabs: { key: typeof outcome; name: string }[] = [
     { key: "task", name: "Task" },
     { key: "event", name: "Event" },
-    ...(isEmail ? ([{ key: "reply", name: "Reply" }, { key: "file", name: "File" }] as const) : []),
+    ...(isEmail ? ([...(ai ? ([{ key: "reply", name: "Reply" }] as const) : []), { key: "file", name: "File" }] as const) : []),
   ];
 
   return (
@@ -467,7 +560,6 @@ function ClarifyCard({
 
         {outcome === "task" || outcome === "event" ? (
           <input
-            autoFocus
             className="taskedit__name"
             value={title}
             maxLength={140}
@@ -491,7 +583,8 @@ function ClarifyCard({
               onChange={(patch) => {
                 touch();
                 setFields((f) => ({ ...f, ...patch }));
-                if (patch.due) setDate(patch.due.slice(0, 10));
+                // Typed words ("fri 3pm") aren't a date the event form can use.
+                if (patch.due) setDate(/^\d{4}-\d{2}-\d{2}/.exec(patch.due)?.[0] ?? "");
               }}
             />
             <button type="button" className="taskedit__done" disabled={busy || !title.trim() || !fields.projectId} onClick={saveTask}>
@@ -558,7 +651,7 @@ function ClarifyCard({
                 type="button"
                 className="rq__btn rq__btn--danger"
                 disabled={busy}
-                onClick={() => run(() => (isEmail ? send(`/api/clarify/thread/${item.id}`, "POST", { action: "trash" }) : send(`/api/tasks/${item.id}`, "DELETE")))}
+                onClick={trash}
               >
                 {isEmail ? "Trash it" : "Delete it"}
               </button>

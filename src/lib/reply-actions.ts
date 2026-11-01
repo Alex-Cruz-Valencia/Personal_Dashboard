@@ -1,6 +1,7 @@
 "use client";
 
-import { hideReply, showReply } from "./reply-state";
+import { hideReply, showReply, snoozeReply, unsnoozeReply } from "./reply-state";
+import { offerUndo, write } from "./undo";
 
 export interface LabelInfo {
   name: string;
@@ -8,8 +9,11 @@ export interface LabelInfo {
   backgroundColor?: string;
 }
 
+/** The connected account, once `loadLabels` has answered; until then, the browser's first account. */
+let account = "";
+
 /** Gmail's own link for a message — where "Reply" happens. */
-export const gmailLink = (id: string) => `https://mail.google.com/mail/u/0/#inbox/${id}`;
+export const gmailLink = (id: string) => `https://mail.google.com/mail/u/${account || "0"}/#inbox/${id}`;
 
 /** Hide the reply now; bring it back if Gmail refuses. Resolves true on success. */
 async function optimistic(id: string, run: () => Promise<Response>): Promise<boolean> {
@@ -24,26 +28,58 @@ async function optimistic(id: string, run: () => Promise<Response>): Promise<boo
   }
 }
 
-export const trashReply = (id: string) =>
-  optimistic(id, () => fetch(`/api/replies/${id}/trash`, { method: "POST" }));
+export async function trashReply(id: string): Promise<boolean> {
+  const ok = await optimistic(id, () => fetch(`/api/replies/${id}/trash`, { method: "POST" }));
+  if (ok) {
+    offerUndo("Email moved to Trash", async () => {
+      await write(`/api/replies/${id}/restore`, "POST");
+      showReply(id);
+    });
+  }
+  return ok;
+}
 
-export const moveReply = (id: string, label: string) =>
-  optimistic(id, () =>
+export async function moveReply(id: string, label: string): Promise<boolean> {
+  const ok = await optimistic(id, () =>
     fetch(`/api/replies/${id}/move`, {
       method: "POST",
       headers: { "content-type": "application/json" },
       body: JSON.stringify({ label }),
     }),
   );
+  if (ok) {
+    offerUndo(`Email moved to ${label}`, async () => {
+      await write(`/api/replies/${id}/restore`, "POST", { label });
+      showReply(id);
+    });
+  }
+  return ok;
+}
 
+/** "Wait a day": hidden in this browser only, so its undo touches nothing else. */
+export function waitReply(id: string) {
+  snoozeReply(id);
+  offerUndo("Hidden for a day", async () => unsnoozeReply(id));
+}
+
+/** The page stays open all day, so a new label shows up within this long. */
+const LABELS_FRESH_MS = 5 * 60_000;
 let labelPromise: Promise<LabelInfo[]> | null = null;
+let labelsAt = 0;
 
-/** Gmail's labels, fetched once per page load and reused. */
+/** Gmail's labels, reused for a few minutes. A failed load isn't kept. */
 export function loadLabels(): Promise<LabelInfo[]> {
-  if (!labelPromise) {
+  if (!labelPromise || Date.now() - labelsAt >= LABELS_FRESH_MS) {
+    labelsAt = Date.now();
     labelPromise = fetch("/api/replies/meta")
-      .then((r) => (r.ok ? r.json() : { labels: [] }))
-      .then((m: { labels: LabelInfo[] }) => m.labels)
+      .then((r) => {
+        if (!r.ok) throw new Error();
+        return r.json();
+      })
+      .then((m: { labels: LabelInfo[]; account?: string }) => {
+        account = m.account ?? "";
+        return m.labels;
+      })
       .catch(() => {
         labelPromise = null;
         return [];
@@ -65,8 +101,11 @@ export interface TriageSuggestion {
 const triageCache = new Map<string, TriageSuggestion | null>();
 
 /** AI suggestions for these emails; only ids not asked about yet go to the server. Read-only. */
+const TRIAGE_BATCH = 8;
+
 export async function loadTriage(ids: string[]): Promise<Map<string, TriageSuggestion | null>> {
-  const missing = ids.filter((id) => !triageCache.has(id));
+  // One call reads at most this many; the oldest of a long queue simply go without.
+  const missing = ids.filter((id) => !triageCache.has(id)).slice(0, TRIAGE_BATCH);
   if (missing.length) {
     const res = await fetch("/api/replies/triage", {
       method: "POST",

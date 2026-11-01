@@ -3,14 +3,22 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildTasks, taskCountLabel } from "@/lib/format";
+import { reviewMode, reviewTasks } from "@/lib/day-review";
+import { setReviewOpen, useReviewOpen } from "@/lib/review-state";
+import { formatHour } from "@/lib/format";
+import { blockedTasks } from "@/lib/plan";
+import { setDraggedTask } from "@/lib/task-drag";
+import { uncompleteRequest } from "@/lib/task-undo";
+import { offerUndo, write } from "@/lib/undo";
 import { use24Hour, type ShownSettings, type Theme } from "@/lib/settings";
-import type { SliceSource, Task } from "@/lib/types";
+import type { AgendaEvent, SliceSource, Task, WeekDay } from "@/lib/types";
 import { NewTaskForm } from "./NewTaskForm";
 import { Popover } from "./Popover";
 import { RambleButton } from "./Ramble";
 import { StaleTag } from "./StaleTag";
 import { useTaskDetail } from "./TaskDetail";
 import { ClarifyPanel } from "./Clarify";
+import { DayReview } from "./DayReview";
 
 interface TaskListProps {
   tasks: Task[];
@@ -22,21 +30,37 @@ interface TaskListProps {
   clarifyCount?: number | null;
   /** The dashboard's day, for the task menu's date shortcuts. */
   todayIso: string;
+  /** For the day review's mode, and what its end says about tomorrow. */
+  nowHour: number;
+  tomorrow: WeekDay | null;
+  /** Today's events, to show which tasks are already blocked on the calendar. */
+  agenda: AgendaEvent[];
+  /** The calendar is live, so a task can be dragged onto it. */
+  canPlan: boolean;
 }
 
-export function TaskList({ tasks, settings, source, ai = false, clarifyCount = null, todayIso }: TaskListProps) {
+export function TaskList({ tasks, settings, source, ai = false, clarifyCount = null, todayIso, nowHour, tomorrow, agenda, canPlan }: TaskListProps) {
   const router = useRouter();
   const { openMenu, isSelected } = useTaskDetail();
   const [done, setDone] = useState<Set<string>>(new Set());
   const [busy, setBusy] = useState<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
   const [clarifying, setClarifying] = useState(false);
+  const reviewing = useReviewOpen();
 
   // Sample tasks keep their reference labels ("EOD"); live ones follow ⚙ Time.
   const use24 = use24Hour(settings); // a plain function, but named like a hook: call it unconditionally
   const rows = buildTasks(tasks, settings.density, source === "live" ? use24 : undefined);
   const taskIds = new Set(tasks.map((t) => t.id));
   const doneVisible = new Set([...done].filter((id) => taskIds.has(id)));
+  const blocked = blockedTasks(agenda);
+
+  const undone = (id: string) =>
+    setDone((s) => {
+      const n = new Set(s);
+      n.delete(id);
+      return n;
+    });
 
   const mark = (id: string) => {
     setError(null);
@@ -46,13 +70,16 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
       .then((res) => {
         if (!res.ok) throw new Error();
         router.refresh();
+        const task = tasks.find((t) => t.id === id);
+        if (!task) return;
+        const back = uncompleteRequest(task);
+        offerUndo("Task completed", async () => {
+          await write(back.path, back.method, back.body);
+          undone(id);
+        });
       })
       .catch(() => {
-        setDone((s) => {
-          const n = new Set(s);
-          n.delete(id);
-          return n;
-        });
+        undone(id);
         setError("Couldn't complete that task — try again.");
       })
       .finally(() => {
@@ -63,6 +90,15 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
         });
       });
   };
+
+  if (reviewing) {
+    const mode = reviewMode(nowHour, settings.windDown);
+    return (
+      <section className="card column--tasks">
+        <DayReview tasks={reviewTasks(tasks, mode)} mode={mode} todayIso={todayIso} tomorrow={tomorrow} use24={use24} onExit={() => setReviewOpen(false)} />
+      </section>
+    );
+  }
 
   if (clarifying) {
     return (
@@ -98,12 +134,21 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
             const isBusy = id ? busy.has(id) : false;
             const canCheck = Boolean(id) && !isBusy && !isDone;
             const task = tasks.find((x) => x.id === id);
+            const block = blocked.get(id);
             return (
               <li
                 key={id || `task${i}`}
                 className={`${t.cls}${isDone ? " task--done" : ""}${
                   task && isSelected(task) ? " task--selected" : ""
                 }`}
+                draggable={canPlan && Boolean(task) && !isDone}
+                onDragStart={(e) => {
+                  if (!task) return;
+                  setDraggedTask(task);
+                  e.dataTransfer.effectAllowed = "copy";
+                  e.dataTransfer.setData("text/plain", task.name);
+                }}
+                onDragEnd={() => setDraggedTask(null)}
                 onContextMenu={(e) => {
                   // Right-click anywhere on the row: Todoist's task menu, at the pointer.
                   const body = e.currentTarget.querySelector<HTMLElement>(".task__body");
@@ -130,7 +175,7 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
                   className="task__body"
                   role={task ? "button" : undefined}
                   tabIndex={task ? 0 : -1}
-                  title={task ? "Task menu" : undefined}
+                  title={task ? (canPlan ? "Click for the menu, or drag onto the calendar" : "Task menu") : undefined}
                   aria-haspopup={task ? "menu" : undefined}
                   // A click opens the same Todoist menu as a right-click; its Edit opens the full editor.
                   onClick={(e) => task && openMenu(task, e.clientX, e.clientY, e.currentTarget)}
@@ -145,6 +190,7 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
                   <div className="task__name">{t.name}</div>
                   <div className="task__meta">
                     {t.dueShown ? <span className="task__when">{t.dueShown}</span> : null}
+                    {block ? <span className="task__block">{formatHour(block.start, use24)} on calendar</span> : null}
                     {t.deadlineLabel ? (
                       <span className="task__deadline" title="Deadline">
                         <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">
@@ -182,6 +228,11 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
 function AddTask({ theme, todayIso, onAdded }: { theme: Theme; todayIso: string; onAdded: () => void }) {
   const btn = useRef<HTMLButtonElement>(null);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const [typed, setTyped] = useState(false);
+  const close = () => {
+    setAnchor(null);
+    setTyped(false);
+  };
 
   return (
     <>
@@ -194,18 +245,19 @@ function AddTask({ theme, todayIso, onAdded }: { theme: Theme; todayIso: string;
         + Add task
       </button>
       {anchor ? (
-        <Popover anchor={anchor} theme={theme} onClose={() => setAnchor(null)} ariaLabel="New task" className="taskedit">
+        <Popover anchor={anchor} theme={theme} onClose={close} hold={typed} ariaLabel="New task" className="taskedit">
           <div className="taskedit__head">
             <span className="taskedit__eyebrow">New task</span>
-            <button type="button" className="taskedit__close" onClick={() => setAnchor(null)} aria-label="Close">
+            <button type="button" className="taskedit__close" onClick={close} aria-label="Close">
               ×
             </button>
           </div>
           <NewTaskForm
             todayIso={todayIso}
-            onCancel={() => setAnchor(null)}
+            onCancel={close}
+            onDirty={setTyped}
             onAdded={() => {
-              setAnchor(null);
+              close();
               onAdded();
             }}
           />

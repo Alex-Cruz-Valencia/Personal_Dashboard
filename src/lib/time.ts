@@ -55,6 +55,23 @@ export function isoDateInZone(date: Date, timeZone: string): string {
 }
 
 /**
+ * The instant on `isoDate` with the same clock time `timestamp` has in `timeZone`. Adding 24
+ * hours a day instead would slip an hour across a clock change.
+ */
+export function sameClockOnDay(timestamp: string, isoDate: string, timeZone: string): string {
+  const p = partsInZone(new Date(timestamp), timeZone);
+  const pad = (n: number) => String(n).padStart(2, "0");
+  const wall = Date.parse(`${isoDate}T${pad(p.hour)}:${pad(p.minute)}:${pad(p.second)}Z`);
+  const offsetAt = (ms: number) => {
+    const q = partsInZone(new Date(ms), timeZone);
+    return Date.UTC(q.year, q.month - 1, q.day, q.hour, q.minute, q.second) - ms;
+  };
+  // The offset is read at a guess, then again at the answer, in case the change falls between.
+  const instant = wall - offsetAt(wall - offsetAt(wall));
+  return new Date(instant).toISOString().replace(/\.\d{3}Z$/, "Z");
+}
+
+/**
  * Decimal hour for an absolute timestamp, relative to `referenceDay` in the
  * given zone. Events before the reference day clamp to 0, after clamp to 24 —
  * the arc only shows a single day.

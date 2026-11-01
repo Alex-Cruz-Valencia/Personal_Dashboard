@@ -20,12 +20,23 @@ const LINK = /(https?:\/\/[^\s<>"')]+)/g;
 function Linked({ text }: { text: string }) {
   return text.split(LINK).map((part, i) =>
     i % 2 === 1 ? (
-      <a key={i} href={part} target="_blank" rel="noopener noreferrer">
-        {part}
-      </a>
+      <LinkPart key={i} part={part} />
     ) : (
       part
     ),
+  );
+}
+
+/** Punctuation right after a link belongs to the sentence, not the address. */
+function LinkPart({ part }: { part: string }) {
+  const url = part.replace(/[.,;:!?]+$/, "");
+  return (
+    <>
+      <a href={url} target="_blank" rel="noopener noreferrer">
+        {url}
+      </a>
+      {part.slice(url.length)}
+    </>
   );
 }
 
@@ -227,7 +238,7 @@ export function EventRead({
 
       {description ? (
         <Row icon={<Notes />}>
-          <div className="gevent__notes"><Linked text={description} /></div>
+          <div className="gevent__notes"><Linked text={description.replace(/\s*\[todoist:[\w-]+\]/, "")} /></div>
         </Row>
       ) : null}
 

@@ -1,10 +1,11 @@
 "use client";
 
 import { useState } from "react";
-import { buildAttention, type AttentionItem } from "@/lib/attention";
+import { attentionChips, buildAttention, type AttentionChip, type AttentionItem } from "@/lib/attention";
 import { dismissConflict, useDismissedConflicts } from "@/lib/conflict-state";
 import { formatHour } from "@/lib/format";
 import { useHiddenReplyIds } from "@/lib/reply-state";
+import { setReviewOpen } from "@/lib/review-state";
 import type { Theme } from "@/lib/settings";
 import type { AgendaEvent, Reply, Task } from "@/lib/types";
 import { useEventDetail } from "./EventDetail";
@@ -39,8 +40,11 @@ export function AttentionStrip({
   canTask,
   todayIso,
   use24,
+  incomplete = false,
 }: {
   use24: boolean;
+  /** A source is down, so an empty list doesn't mean everything is clear. */
+  incomplete?: boolean;
   aiDraft: boolean;
   canTask: boolean;
   todayIso: string;
@@ -54,6 +58,7 @@ export function AttentionStrip({
   const okConflicts = useDismissedConflicts();
   const [open, setOpen] = useState<{ item: AttentionItem; anchor: DOMRect } | null>(null);
   const [resolving, setResolving] = useState<{ item: AttentionItem; el: HTMLElement } | null>(null);
+  const [picking, setPicking] = useState<{ chip: AttentionChip; el: HTMLElement } | null>(null);
 
   const live = replies.filter((r) => !r.id || !hidden.has(r.id));
   const items = buildAttention({ agenda, tasks, replies: live, nowHour, todayIso }).filter(
@@ -66,6 +71,7 @@ export function AttentionStrip({
     : [];
 
   if (items.length === 0) {
+    if (incomplete) return null;
     return (
       <section className="attn attn--clear" aria-label="Needs attention">
         <span className="attn__clear">Nothing missed. Overdue tasks, conflicts and replies are all clear.</span>
@@ -76,25 +82,30 @@ export function AttentionStrip({
     <section className="attn" aria-label="Needs attention">
       <h2 className="attn__title">Needs attention</h2>
       <ul className="attn__list">
-        {items.slice(0, 5).map((it) => (
-          <li key={it.id}>
-            <button
-              type="button"
-              className={`attn__item attn__item--${it.kind}`}
-              aria-haspopup={it.replyIds?.length ? "dialog" : undefined}
-              aria-expanded={it.events ? resolving?.item.id === it.id : undefined}
-              onClick={(e) => {
-                if (it.replyIds?.length) setOpen({ item: it, anchor: e.currentTarget.getBoundingClientRect() });
-                else if (it.events && it.okKey) setResolving({ item: it, el: e.currentTarget });
-                else jump(it.target);
-              }}
-            >
-              <span className="attn__label">{it.label}</span>
-              <span className="attn__text">{it.title}</span>
-              <span className="attn__detail">{it.detail}</span>
-            </button>
-          </li>
-        ))}
+        {attentionChips(items).map((chip) => {
+          const first = chip.items[0];
+          const about = chip.items.length === 1 ? first.detail : chip.items.map((it) => it.title).join("; ");
+          return (
+            <li key={chip.id}>
+              <button
+                type="button"
+                className={`attn__chip attn__chip--${chip.kind}`}
+                title={about}
+                aria-label={`${chip.count} ${chip.label}. ${about}`}
+                aria-haspopup={first.replyIds?.length || first.events ? "dialog" : undefined}
+                onClick={(e) => {
+                  if (first.replyIds?.length) setOpen({ item: first, anchor: e.currentTarget.getBoundingClientRect() });
+                  else if (first.kind === "overdue") setReviewOpen(true);
+                  else if (chip.items.length > 1) setPicking({ chip, el: e.currentTarget });
+                  else if (first.events && first.okKey) setResolving({ item: first, el: e.currentTarget });
+                  else jump(first.target);
+                }}
+              >
+                <span><span className="attn__count">{chip.count}</span> {chip.label}</span>
+              </button>
+            </li>
+          );
+        })}
       </ul>
       {open && queue.length > 0 ? (
         <ReplyQueue
@@ -108,10 +119,54 @@ export function AttentionStrip({
           onClose={() => setOpen(null)}
         />
       ) : null}
+      {picking ? (
+        <ChipItems
+          chip={picking.chip}
+          anchorEl={picking.el}
+          theme={theme}
+          onPick={(item) => {
+            setResolving({ item, el: picking.el });
+            setPicking(null);
+          }}
+          onClose={() => setPicking(null)}
+        />
+      ) : null}
       {resolving ? (
         <ConflictCard item={resolving.item} anchorEl={resolving.el} theme={theme} use24={use24} onClose={() => setResolving(null)} />
       ) : null}
     </section>
+  );
+}
+
+/** When a chip stands for several conflicts or turnarounds: which one to look at. */
+function ChipItems({
+  chip,
+  anchorEl,
+  theme,
+  onPick,
+  onClose,
+}: {
+  chip: AttentionChip;
+  anchorEl: HTMLElement;
+  theme: Theme;
+  onPick: (item: AttentionItem) => void;
+  onClose: () => void;
+}) {
+  const [anchor] = useState(() => anchorEl.getBoundingClientRect());
+  return (
+    <Popover anchor={anchor} theme={theme} onClose={onClose} ariaLabel={`${chip.count} ${chip.label}`} className="resolve">
+      <p className="resolve__title">{chip.count} {chip.label}</p>
+      <ul className="resolve__events">
+        {chip.items.map((it) => (
+          <li key={it.id}>
+            <button type="button" className="resolve__event resolve__event--pick" onClick={() => onPick(it)}>
+              <span className="resolve__pick">{it.title}</span>
+              <span className="resolve__when">{it.detail}</span>
+            </button>
+          </li>
+        ))}
+      </ul>
+    </Popover>
   );
 }
 

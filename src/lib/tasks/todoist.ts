@@ -12,7 +12,7 @@
 import "server-only";
 import { config } from "@/lib/config";
 import { formatHour } from "@/lib/format";
-import { decimalHourForTimestamp, isoDateInZone } from "@/lib/time";
+import { decimalHourForTimestamp, isoDateInZone, sameClockOnDay } from "@/lib/time";
 import type { ClarifyItem, Priority, Project, Section, Task, WeekTask } from "@/lib/types";
 
 const API = "https://api.todoist.com/api/v1";
@@ -433,8 +433,7 @@ function movedDue(due: TodoistDue, isoDate: string, timezone: string): Record<st
   let date = isoDate;
   if (isTimed(due)) {
     if (hasExplicitZone(due.date)) {
-      const days = Math.round((Date.parse(`${isoDate}T00:00:00Z`) - Date.parse(`${dueDayOf(due, timezone)}T00:00:00Z`)) / 86_400_000);
-      date = new Date(Date.parse(due.date) + days * 86_400_000).toISOString().replace(/\.\d{3}Z$/, "Z");
+      date = sameClockOnDay(due.date, isoDate, due.timezone ?? timezone);
     } else {
       date = isoDate + due.date.slice(10);
     }

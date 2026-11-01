@@ -69,9 +69,12 @@
   solid under `prefers-reduced-transparency` / `prefers-contrast: more`).
 - **"What did I miss?" layer** (all pure logic is server/client-safe):
   - `AttentionStrip` (`src/lib/attention.ts`): conflicts, tight turnarounds (<10
-    min), overdue tasks (one rolled-up line; `Task.overdueDays` is date-based, set
-    in `todoist.ts`), replies. Reply items open `ReplyQueue` (Reply in Gmail,
-    Wait a day, Move, Trash); other items scroll to their card.
+    min), overdue tasks (one rolled-up line, its chip opens the day review; `Task.overdueDays` is date-based, set
+    in `todoist.ts`), replies. One line beside the heading: `attentionChips()` rolls
+    them into a count per kind (`.attn__chip`; a colored bar in clean, a dot in cards).
+    Reply chips open `ReplyQueue` (Reply in Gmail, Wait a day, Move, Trash); a chip
+    with several conflicts lists them first (`ChipItems`).
+    The same meeting on two calendars (`sameMeeting`) isn't a conflict.
   - Reply visibility is shared client state in `src/lib/reply-state.ts`
     (session-cleared + "Wait" snoozes in localStorage `dashboard_snoozed`, 24h);
     `EmailList`, the strip and the queue all filter by it. Snooze never touches Gmail.
@@ -118,6 +121,16 @@
   (`lib/llm/clarify.ts`, `parseClarify`, six items per call) fills the form; writes are clicks
   on the normal task/event routes. An item leaves only with a real home: a project other than
   Inbox (`Project.inbox`), the calendar, a label, or finished. Skips last for the session.
+- **Day review** (`DayReview.tsx`, `ReviewPrompt.tsx`, `lib/day-review.ts`, open state in `lib/review-state.ts`):
+  takes over the task card like Clarify. Before `settings.windDown` it's "morning" (overdue tasks, Today
+  first); from then it's "night" (all open tasks, Tomorrow first). Opened by the banner or the Overdue
+  chip; Later hides the banner until the next `<date>:<mode>`, in localStorage `dashboard_review_later`.
+- **Planning:** task rows are draggable onto `DayCalendar` while the calendar is live (`lib/task-drag.ts`
+  holds the task, since drag data is hidden until drop). A drop is `POST /api/events` with `taskId`,
+  which tags the event `[todoist:<id>]`; `blockedTasks()` reads that back for the row's "on calendar".
+  It never writes to Todoist. HTML5 drag, so mouse only. Dragging a block (`isTaskBlock`, marked events
+  only) past the calendar's edge pops it off as `.vcal__ghost` (portalled, so it carries `data-theme`);
+  over `.column--tasks` a release deletes the event, not the task, with undo; elsewhere it goes back.
 - **One task menu:** date, priority, deadline and project are always set with Todoist's menu.
   `TaskMenu` is the pop-up on an existing task; `TaskFieldsMenu` (same file) is the same thing inside
   a form, writing nothing itself (`onChange`), and is used by `NewTaskForm` ("+ Add task", the email
@@ -227,7 +240,9 @@
   `h % 24` before computing am/pm — needed once `dayEnd` can legitimately
   be `24` (midnight), which used to collide with noon's "12:00pm" label.
 - `dashboard-data.ts` marks each slice `live` / `mock` (configured but the
-  fetch failed — `StaleTag` shows) / `off` (nothing configured — silent).
+  fetch failed — `SourceNotice` under the top row and `StaleTag` show, and
+  `Dashboard` keeps those rows out of `AttentionStrip`) / `off` (nothing
+  configured — silent).
 - `Popover` (`src/components/Popover.tsx`) is the shared portalled-card shell
   (anchored positioning + viewport clamp + outside-click/Esc close); it carries
   its own `data-theme` since it renders outside `.morning`. Both
@@ -268,6 +283,10 @@
   throws `GoogleAuthError` (`oauth.ts`); `settle` in `dashboard-data.ts`
   surfaces it as `DashboardData.googleReconnect`, and `StaleTag`'s `reconnect`
   prop turns the "Sample" pill into a "Reconnect Google" link.
+- `src/proxy.ts` refuses any `Host` that isn't local (`lib/allowed-hosts.ts`, DNS rebinding, reads too),
+  unless on Vercel or listed in `ALLOWED_HOSTS`, so reaching `next dev` by LAN address needs that env.
+- Email text helpers are pure in `lib/google/mail-text.ts`. Gmail links name the connected account
+  (`getAccountEmail`, `account` from `/api/replies/meta`), never `/u/0`, once labels have loaded.
 - **Every write route calls `rejectCrossSite(request)`** (`src/lib/request-guard.ts`)
   first — 403 for requests from another site (`localhost` has no login in front
   of it). Path ids are validated before they reach a URL (`validTaskId`,
@@ -282,6 +301,17 @@
   says ok. `EventDetail` debounces reschedules (one PATCH once fields settle);
   events clipped to 00:00/24:00 (they span past today) can't be dragged or
   re-timed here.
+- **Undo** (`lib/undo.ts`, `UndoToast`, reverse logic in `lib/task-undo.ts`): one pending offer, shown
+  eight seconds; writes happen at once and undo is a real reverse write. Any new one-click write calls
+  `offerUndo(text, fn)`, unless it can't be reversed (deleting a Todoist task), which keeps a confirm.
+  Reverse routes: `POST /api/tasks/[id]/reopen`, `POST /api/replies/[id]/restore`,
+  `POST /api/clarify/thread/[id]` (`untrash`, `restore`), PATCH `/api/events/[id]` `{ restore: true }`.
+- **Tests:** `npm test` (vitest, `src/**/*.test.ts`). Pure logic in `src/lib` gets a test with any change.
+- **`BACKLOG.md`** holds open product work and why it's ranked as it is; decided work moves to
+  `DESIGN_LOG.md`. Add to it when something is deferred.
+- `getAgenda` and `getWeekAgendas` leave out declined events and timed working-location markers.
+  `AgendaEvent.free` (Google "free") stays drawn but is out of conflicts, free gaps and booked hours.
+- `Popover`'s `hold` keeps it open on outside click and Esc while a form has unsaved content.
 - **Never send email.** Drafts only. `googleFetch` calls `assertNoSend`
   (`src/lib/google/no-send.ts`, which also blocks the `/upload/...send` form and
   any `/batch` request) and `scripts/check-no-send.mjs` runs before

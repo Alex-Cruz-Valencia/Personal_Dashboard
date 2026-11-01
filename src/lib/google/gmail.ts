@@ -15,6 +15,7 @@ import "server-only";
 import { config } from "@/lib/config";
 import { relativeAge } from "@/lib/time";
 import type { ClarifyItem, Reply, Urgency } from "@/lib/types";
+import { encodeAddresses, htmlToText, mimeHeader, replyRecipient } from "./mail-text";
 import { googleFetch } from "./tokens";
 
 const BASE = "https://gmail.googleapis.com/gmail/v1/users/me";
@@ -110,6 +111,9 @@ function classify(
   return { note: "FYI", urgency: 3 };
 }
 
+/** Enough that a count on the page is the real one on any normal day. */
+const MAX_REPLIES = 20;
+
 export async function getReplies(): Promise<Reply[]> {
   const listUrl = new URL(`${BASE}/messages`);
   listUrl.searchParams.set("q", config.google.gmailQuery);
@@ -142,6 +146,8 @@ export async function getReplies(): Promise<Reply[]> {
   );
   const messages = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
   if (messages.length === 0) throw new Error("No Gmail message could be read");
+  // Counts only, never content. A quiet shortfall here would just look like less mail.
+  if (messages.length < ids.length) console.warn(`Gmail: read ${messages.length} of ${ids.length} messages`);
 
   return messages
     .filter((msg) => !looksLikeBulk(msg))
@@ -164,7 +170,7 @@ export async function getReplies(): Promise<Reply[]> {
         a.urgency - b.urgency ||
         ageMinutes(a.age) - ageMinutes(b.age),
     )
-    .slice(0, 6);
+    .slice(0, MAX_REPLIES);
 }
 
 /** Rough re-parse of "18h" / "2d" back to minutes, for sorting only. */
@@ -246,6 +252,23 @@ export async function trashMessage(id: string): Promise<void> {
   if (!res.ok) throw new Error(`Gmail trash responded ${res.status}`);
 }
 
+/** Undo of `trashMessage`. */
+export async function untrashMessage(id: string): Promise<void> {
+  const res = await googleFetch(`${BASE}/messages/${id}/untrash`, { method: "POST" });
+  if (!res.ok) throw new Error(`Gmail untrash responded ${res.status}`);
+}
+
+/** Undo of `moveMessageToLabel`: back in the inbox, off the label. */
+export async function unmoveMessage(id: string, labelName: string): Promise<void> {
+  const labelId = await findOrCreateLabelId(labelName);
+  const res = await googleFetch(`${BASE}/messages/${id}/modify`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ addLabelIds: ["INBOX"], removeLabelIds: [labelId] }),
+  });
+  if (!res.ok) throw new Error(`Gmail modify responded ${res.status}`);
+}
+
 /**
  * The "move to a folder" action: apply a label (creating it if it doesn't
  * exist yet) and pull the message out of the inbox. Read/unread state is
@@ -294,9 +317,7 @@ function bodyText(part: GmailPart | undefined): string {
   const plain = find(part, "text/plain");
   if (plain) return plain.trim();
   const html = find(part, "text/html");
-  return html
-    ? html.replace(/<(style|script)[\s\S]*?<\/\1>/gi, " ").replace(/<[^>]+>/g, " ").replace(/&nbsp;/g, " ").replace(/\s+/g, " ").trim()
-    : "";
+  return html ? htmlToText(html) : "";
 }
 
 const headerOf = (part: GmailPart | undefined, name: string) =>
@@ -321,9 +342,16 @@ export async function getMessageForDraft(
 }
 
 const oneLine = (v: string) => v.replace(/[\r\n]+/g, " ").trim();
-/** RFC 2047 for headers with non-ASCII characters. */
-const mimeHeader = (v: string) =>
-  /^[\x20-\x7e]*$/.test(v) ? v : `=?UTF-8?B?${Buffer.from(v, "utf8").toString("base64")}?=`;
+
+/** The connected account's address. It can't change while the page runs, so it's cached. */
+export async function getAccountEmail(): Promise<string> {
+  const res = await googleFetch(`${BASE}/profile`, { next: { revalidate: 3600 } });
+  if (!res.ok) throw new Error(`Gmail profile responded ${res.status}`);
+  return ((await res.json()) as { emailAddress?: string }).emailAddress ?? "";
+}
+
+/** A Gmail address in this account, not whichever account is signed in first in the browser. */
+const mailUrl = (account: string, hash: string) => `https://mail.google.com/mail/u/${account || "0"}/#${hash}`;
 
 /**
  * Save `text` as a threaded reply DRAFT to message `id`. Nothing is sent — the
@@ -331,8 +359,13 @@ const mimeHeader = (v: string) =>
  * already covers creating drafts, so no new permission is needed.)
  */
 export async function saveReplyDraft(id: string, text: string): Promise<{ url: string }> {
-  const msg = await getFull(id);
-  const to = oneLine(headerOf(msg.payload, "Reply-To") || headerOf(msg.payload, "From"));
+  const [msg, me] = await Promise.all([getFull(id), getAccountEmail().catch(() => "")]);
+  const to = oneLine(
+    replyRecipient(
+      { from: headerOf(msg.payload, "From"), replyTo: headerOf(msg.payload, "Reply-To"), to: headerOf(msg.payload, "To") },
+      me,
+    ),
+  );
   if (!to) throw new Error("The message has no sender to reply to.");
   const subjectRaw = oneLine(headerOf(msg.payload, "Subject"));
   const subject = /^re:/i.test(subjectRaw) ? subjectRaw : `Re: ${subjectRaw}`;
@@ -340,7 +373,7 @@ export async function saveReplyDraft(id: string, text: string): Promise<{ url: s
   const refs = oneLine(headerOf(msg.payload, "References"));
 
   const lines = [
-    `To: ${to}`,
+    `To: ${encodeAddresses(to)}`,
     `Subject: ${mimeHeader(subject)}`,
     ...(messageId ? [`In-Reply-To: ${messageId}`, `References: ${[refs, messageId].filter(Boolean).join(" ")}`] : []),
     "MIME-Version: 1.0",
@@ -359,7 +392,7 @@ export async function saveReplyDraft(id: string, text: string): Promise<{ url: s
   if (!res.ok) throw new Error(`Gmail draft responded ${res.status}`);
   const created = (await res.json()) as { message?: { id?: string } };
   const draftMsg = created.message?.id;
-  return { url: draftMsg ? `https://mail.google.com/mail/u/0/#drafts?compose=${draftMsg}` : "https://mail.google.com/mail/u/0/#drafts" };
+  return { url: mailUrl(me, draftMsg ? `drafts?compose=${draftMsg}` : "drafts") };
 }
 
 /* ---------- the to-do label (Clarify mode) ---------- */
@@ -441,10 +474,33 @@ export async function clearTodoLabel(id: string): Promise<void> {
   if (label) await modifyThread(id, { removeLabelIds: [label] });
 }
 
-/** Filed: under `labelName` (created if new), out of the to-do label and out of the inbox. */
-export async function fileTodoThread(id: string, labelName: string): Promise<void> {
+/**
+ * Filed: under `labelName` (created if new), out of the to-do label and out of the inbox.
+ * Resolves to whether it was in the inbox, so an undo puts it back only if it was.
+ */
+export async function fileTodoThread(id: string, labelName: string): Promise<boolean> {
   const [target, todo] = await Promise.all([findOrCreateLabelId(labelName), todoLabelId()]);
+  const before = await googleFetch(`${BASE}/threads/${id}?format=minimal`);
+  if (!before.ok) throw new Error(`Gmail thread responded ${before.status}`);
+  const { messages = [] } = (await before.json()) as { messages?: { labelIds?: string[] }[] };
+  const wasInbox = messages.some((m) => m.labelIds?.includes("INBOX"));
   await modifyThread(id, { addLabelIds: [target], removeLabelIds: [...(todo ? [todo] : []), "INBOX"] });
+  return wasInbox;
+}
+
+/** Undo of clearing or filing: back on the to-do label, and off `labelName` if it was filed. */
+export async function restoreTodoThread(id: string, labelName?: string, inbox = false): Promise<void> {
+  const [todo, target] = await Promise.all([todoLabelId(), labelName ? findOrCreateLabelId(labelName) : null]);
+  await modifyThread(id, {
+    addLabelIds: [...(todo ? [todo] : []), ...(inbox ? ["INBOX"] : [])],
+    removeLabelIds: target ? [target] : [],
+  });
+}
+
+/** Undo of `trashThread`. */
+export async function untrashThread(id: string): Promise<void> {
+  const res = await googleFetch(`${BASE}/threads/${id}/untrash`, { method: "POST" });
+  if (!res.ok) throw new Error(`Gmail untrash responded ${res.status}`);
 }
 
 /** The whole conversation goes to Trash, recoverable in Gmail for 30 days. */

@@ -10,6 +10,9 @@ import {
 } from "react";
 import { useRouter } from "next/navigation";
 import type { Theme } from "@/lib/settings";
+import { loadTaskMeta } from "@/lib/task-meta";
+import { uncompleteRequest } from "@/lib/task-undo";
+import { offerUndo, write } from "@/lib/undo";
 import type { Project, Section, Task } from "@/lib/types";
 import { useFocus } from "./Focus";
 import { flushFocus, Popover } from "./Popover";
@@ -60,13 +63,10 @@ export function TaskDetailProvider({
   useEffect(() => {
     if (metaCache || (!state && !menu)) return;
     let alive = true;
-    fetch("/api/tasks/meta")
-      .then((r) => (r.ok ? r.json() : { projects: [], labels: [] }))
-      .then((m: Meta) => {
-        metaCache = m;
-        if (alive) setMeta(m);
-      })
-      .catch(() => {});
+    loadTaskMeta().then((m) => {
+      if (m.projects.length) metaCache = m;
+      if (alive) setMeta(m);
+    });
     return () => {
       alive = false;
     };
@@ -329,7 +329,11 @@ function TaskDetailCard({
           className="taskedit__done"
           disabled={saving}
           onClick={async () => {
-            if (await send({}, "POST", `/api/tasks/${id}/complete`)) onClose();
+            if (await send({}, "POST", `/api/tasks/${id}/complete`)) {
+              const back = uncompleteRequest(task);
+              offerUndo("Task completed", () => write(back.path, back.method, back.body));
+              onClose();
+            }
           }}
         >
           ✓ Complete

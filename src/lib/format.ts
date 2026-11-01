@@ -413,7 +413,7 @@ export function footLeft(agenda: AgendaEvent[], nowHour: number): string {
   const firstMeeting = agenda.find(
     (e) => e.kind === "meeting" && e.start > nowHour,
   );
-  if (!firstMeeting) return "Next block is already underway";
+  if (!firstMeeting) return "No more meetings today";
   const freeMins = Math.round((firstMeeting.start - nowHour) * 60);
   return `${Math.floor(freeMins / 60)}h ${freeMins % 60}m clear before “${firstMeeting.name}”`;
 }

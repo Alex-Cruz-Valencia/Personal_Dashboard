@@ -21,6 +21,7 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+  if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
 
   if (typeof body.content !== "string" || !body.content.trim()) {
     return NextResponse.json({ error: "content is required" }, { status: 400 });
@@ -35,7 +36,7 @@ export async function POST(request: Request) {
   if (body.dueDate !== undefined && !/^\d{4}-\d{2}-\d{2}$/.test(body.dueDate)) {
     return NextResponse.json({ error: "dueDate must be YYYY-MM-DD" }, { status: 400 });
   }
-  if (body.description !== undefined && (typeof body.description !== "string" || body.description.length > 2000)) {
+  if (body.description !== undefined && (typeof body.description !== "string" || body.description.length > 16000)) {
     return NextResponse.json({ error: "description is too long" }, { status: 400 });
   }
 

@@ -1,19 +1,23 @@
 "use client";
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type TouchEvent, type WheelEvent } from "react";
+import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { upNext } from "@/lib/attention";
 import { dateLineFor, decimalHourToTimeInput, formatHour, layoutOverlaps } from "@/lib/format";
 import { cascade, hourLabel, shortSpan, shortTime } from "@/lib/gcal-look";
-import { minutesLabel } from "@/lib/plan";
+import { isTaskBlock, minutesLabel, taskMinutes } from "@/lib/plan";
+import { draggedTask, setDraggedTask } from "@/lib/task-drag";
 import type { ShownSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
-import type { AgendaEvent, ArcWindow, CalendarLegendItem, TodayInfo, WeekDay } from "@/lib/types";
+import type { AgendaEvent, ArcWindow, CalendarLegendItem, SliceSource, TodayInfo, WeekDay } from "@/lib/types";
+import { offerUndo, write } from "@/lib/undo";
 import { useNowSeconds } from "@/lib/use-now";
 import { EndOfDay } from "./EndOfDay";
 import { useEventDetail } from "./EventDetail";
 import { formatClock, useFocus } from "./Focus";
 import { Popover } from "./Popover";
+import { StaleTag } from "./StaleTag";
 import { DayDetail } from "./WeekStrip";
 
 /** Pixels per hour. A 30-minute event is 28px: room for a one-line title. */
@@ -39,6 +43,8 @@ const PULL_GAP_MS = 220;
 const PULL_GIVE_PX = 36;
 /** Dragging and drawing snap to this many hours (15 minutes). */
 const SNAP = 0.25;
+/** How far past the calendar's edge a dragged task block pops off. */
+const POP_PX = 8;
 /** A pointer that moves less than this many px is a click, not a drag. */
 const DRAG_PX = 4;
 /** Within this many px of the scroller's edge a drag scrolls it. */
@@ -65,6 +71,9 @@ interface DayCalendarProps {
   focusTask?: string;
   /** Google is connected: events can be dragged, resized and drawn. */
   editable?: boolean;
+  source?: SliceSource;
+  /** Google's stored sign-in is dead — offer a reconnect link on the tag. */
+  reconnect?: boolean;
   /** Tomorrow's agenda and tasks, for "Plan tomorrow" (null when neither source is readable). */
   tomorrow?: WeekDay | null;
   /** Which color is which connected calendar; the legend shows when there are two or more. */
@@ -78,7 +87,7 @@ interface DayCalendarProps {
  * Google is connected, drag one to move it, drag its bottom edge to resize it,
  * or drag on an empty stretch to add a new one. Nothing is saved until you let go.
  */
-export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settings, frozen = false, focusTask, editable = false, tomorrow = null, legend = [] }: DayCalendarProps) {
+export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settings, frozen = false, focusTask, editable = false, source = "live", reconnect = false, tomorrow = null, legend = [] }: DayCalendarProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const focus = useFocus();
@@ -95,7 +104,8 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
   // A moved event shows at its new time at once; the override only applies to the
   // agenda it was made against, so the next server render replaces it.
   const [moved, setMoved] = useState<Record<string, Span & { base: AgendaEvent[] }>>({});
-  const agenda = rawAgenda.map((e) => {
+  const [gone, setGone] = useState<ReadonlySet<string>>(new Set());
+  const agenda = rawAgenda.filter((e) => !e.id || !gone.has(e.id)).map((e) => {
     const m = e.id ? moved[e.id] : undefined;
     return m && m.base === rawAgenda ? { ...e, start: m.start, end: m.end } : e;
   });
@@ -274,11 +284,12 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
   };
 
   /** Drag in progress: which event, and where it would land. */
-  const [drag, setDrag] = useState<(Span & { id: string }) | null>(null);
-  const dragRef = useRef<{ id: string; mode: "move" | "resize"; h0: number; span: Span; active: boolean; latest: Span | null } | null>(null);
+  const [drag, setDrag] = useState<(Span & { id: string; popped?: boolean }) | null>(null);
+  const dragRef = useRef<{ id: string; mode: "move" | "resize"; h0: number; span: Span; active: boolean; latest: Span | null; out?: boolean } | null>(null);
   const suppressClick = useRef(false);
 
   const saveMove = async (id: string, span: Span) => {
+    const was = rawAgenda.find((e) => e.id === id);
     setMoved((m) => ({ ...m, [id]: { ...span, base: rawAgenda } }));
     try {
       const res = await fetch(`/api/events/${encodeURIComponent(id)}`, {
@@ -292,6 +303,16 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
       });
       if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error || "Couldn't move that event.");
       router.refresh();
+      if (was) {
+        offerUndo("Event moved", async () => {
+          await write(`/api/events/${encodeURIComponent(id)}`, "PATCH", {
+            date: today.iso,
+            startTime: decimalHourToTimeInput(was.start),
+            endTime: decimalHourToTimeInput(was.end),
+          });
+          setMoved((m) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== id)));
+        });
+      }
     } catch (e) {
       setMoved((m) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== id)));
       tell((e as Error).message);
@@ -320,13 +341,75 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
         }),
       });
       if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error || "Couldn't add that event.");
+      const { id } = (await res.json()) as { id: string };
       setDraft(null);
       setDraftName("");
       router.refresh();
+      offerUndo("Event added", () => write(`/api/events/${encodeURIComponent(id)}`, "DELETE"));
     } catch (e) {
       tell((e as Error).message);
     }
     setDraftBusy(false);
+  };
+
+  /** A task held over the day, and one just dropped until the refreshed agenda shows it. */
+  const [dropAt, setDropAt] = useState<(Span & { name: string }) | null>(null);
+  const [placed, setPlaced] = useState<(Span & { name: string; base: AgendaEvent[] }) | null>(null);
+
+  /** Over the task card with a task's block, ready to take it off the calendar. */
+  const markDropzone = (on: boolean) => document.querySelector(".column--tasks")?.classList.toggle("is-dropzone", on);
+  const overTaskCard = (x: number, y: number) => {
+    const r = document.querySelector(".column--tasks")?.getBoundingClientRect();
+    return Boolean(r && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom);
+  };
+  /** Past the calendar's edge a task block pops off and follows the pointer. A little slack, so a drag along the edge doesn't flicker. */
+  const pastCalendar = (x: number, y: number) => {
+    const r = scrollerRef.current?.getBoundingClientRect();
+    return Boolean(r && (x < r.left - POP_PX || x > r.right + POP_PX || y < r.top - POP_PX || y > r.bottom + POP_PX));
+  };
+  const [ghost, setGhost] = useState<{ name: string; when: string; color?: string; x: number; y: number; width: number } | null>(null);
+
+  const unmark = (id: string) =>
+    setGone((g) => {
+      const next = new Set(g);
+      next.delete(id);
+      return next;
+    });
+
+  /** The block goes; the task stays open in Todoist, with its row as it was. */
+  const removeBlock = async (id: string) => {
+    const url = `/api/events/${encodeURIComponent(id)}`;
+    setGone((g) => new Set(g).add(id));
+    try {
+      const res = await fetch(url, { method: "DELETE" });
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error || "Couldn't take that off the calendar.");
+      router.refresh();
+      offerUndo("Taken off your calendar", async () => {
+        await write(url, "PATCH", { restore: true });
+        unmark(id);
+      });
+    } catch (e) {
+      unmark(id);
+      tell((e as Error).message);
+    }
+  };
+
+  const blockTask = async (id: string, name: string, span: Span) => {
+    setPlaced({ ...span, name, base: rawAgenda });
+    try {
+      const res = await fetch("/api/events", {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ name, date: today.iso, startTime: decimalHourToTimeInput(span.start), endTime: decimalHourToTimeInput(span.end), taskId: id }),
+      });
+      if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error || "Couldn't add that to the calendar.");
+      const { id: eventId } = (await res.json()) as { id: string };
+      router.refresh();
+      offerUndo("Added to your calendar", () => write(`/api/events/${encodeURIComponent(eventId)}`, "DELETE"));
+    } catch (e) {
+      setPlaced(null);
+      tell((e as Error).message);
+    }
   };
 
   const [planAnchor, setPlanAnchor] = useState<DOMRect | null>(null);
@@ -382,6 +465,7 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
         <h2 className="card__title">
           Today
           <span className="vcal__date">{dateLineFor(today.iso)}</span>
+          <StaleTag source={source} reconnect={reconnect} />
         </h2>
         {focus.session ? (
           <div className="vcal__status vcal__focus-status" aria-live="polite">
@@ -542,6 +626,26 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
               drawRef.current = null;
               setDraft(null);
             }}
+            onDragOver={(ev) => {
+              const task = draggedTask();
+              if (!editable || !task) return;
+              ev.preventDefault();
+              ev.dataTransfer.dropEffect = "copy";
+              edgeScroll(ev.clientY);
+              const start = Math.round(hourAt(ev.clientY) / SNAP) * SNAP;
+              setDropAt({ ...clampSpan(start, start + taskMinutes(task) / 60), name: task.name });
+            }}
+            onDragLeave={(ev) => {
+              if (!ev.currentTarget.contains(ev.relatedTarget as Node | null)) setDropAt(null);
+            }}
+            onDrop={(ev) => {
+              const task = draggedTask();
+              setDraggedTask(null);
+              setDropAt(null);
+              if (!editable || !task?.id || !dropAt) return;
+              ev.preventDefault();
+              void blockTask(task.id, task.name, dropAt);
+            }}
           >
             {hourMarks.map((h) => (
               <div key={h} className="vcal__line" style={{ top: y(h) }} />
@@ -570,7 +674,8 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
               const end = dragging ? dragging.end : e.end;
               // An event running past either end of today is drawn clipped; dragging it
               // would save the clipped times and cut the real event short.
-              const canEdit = editable && Boolean(e.id) && e.start > 0 && e.end < 24;
+              // The same goes for one past the hours shown: there's no room to drag it into.
+              const canEdit = editable && Boolean(e.id) && e.start > 0 && e.end < 24 && e.start >= arc.from && e.end <= maxHour;
               const top = y(start);
               const h = Math.max(20, y(end) - top - 2);
               const { lane, lanes: n } = lanes[i];
@@ -581,7 +686,7 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
                 <div
                   key={e.id ?? `${e.name}${i}`}
                   data-color={e.color}
-                  className={`vcal__event vcal__event--${e.kind} vcal__event--${state}${isSelected(e) ? " vcal__event--selected" : ""}${canEdit ? " vcal__event--editable" : ""}${dragging ? " vcal__event--dragging" : ""}`}
+                  className={`vcal__event vcal__event--${e.kind} vcal__event--${state}${isSelected(e) ? " vcal__event--selected" : ""}${canEdit ? " vcal__event--editable" : ""}${dragging ? " vcal__event--dragging" : ""}${dragging?.popped ? " vcal__event--popped" : ""}`}
                   style={
                     {
                       top,
@@ -615,6 +720,28 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
                       if (Math.abs(dh) * HOUR_PX < DRAG_PX) return;
                       d.active = true;
                     }
+                    const popped = d.mode === "move" && isTaskBlock(e) && pastCalendar(ev.clientX, ev.clientY);
+                    const out = popped && overTaskCard(ev.clientX, ev.clientY);
+                    if (out !== d.out) {
+                      d.out = out;
+                      markDropzone(out);
+                    }
+                    if (popped) {
+                      // It leaves its slot; if it's let go out here, it goes back there.
+                      const { width } = ev.currentTarget.getBoundingClientRect();
+                      d.latest = null;
+                      setDrag({ id: d.id, ...d.span, popped: true });
+                      setGhost((g) => ({
+                        name: e.name,
+                        when: `${formatHour(e.start, use24)} – ${formatHour(e.end, use24)}`,
+                        color: e.color,
+                        x: ev.clientX,
+                        y: ev.clientY,
+                        width: g?.width ?? width,
+                      }));
+                      return;
+                    }
+                    setGhost(null);
                     edgeScroll(ev.clientY);
                     const delta = Math.round(dh / SNAP) * SNAP;
                     const span =
@@ -634,11 +761,19 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
                     setTimeout(() => (suppressClick.current = false), 0);
                     const final = d.latest;
                     setDrag(null);
+                    setGhost(null);
+                    if (d.out) {
+                      markDropzone(false);
+                      void removeBlock(d.id);
+                      return;
+                    }
                     if (final && (final.start !== d.span.start || final.end !== d.span.end)) saveMove(d.id, final);
                   }}
                   onPointerCancel={() => {
                     dragRef.current = null;
                     setDrag(null);
+                    setGhost(null);
+                    markDropzone(false);
                   }}
                   onClick={(ev) => {
                     if (!suppressClick.current) open(e, ev.currentTarget);
@@ -703,6 +838,10 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
               </div>
             ) : null}
 
+            {dropAt ?? (placed?.base === rawAgenda ? placed : null) ? (
+              <TaskBlock span={(dropAt ?? placed) as Span & { name: string }} y={y} use24={use24} />
+            ) : null}
+
             {nowVisible ? (
               <div className="vcal__now" style={{ top: y(nowHour) }} aria-label={`Now, ${formatHour(nowHour, use24)}`}>
                 <i />
@@ -717,11 +856,38 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
         )}
       </div>
       </div>
+      {ghost
+        ? createPortal(
+            <div
+              className="vcal__ghost"
+              data-color={ghost.color}
+              data-theme={settings.theme === "system" ? undefined : settings.theme}
+              style={{ left: ghost.x, top: ghost.y, width: ghost.width }}
+            >
+              <div className="vcal__ghost-name">{ghost.name}</div>
+              <div className="vcal__ghost-when">{ghost.when}</div>
+            </div>,
+            document.body,
+          )
+        : null}
+
       {planAnchor && tomorrow ? (
         <Popover anchor={planAnchor} theme={settings.theme} onClose={() => setPlanAnchor(null)} ariaLabel="Tomorrow" className="taskedit plantomorrow">
           <DayDetail day={tomorrow} use24={use24} onClose={() => setPlanAnchor(null)} />
         </Popover>
       ) : null}
     </section>
+  );
+}
+
+/** Where a dragged task would land. */
+function TaskBlock({ span, y, use24 }: { span: { start: number; end: number; name: string }; y: (h: number) => number; use24: boolean }) {
+  return (
+    <div className="vcal__event vcal__draft" style={{ top: y(span.start), height: Math.max(20, y(span.end) - y(span.start) - 2), left: 2, right: 2 }}>
+      <div className="vcal__name">{span.name}</div>
+      <div className="vcal__event-time">
+        {formatHour(span.start, use24)} – {formatHour(span.end, use24)}
+      </div>
+    </div>
   );
 }

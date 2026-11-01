@@ -38,11 +38,13 @@ interface Props {
   /** Extra controls above the buttons (parent owns their state). */
   extra?: ReactNode;
   onCancel?: () => void;
+  /** Told whether anything's been typed, so its popover can stay open. Pass a stable function. */
+  onDirty?: (dirty: boolean) => void;
   onAdded: () => void;
 }
 
 /** Fill in a task the way Todoist does, then add it. Nothing is written until Add. */
-export function NewTaskForm({ initial, todayIso, submitLabel = "Add task", onFill, autoFill, extra, onCancel, onAdded }: Props) {
+export function NewTaskForm({ initial, todayIso, submitLabel = "Add task", onFill, autoFill, extra, onCancel, onDirty, onAdded }: Props) {
   const [d, setD] = useState<TaskDraft>({ ...EMPTY_DRAFT, ...initial });
   const [meta, setMeta] = useState<TaskMeta | null>(null);
   const [labelDraft, setLabelDraft] = useState("");
@@ -59,6 +61,11 @@ export function NewTaskForm({ initial, todayIso, submitLabel = "Add task", onFil
 
   const set = <K extends keyof TaskDraft>(k: K, v: TaskDraft[K]) => setD((s) => ({ ...s, [k]: v }));
   const busy = phase !== "edit";
+
+  const dirty = Boolean(d.content.trim() || d.description.trim());
+  useEffect(() => {
+    onDirty?.(dirty);
+  }, [dirty, onDirty]);
 
   const addLabel = (raw: string) => {
     const l = raw.trim().replace(/^@/, "");

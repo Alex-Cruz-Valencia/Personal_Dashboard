@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNod
 import { useRouter } from "next/navigation";
 import { formatHour } from "@/lib/format";
 import { loadTaskMeta, type TaskMeta } from "@/lib/task-meta";
+import { changeText, revertPatch } from "@/lib/task-undo";
+import { offerUndo, write } from "@/lib/undo";
 import type { Theme } from "@/lib/settings";
 import type { Project, Section, Task } from "@/lib/types";
 import { Popover } from "./Popover";
@@ -41,14 +43,14 @@ function dayLabel(iso: string, todayIso: string): string {
 }
 
 /** Todoist's date shortcuts, as days from today. */
-function quickDates(todayIso: string) {
+export function quickDates(todayIso: string) {
   const dow = weekday(todayIso);
   return [
     { key: "today", label: "Today", date: todayIso },
     { key: "tomorrow", label: "Tomorrow", date: addDays(todayIso, 1) },
-    { key: "weekend", label: "This weekend", date: addDays(todayIso, (6 - dow + 7) % 7 || 7) },
+    { key: "weekend", label: "This weekend", date: addDays(todayIso, (6 - dow + 7) % 7) },
     { key: "nextweek", label: "Next week", date: addDays(todayIso, (1 - dow + 7) % 7 || 7) },
-  ] as const;
+  ].filter((d, i, all) => all.findIndex((x) => x.date === d.date) === i); // on a Saturday, "this weekend" is today
 }
 
 export function TaskMenu({
@@ -112,7 +114,12 @@ export function TaskMenu({
   const act = async (path: string, method: "PATCH" | "POST" | "DELETE", body?: unknown) => {
     if (await send(path, method, body)) onClose();
   };
-  const patch = (body: Record<string, unknown>) => act(`/api/tasks/${id}`, "PATCH", body);
+  const patch = async (body: Record<string, unknown>) => {
+    if (!(await send(`/api/tasks/${id}`, "PATCH", body))) return;
+    const back = revertPatch(task, body);
+    if (back) offerUndo(changeText(body), () => write(`/api/tasks/${id}`, "PATCH", back));
+    onClose();
+  };
 
   const setDate = (date: string | null) => patch({ date });
   const setP = (p: TodoistP) => {
@@ -284,6 +291,8 @@ export interface TaskFields {
 }
 
 const ISO_DUE = /^(\d{4}-\d{2}-\d{2})(?: (\d{2}):(\d{2}))?$/;
+/** A whole date, not a year still being typed (a date input reads "2" as the year 0002). */
+const TYPED_DAY = /^[2-9]\d{3}-\d{2}-\d{2}$/;
 
 /** A due value as the menu shows it: "Tomorrow", "Sat · 2:00pm", or the words as typed. */
 export function dueLabel(due: string, todayIso: string): string {
@@ -479,6 +488,11 @@ function DatePanel({
   onClear: () => void;
 }) {
   const [text, setText] = useState("");
+  // A typed date is valid after one keystroke, so it waits for Enter or "Set to…".
+  // A day clicked in the browser's calendar has no keystroke before it and applies at once.
+  const typing = useRef(false);
+  const [typed, setTyped] = useState("");
+  const ready = TYPED_DAY.test(typed) && typed !== current ? typed : "";
   return (
     <div className="taskmenu__panel">
       <PanelHead title={title} onBack={onBack} />
@@ -513,10 +527,32 @@ function DatePanel({
           </button>
         ) : null}
       </div>
-      <label className="taskmenu__pick">
-        <span>Pick a day</span>
-        <input type="date" data-mi className="taskmenu__input" defaultValue={current} onChange={(e) => e.target.value && onPick(e.target.value)} />
-      </label>
+      <div className="taskmenu__pick">
+        <label className="taskmenu__pickfield">
+          <span>Pick a day</span>
+          <input
+            type="date"
+            data-mi
+            className="taskmenu__input"
+            defaultValue={current}
+            onKeyDown={(e) => {
+              if (/^\d$/.test(e.key) || e.key === "Backspace" || e.key === "Delete") typing.current = true;
+              if (e.key !== "Enter") return;
+              e.preventDefault();
+              if (ready) onPick(ready);
+            }}
+            onChange={(e) => {
+              if (typing.current) setTyped(e.target.value);
+              else if (e.target.value) onPick(e.target.value);
+            }}
+          />
+        </label>
+        {ready ? (
+          <button type="button" data-mi className="taskmenu__row" onClick={() => onPick(ready)}>
+            <span className="taskmenu__label">Set to {dayLabel(ready, todayIso)}</span>
+          </button>
+        ) : null}
+      </div>
     </div>
   );
 }

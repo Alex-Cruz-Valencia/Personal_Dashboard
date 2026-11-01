@@ -21,7 +21,7 @@ export function addDays(iso: string, n: number): string {
 /** Merged duration of timed events, in hours (overlaps counted once). */
 export function bookedHours(events: AgendaEvent[]): number {
   const spans = events
-    .filter((e) => e.end - e.start < ALL_DAY_HOURS && e.end > e.start)
+    .filter((e) => e.end - e.start < ALL_DAY_HOURS && e.end > e.start && !e.free)
     .map((e) => [e.start, e.end] as [number, number])
     .sort((a, b) => a[0] - b[0]);
   let total = 0;

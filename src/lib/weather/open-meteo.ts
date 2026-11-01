@@ -177,7 +177,7 @@ export async function getWeather(
   const sunrise = isoLocalToDecimalHour(data.daily.sunrise[0]);
   const sunset = isoLocalToDecimalHour(data.daily.sunset[0]);
 
-  const nowHour = isoLocalToDecimalHour(data.current_time ?? "") || new Date().getHours();
+  const nowHour = data.current_time ? isoLocalToDecimalHour(data.current_time) : new Date().getHours();
   const d = data.daily;
   const tomorrow =
     d.temperature_2m_max?.[1] != null && d.temperature_2m_min?.[1] != null
