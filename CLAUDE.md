@@ -125,6 +125,12 @@
   takes over the task card like Clarify. Before `settings.windDown` it's "morning" (overdue tasks, Today
   first); from then it's "night" (all open tasks, Tomorrow first). Opened by the banner or the Overdue
   chip; Later hides the banner until the next `<date>:<mode>`, in localStorage `dashboard_review_later`.
+- **Planning:** task rows are draggable onto `DayCalendar` while the calendar is live (`lib/task-drag.ts`
+  holds the task, since drag data is hidden until drop). A drop is `POST /api/events` with `taskId`,
+  which tags the event `[todoist:<id>]`; `blockedTasks()` reads that back for the row's "on calendar".
+  It never writes to Todoist. HTML5 drag, so mouse only. Dragging a block (`isTaskBlock`, marked events
+  only) past the calendar's edge pops it off as `.vcal__ghost` (portalled, so it carries `data-theme`);
+  over `.column--tasks` a release deletes the event, not the task, with undo; elsewhere it goes back.
 - **One task menu:** date, priority, deadline and project are always set with Todoist's menu.
   `TaskMenu` is the pop-up on an existing task; `TaskFieldsMenu` (same file) is the same thing inside
   a form, writing nothing itself (`onChange`), and is used by `NewTaskForm` ("+ Add task", the email

@@ -19,19 +19,7 @@ Nothing in progress.
 
 ## Next
 
-### B-3. Plan the day
-- **Problem:** the page shows what's on my plate but not whether it fits. Tasks and calendar sit side
-  by side with nothing joining them.
-- **Evidence:** 2026-10-31: 17 tasks due, 14 of them overdue, beside a calendar with its free time
-  unused.
-- **Idea:** show free hours against estimated task hours, and let a task be dragged onto the calendar
-  to block time.
-- **Why first:** highest impact for the least new work, and the day review now keeps the task list
-  honest. `PlanCard`, `buildPlan()`,
-  `/api/plan/suggest` and `freeSpans()` already exist; "Plan with AI" just has no UI.
-- **Done when:** I can tell in five seconds whether today is realistic, and a block takes one drag.
-- **Risk:** it could turn into a second calendar. Keep it to blocking time.
-- **Impact / effort:** High / M
+Nothing ordered. Pick from Later.
 
 ## Later
 
@@ -66,7 +54,17 @@ Nothing in progress.
 - **Why later:** wait to see whether that's ever missed in daily use.
 - **Impact / effort:** Low / M
 
+### B-12. Plan the day: what's left
+- **AI plan:** "Plan with AI" proposes blocks across free gaps. `/api/plan/suggest` still exists. Wait
+  to see whether dragging feels like too much work.
+- **Phone:** dragging needs a mouse. A "Block next free time" menu item would cover touch and keyboard.
+- **Tomorrow:** plan onto tomorrow from the night review.
+- **Impact / effort:** Medium / M
+
 ## Decided against for now
+
+- **A "does today fit" capacity line (from B-3).** Knowing whether there's enough time rarely changes
+  anything; the value is in placing tasks. Dropped before building.
 
 - **New data sources (Slack, health, finances).** More to look at, when the real problem is deciding
   what to do with what's already here. Revisit once B-3 and B-4 have shipped.
@@ -75,6 +73,7 @@ Nothing in progress.
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
+| B-3 | Plan the day: drag a task onto the calendar | #81 | 2026-11-01 |
 | B-4, B-7 | Day review: Overdue reset and End-of-day shutdown as one feature | #80 | 2026-11-01 |
 | B-8 | Suspected bugs checked: 7 fixed, 3 closed (below) | #79 | 2026-11-01 |
 | B-1 | Undo after writes | #78 | 2026-11-01 |

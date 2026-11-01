@@ -9,6 +9,42 @@ for retrospectives, write-ups, and interview prep.
 Newest first. Each entry:
 
 ```
+## YYYY-MM-DD — Short title
+
+**Problem / trigger** — what prompted this
+**Decision** — what we did
+**Reasoning** — why this over the alternatives
+**Alternatives considered** — what else was on the table, and why not (if any)
+**Tradeoffs / open questions** — what this costs, or what's still unresolved
+```
+
+## 2026-11-01 — Plan the day: drag a task onto the calendar
+
+**Problem** — Tasks and the calendar sat side by side with nothing joining them, so the plan for a
+day lived in my head.
+
+**Decision** — Drag a task from the list onto the day. It lands on a 15-minute grid at the task's
+Todoist duration, or 30 minutes, and creates a linked calendar block. The task isn't changed. Its row
+then shows "2:00pm on calendar", and the block can be moved, resized or undone like any event.
+
+**Reasoning** — Dragging is the planning: you see the day and put something on it, which is how the
+calendar already works. Keeping the Todoist task untouched means there's one place each thing lives,
+and moving a block never quietly rewrites a task.
+
+**Alternatives considered** — A "3h free · 6h of tasks" capacity line was the original headline of
+this item. I cut it: I rarely need telling whether there's enough time, so the value is in placing
+tasks, and it would have added a number to the page. Writing the time to the Todoist task as well
+leaves two copies to drift apart. "Plan with AI" stays ready, but is held until dragging proves slow.
+
+Dragging a block back onto the task list takes it off the calendar, and leaves the task alone.
+That came from trying it: dragging one out was the first instinct, so the gesture should work both
+ways. Only task blocks do this, so a real meeting can't be deleted by a sloppy drag. Inside the calendar a
+block still snaps to times; past its edge the card pops off and follows the pointer, so the gesture
+looks like what it does. Let go anywhere but the list and it returns to its slot.
+
+**Tradeoffs / open questions** — Dragging needs a mouse, so phones can't plan yet. A block doesn't
+disappear when its task is finished. Today only, for now.
+
 ## 2026-11-01 — One day review for overdue tasks and closing the day
 
 **Problem** — "14 overdue" was a number with nothing to do but open each task. And the moment a task
@@ -141,15 +177,6 @@ has anything. Literal rounded pills were the first mockup and don't match Clean.
 **Tradeoffs / open questions** — You see counts, not names, until you hover or click, and
 hover doesn't exist on a phone. "Same meeting" is an exact match on name, start and end, so
 a copy with a renamed title or shifted time still shows as a conflict.
-
-## YYYY-MM-DD — Short title
-
-**Problem / trigger** — what prompted this
-**Decision** — what we did
-**Reasoning** — why this over the alternatives
-**Alternatives considered** — what else was on the table, and why not (if any)
-**Tradeoffs / open questions** — what this costs, or what's still unresolved
-```
 
 ---
 
