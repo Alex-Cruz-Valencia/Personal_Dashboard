@@ -51,7 +51,9 @@ const TIME = /^([01]\d|2[0-3]):[0-5]\d$/;
 
 function validDate(s: unknown, todayIso: string): s is string {
   if (typeof s !== "string" || !/^\d{4}-\d{2}-\d{2}$/.test(s)) return false;
-  if (Number.isNaN(Date.parse(`${s}T00:00:00Z`))) return false;
+  // Date.parse rolls Feb 31 over to March, so only a date that comes back unchanged is real.
+  const parsed = new Date(`${s}T00:00:00Z`);
+  if (Number.isNaN(parsed.getTime()) || parsed.toISOString().slice(0, 10) !== s) return false;
   const limit = `${Number(todayIso.slice(0, 4)) + 1}${todayIso.slice(4)}`;
   return s >= todayIso && s <= limit;
 }

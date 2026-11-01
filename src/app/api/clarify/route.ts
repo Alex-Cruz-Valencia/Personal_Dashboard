@@ -3,7 +3,7 @@ import { config, features } from "@/lib/config";
 import { getTodoThreads } from "@/lib/google/gmail";
 import { resolveLocation } from "@/lib/location";
 import { getInboxTasks } from "@/lib/tasks/todoist";
-import { isoDateInZone } from "@/lib/time";
+import { decimalHourInZone, isoDateInZone } from "@/lib/time";
 import type { ClarifyItem } from "@/lib/types";
 
 /**
@@ -24,6 +24,7 @@ export async function GET() {
   return NextResponse.json({
     items,
     todayIso,
+    nowHour: decimalHourInZone(new Date(), timezone),
     todoLabel: config.google.todoLabel,
     partial: tasks.status === "rejected" || emails.status === "rejected",
   });

@@ -1,5 +1,5 @@
 import { NextResponse } from "next/server";
-import { features } from "@/lib/config";
+import { config, features } from "@/lib/config";
 import { getMessageForDraft, listGmailLabels } from "@/lib/google/gmail";
 import { clarifyItems, type ClarifyInput } from "@/lib/llm/clarify";
 import { guardAi, validMessageId } from "@/lib/llm/guard";
@@ -46,7 +46,10 @@ export async function POST(request: Request) {
         }),
       ),
       features.todoist ? listProjects().catch(() => []) : [],
-      listGmailLabels().then((ls) => ls.map((l) => l.name)).catch(() => [] as string[]),
+      // The to-do label itself is no place to file something out of it.
+      listGmailLabels()
+        .then((ls) => ls.map((l) => l.name).filter((n) => n.toLowerCase() !== config.google.todoLabel.toLowerCase()))
+        .catch(() => [] as string[]),
       resolveLocation(),
     ]);
     // One item that can't be read just gets no suggestion.

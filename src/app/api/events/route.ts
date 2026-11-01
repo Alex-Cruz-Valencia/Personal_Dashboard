@@ -42,6 +42,7 @@ export async function POST(request: Request) {
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+  if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
 
   const name = typeof body.name === "string" ? body.name.trim() : "";
   if (name.length > 1000) return NextResponse.json({ error: "name is too long" }, { status: 400 });
@@ -56,7 +57,7 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: "End time must be after start time" }, { status: 400 });
   }
 
-  if (body.description !== undefined && (typeof body.description !== "string" || body.description.length > 2000)) {
+  if (body.description !== undefined && (typeof body.description !== "string" || body.description.length > 8000)) {
     return NextResponse.json({ error: "description is too long" }, { status: 400 });
   }
 

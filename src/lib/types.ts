@@ -159,6 +159,8 @@ export interface AgendaEvent {
   color?: EventColor;
   /** An all-day event: a banner, not booked time. `start`/`end` are 0 and 24. */
   allDay?: boolean;
+  /** Marked "free" in Google: drawn, but it can't conflict and doesn't take up time. */
+  free?: boolean;
 
   /* ---- detail (shown in the click-to-expand card; optional) ---- */
   /** Physical location or room. */

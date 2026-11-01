@@ -2,7 +2,7 @@ import { cookies } from "next/headers";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { Dashboard } from "@/components/Dashboard";
 import { LocationSync } from "@/components/LocationSync";
-import { config } from "@/lib/config";
+import { config, features } from "@/lib/config";
 import { getDashboardData } from "@/lib/dashboard-data";
 import { parseLocationOverride } from "@/lib/location";
 import { parseSkyPreview } from "@/lib/weather/codes";
@@ -36,8 +36,13 @@ export default async function Home({ searchParams }: PageProps<"/">) {
   const shown = Number.isFinite(previewNow) && previewNow >= 0 && previewNow < 24 ? { ...data, today: { ...data.today, nowHour: previewNow } } : data;
   return (
     <>
-      <Dashboard data={sky ? { ...shown, weather: { ...shown.weather, sky } } : shown} settings={settings} />
-      <LocationSync />
+      <Dashboard
+        data={sky ? { ...shown, weather: { ...shown.weather, sky } } : shown}
+        settings={settings}
+        connectFailed={typeof sp.google === "string" && sp.google.startsWith("error:")}
+      />
+      {/* The public demo has nothing to localize, so it doesn't ask for your position. */}
+      {features.google || features.todoist ? <LocationSync /> : null}
       <AutoRefresh />
     </>
   );

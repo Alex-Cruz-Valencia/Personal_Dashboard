@@ -8,6 +8,7 @@ import {
   loadTriage,
   moveReply,
   trashReply,
+  waitReply,
   type LabelInfo,
   type TriageSuggestion,
 } from "@/lib/reply-actions";
@@ -96,7 +97,7 @@ export function ReplyQueue({
     else if (s.action === "file" && s.label) done(id, (i) => moveReply(i, s.label as string));
     else if (s.action === "task") { setTasking(id); setDrafting(null); }
     else if (s.action === "reply") { setDrafting(id); setTasking(null); }
-    else snoozeReply(id);
+    else waitReply(id);
   };
 
   return (
@@ -145,7 +146,7 @@ export function ReplyQueue({
                     Make task
                   </button>
                 ) : null}
-                <button type="button" className="rq__btn" onClick={() => snoozeReply(id)} title={`Hide for ${SNOOZE_HOURS} hours`}>
+                <button type="button" className="rq__btn" onClick={() => waitReply(id)} title={`Hide for ${SNOOZE_HOURS} hours`}>
                   Wait a day
                 </button>
                 <button type="button" className="rq__btn" onClick={() => setMoving(moving === id ? null : id)} aria-expanded={moving === id}>
@@ -354,7 +355,7 @@ export function DraftPanel({
             maxLength={8000}
             aria-label="Draft reply"
             onChange={(e) => setText(e.target.value)}
-            disabled={phase === "saving"}
+            disabled={phase === "saving" || phase === "saved"}
           />
           <p className="rq__hint">AI draft. Read it before you send; nothing is sent from here.</p>
           <div className="rq__actions">
@@ -374,9 +375,11 @@ export function DraftPanel({
                 {phase === "saving" ? "Saving…" : "Save to Gmail drafts"}
               </button>
             )}
-            <button type="button" className="rq__btn" disabled={phase === "saving"} onClick={generate}>
-              Redo
-            </button>
+            {phase === "saved" ? null : (
+              <button type="button" className="rq__btn" disabled={phase === "saving"} onClick={generate}>
+                Redo
+              </button>
+            )}
           </div>
         </>
       )}

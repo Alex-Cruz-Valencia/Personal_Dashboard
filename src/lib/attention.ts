@@ -74,7 +74,7 @@ export function buildAttention(input: {
 
   // Only what's still ahead (or underway) matters for conflicts and gaps.
   const upcoming = agenda
-    .filter((e) => e.end > nowHour && e.end - e.start < ALL_DAY_HOURS)
+    .filter((e) => e.end > nowHour && e.end - e.start < ALL_DAY_HOURS && !e.free)
     .sort((a, b) => a.start - b.start || a.end - b.end);
 
   // Conflicts: each event against every later one that starts before it ends.
@@ -203,9 +203,9 @@ export function attentionChips(items: AttentionItem[]): AttentionChip[] {
   return [...chips.values()].map((c) => ({ ...c, label: chipLabel(c.id, c.count) }));
 }
 
-/** Real, timed events only (all-day banners don't block time). */
+/** Real, timed events that take up time (not all-day banners, not ones marked free). */
 function timed(agenda: AgendaEvent[]): AgendaEvent[] {
-  return agenda.filter((e) => e.end - e.start < ALL_DAY_HOURS);
+  return agenda.filter((e) => e.end - e.start < ALL_DAY_HOURS && !e.free);
 }
 
 /** Open stretches in [from, to] at least `minMinutes` long, for the arc's "free" labels. */

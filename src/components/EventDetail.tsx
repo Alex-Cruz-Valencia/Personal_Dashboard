@@ -12,6 +12,7 @@ import {
 import { useRouter } from "next/navigation";
 import { decimalHourToTimeInput, formatHour } from "@/lib/format";
 import type { Theme } from "@/lib/settings";
+import { offerUndo, write } from "@/lib/undo";
 import type { AgendaEvent, EventDetails, RsvpStatus } from "@/lib/types";
 import { EventRead } from "./EventRead";
 import { flushFocus, Popover } from "./Popover";
@@ -160,6 +161,9 @@ function EventDetailCard({
     [id, router],
   );
 
+  const offerRestore = () =>
+    offerUndo("Event deleted", () => write(`/api/events/${encodeURIComponent(id)}`, "PATCH", { restore: true }));
+
   // Date and time inputs change on every keystroke ("1" then "10" for 10:00), so a
   // reschedule waits until the fields settle: one PATCH, not several racing ones
   // that could land out of order. A pending one is still sent if the card closes.
@@ -224,7 +228,10 @@ function EventDetailCard({
             setEditing(true);
           }}
           onDelete={async () => {
-            if (await send({}, "DELETE")) onClose();
+            if (await send({}, "DELETE")) {
+              offerRestore();
+              onClose();
+            }
           }}
           onRsvp={async (status) => {
             const before = rsvp;
@@ -380,7 +387,10 @@ function EventDetailCard({
                 // calendar) is shown instead of the card just vanishing.
                 if (timer.current) clearTimeout(timer.current);
                 pending.current = null; // no reschedule of an event being deleted
-                if (await send({}, "DELETE")) onClose();
+                if (await send({}, "DELETE")) {
+                  offerRestore();
+                  onClose();
+                }
               }}
             >
               Delete
