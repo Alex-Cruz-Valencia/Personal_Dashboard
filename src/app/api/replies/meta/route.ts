@@ -1,6 +1,6 @@
 import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
-import { listGmailLabels } from "@/lib/google/gmail";
+import { getAccountEmail, listGmailLabels } from "@/lib/google/gmail";
 
 /** Existing user labels, for the "move to a folder" picker. Fetched lazily when it opens. */
 export async function GET() {
@@ -8,8 +8,8 @@ export async function GET() {
     return NextResponse.json({ labels: [] });
   }
   try {
-    const labels = await listGmailLabels();
-    return NextResponse.json({ labels });
+    const [labels, account] = await Promise.all([listGmailLabels(), getAccountEmail().catch(() => "")]);
+    return NextResponse.json({ labels, account });
   } catch (err) {
     return NextResponse.json(
       { labels: [], error: (err as Error).message },

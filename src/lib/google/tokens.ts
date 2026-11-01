@@ -20,7 +20,7 @@
 
 import "server-only";
 import { Redis } from "@upstash/redis";
-import { mkdir, readFile, rm, writeFile } from "node:fs/promises";
+import { mkdir, readFile, rename, rm, writeFile } from "node:fs/promises";
 import { dirname, join } from "node:path";
 import { assertNoSend } from "./no-send";
 import { GoogleAuthError, refreshAccessToken, type GoogleTokens } from "./oauth";
@@ -53,7 +53,10 @@ export async function writeGoogleTokens(tokens: GoogleTokens): Promise<void> {
     return;
   }
   await mkdir(dirname(TOKEN_FILE), { recursive: true });
-  await writeFile(TOKEN_FILE, JSON.stringify(tokens, null, 2), { mode: 0o600 });
+  // Renamed into place, so a reader never catches a half-written file.
+  const temp = `${TOKEN_FILE}.${process.pid}.${Date.now()}`;
+  await writeFile(temp, JSON.stringify(tokens, null, 2), { mode: 0o600 });
+  await rename(temp, TOKEN_FILE);
 }
 
 export async function clearGoogleTokens(): Promise<void> {
@@ -62,6 +65,21 @@ export async function clearGoogleTokens(): Promise<void> {
     return;
   }
   await rm(TOKEN_FILE, { force: true });
+}
+
+let refreshing: Promise<GoogleTokens> | null = null;
+
+/** A page render starts dozens of calls at once; they should share one refresh, not race. */
+function refreshOnce(refreshToken: string): Promise<GoogleTokens> {
+  refreshing ??= refreshAccessToken(refreshToken)
+    .then(async (fresh) => {
+      await writeGoogleTokens(fresh);
+      return fresh;
+    })
+    .finally(() => {
+      refreshing = null;
+    });
+  return refreshing;
 }
 
 /**
@@ -78,9 +96,7 @@ export async function getGoogleAccessToken(): Promise<string> {
   if (!tokens.refreshToken) {
     throw new GoogleAuthError("Google access token expired and no refresh token is stored");
   }
-  const refreshed = await refreshAccessToken(tokens.refreshToken);
-  await writeGoogleTokens(refreshed);
-  return refreshed.accessToken;
+  return (await refreshOnce(tokens.refreshToken)).accessToken;
 }
 
 /**
@@ -111,9 +127,7 @@ export async function googleFetch(input: string | URL, init: RequestInit = {}): 
 
   const tokens = await readGoogleTokens();
   if (!tokens?.refreshToken) return res;
-  const refreshed = await refreshAccessToken(tokens.refreshToken);
-  await writeGoogleTokens(refreshed);
-  return send(refreshed.accessToken);
+  return send((await refreshOnce(tokens.refreshToken)).accessToken);
 }
 
 export function isGoogleConnected(): Promise<boolean> {

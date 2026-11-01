@@ -9,8 +9,11 @@ export interface LabelInfo {
   backgroundColor?: string;
 }
 
+/** The connected account, once `loadLabels` has answered; until then, the browser's first account. */
+let account = "";
+
 /** Gmail's own link for a message — where "Reply" happens. */
-export const gmailLink = (id: string) => `https://mail.google.com/mail/u/0/#inbox/${id}`;
+export const gmailLink = (id: string) => `https://mail.google.com/mail/u/${account || "0"}/#inbox/${id}`;
 
 /** Hide the reply now; bring it back if Gmail refuses. Resolves true on success. */
 async function optimistic(id: string, run: () => Promise<Response>): Promise<boolean> {
@@ -73,7 +76,10 @@ export function loadLabels(): Promise<LabelInfo[]> {
         if (!r.ok) throw new Error();
         return r.json();
       })
-      .then((m: { labels: LabelInfo[] }) => m.labels)
+      .then((m: { labels: LabelInfo[]; account?: string }) => {
+        account = m.account ?? "";
+        return m.labels;
+      })
       .catch(() => {
         labelPromise = null;
         return [];

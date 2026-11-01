@@ -15,7 +15,10 @@ import { rejectCrossSite } from "@/lib/request-guard";
  *        body (used for previews / testing without touching real sources).
  */
 
-export async function GET() {
+export async function GET(request: Request) {
+  // Each hit can call the model, so another site mustn't be able to trigger it.
+  const blocked = rejectCrossSite(request, { allowDirect: true });
+  if (blocked) return blocked;
   const data = await getDashboardData();
   return NextResponse.json({
     note: data.dayNote,
