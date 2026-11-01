@@ -1,3 +1,8 @@
+import { DAY_PARTS, type DayPart } from "./day-part";
+
+/** The weathers ⚙ Sky weather offers: sky themes never draw cloud cover or fog. */
+const SKY_PICKS = ["clear", "drizzle", "rain", "storm", "snow"] as const;
+
 /**
  * Presentation settings — the three knobs the Claude Design component exposed
  * (Appearance / Behavior).
@@ -38,6 +43,14 @@ export type LightPalette = "daylight" | "clay";
 export type Look = "cards" | "clean";
 /** The calendars' look: "dashboard" is the page's own; "google" copies Google Calendar's (solid blocks, cascade, "8 AM"). */
 export type CalLook = "dashboard" | "google";
+/** "time" colors the sky by the hour and the sun's real position; "plain" keeps one sky all day. */
+export type SkyTheme = "time" | "plain";
+/** Light theme's daytime sky: "blue" by default (the one place light carries blue), or warm "cream". Dark ignores it. */
+export type LightSky = "cream" | "blue";
+/** "auto" follows the real sun. A pick holds the sky at that part of the day. */
+export type SkyPart = DayPart | "auto";
+/** "auto" follows the real weather. A pick changes the sky only, never the forecast text. */
+export type SkyWeather = (typeof SKY_PICKS)[number] | "auto";
 /** Voice of the "shape of the day" note — see src/lib/day-note.ts. */
 export type NoteStyle = "timely" | "gentle" | "plain";
 
@@ -51,6 +64,10 @@ export interface DashboardSettings {
   surface: Surface;
   motion: Motion;
   background: Background;
+  skyTheme: SkyTheme;
+  lightSky: LightSky;
+  skyPart: SkyPart;
+  skyWeather: SkyWeather;
   pastEvents: PastEvents;
   topRow: TopRow;
   noteStyle: NoteStyle;
@@ -85,6 +102,10 @@ export const DEFAULT_SETTINGS: DashboardSettings = {
   surface: "solid",
   motion: "on",
   background: "scene",
+  skyTheme: "time",
+  lightSky: "blue",
+  skyPart: "auto",
+  skyWeather: "auto",
   pastEvents: "hide",
   topRow: "unified",
   noteStyle: "timely",
@@ -159,6 +180,10 @@ export function parseSettings(
     surface: pick(searchParams.surface, ["glass", "solid"], base.surface),
     motion: pick(searchParams.motion, ["on", "off"], base.motion),
     background: pick(searchParams.background, ["scene", "plain"], base.background),
+    skyTheme: pick(searchParams.skytheme, ["time", "plain"], base.skyTheme),
+    lightSky: pick(searchParams.lightsky, ["cream", "blue"], base.lightSky),
+    skyPart: pick(searchParams.skypart, ["auto", ...DAY_PARTS], base.skyPart),
+    skyWeather: pick(searchParams.skyweather, ["auto", ...SKY_PICKS], base.skyWeather),
     pastEvents: pick(searchParams.past, ["hide", "show"], base.pastEvents),
     topRow: pick(searchParams.top, ["classic", "unified", "simple", "brief"], base.topRow),
     noteStyle: pick(searchParams.noteStyle, ["timely", "gentle", "plain"], base.noteStyle),
@@ -208,6 +233,18 @@ export function readStoredSettings(raw: string | undefined): Partial<DashboardSe
   }
   if (obj.background === "scene" || obj.background === "plain") {
     out.background = obj.background;
+  }
+  if (obj.skyTheme === "time" || obj.skyTheme === "plain") {
+    out.skyTheme = obj.skyTheme;
+  }
+  if (obj.lightSky === "cream" || obj.lightSky === "blue") {
+    out.lightSky = obj.lightSky;
+  }
+  if (obj.skyPart === "auto" || DAY_PARTS.includes(obj.skyPart as DayPart)) {
+    out.skyPart = obj.skyPart as SkyPart;
+  }
+  if (obj.skyWeather === "auto" || SKY_PICKS.includes(obj.skyWeather as (typeof SKY_PICKS)[number])) {
+    out.skyWeather = obj.skyWeather as SkyWeather;
   }
   if (obj.pastEvents === "hide" || obj.pastEvents === "show") {
     out.pastEvents = obj.pastEvents;

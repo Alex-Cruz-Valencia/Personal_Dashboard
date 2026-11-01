@@ -1,9 +1,10 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
 import { createPortal } from "react-dom";
+import { sceneSky } from "@/lib/day-part";
 import { dateLineFor } from "@/lib/format";
-import type { Theme } from "@/lib/settings";
+import type { DashboardSettings, Theme } from "@/lib/settings";
 import type { TodayInfo, Weather } from "@/lib/types";
 import { useNowSeconds } from "@/lib/use-now";
 import { WeatherScene } from "./WeatherScene";
@@ -13,7 +14,10 @@ import { WeatherScene } from "./WeatherScene";
  * meteors at night, sun and slow beams by day), full screen, with the cursor hidden when idle
  * and the display kept awake. Any key, click or tap goes back to the dashboard.
  */
-export function AmbientButton(props: { today: TodayInfo; weather: Weather; use24: boolean; theme: Theme; frozen: boolean }) {
+/** The ⚙ choices the ambient screen shares with the page. */
+type AmbientSky = Pick<DashboardSettings, "lightPalette" | "lightSky" | "skyTheme" | "skyPart">;
+
+export function AmbientButton(props: { today: TodayInfo; weather: Weather; use24: boolean; theme: Theme; frozen: boolean; settings: AmbientSky }) {
   const [on, setOn] = useState(false);
   return (
     <>
@@ -34,6 +38,7 @@ function AmbientScreen({
   use24,
   theme,
   frozen,
+  settings,
   onExit,
 }: {
   today: TodayInfo;
@@ -41,6 +46,7 @@ function AmbientScreen({
   use24: boolean;
   theme: Theme;
   frozen: boolean;
+  settings: AmbientSky;
   onExit: () => void;
 }) {
   const ref = useRef<HTMLDivElement>(null);
@@ -49,7 +55,7 @@ function AmbientScreen({
   const hh = Math.floor(secs / 3600) % 24;
   const mm = Math.floor((secs % 3600) / 60);
   const hour = secs / 3600;
-  const isDay = hour >= weather.sunrise && hour < weather.sunset;
+  const { isDay, time } = sceneSky(hour, weather, settings);
 
   const exit = useCallback(() => {
     if (document.fullscreenElement) void document.exitFullscreen().catch(() => {});
@@ -92,13 +98,16 @@ function AmbientScreen({
   return createPortal(
     <div
       ref={ref}
-      className={`ambient ${isDay ? "ambient--day" : "ambient--night"}${idle ? " ambient--idle" : ""}`}
+      className={`ambient ${isDay ? "ambient--day" : "ambient--night"}${time ? " ambient--sky" : ""}${idle ? " ambient--idle" : ""}`}
       data-theme={theme === "system" ? undefined : theme}
+      data-palette={settings.lightPalette}
+      data-lightsky={settings.lightSky}
+      style={time ? ({ "--sun-x": `${time.sunX}%`, "--sun-y": `${time.sunY}%` } as CSSProperties) : undefined}
       role="dialog"
       aria-label="Ambient screen. Press any key to go back."
       onClick={exit}
     >
-      <WeatherScene variant="page" sky={weather.sky} isDay={isDay} fenced={false} />
+      <WeatherScene variant="page" sky={weather.sky} isDay={isDay} fenced={false} time={time} />
       <span className="ambient__orb" aria-hidden="true" />
       <div className="ambient__center">
         <div className="ambient__time">

@@ -1,4 +1,5 @@
 import { shownTheme, use24Hour, type DashboardSettings, type ShownSettings } from "@/lib/settings";
+import { sceneSky, skyHour } from "@/lib/day-part";
 import type { DashboardData } from "@/lib/types";
 import { reviewMode, reviewTasks } from "@/lib/day-review";
 import { MOCK_TODAY } from "@/lib/mock-data";
@@ -7,6 +8,7 @@ import { SkyTint } from "./SkyTint";
 import { ClockCard } from "./ClockCard";
 import { DayCalendar } from "./DayCalendar";
 import { FocusProvider } from "./Focus";
+import { EventAlerts } from "./EventAlerts";
 import { EventDetailProvider } from "./EventDetail";
 import { Footline } from "./Footline";
 import { AmbientButton } from "./Ambient";
@@ -35,10 +37,13 @@ interface DashboardProps {
 export function Dashboard({ data, settings: chosen, connectFailed = false }: DashboardProps) {
   // "timed" resolves to light or dark by the sun for this render; AutoRefresh's
   // minute re-render flips it at sunrise / sunset. The panel still sees the choice.
-  const settings: ShownSettings = { ...chosen, theme: shownTheme(chosen.theme, data.today.nowHour, data.weather) };
+  // Picking Night under ⚙ Sky time always shows the dark page, since that's what the night sky is made for.
+  const nightPicked = chosen.skyTheme === "time" && chosen.skyPart === "night";
+  const settings: ShownSettings = { ...chosen, theme: nightPicked ? "dark" : shownTheme(chosen.theme, skyHour(data.today.nowHour, data.weather, chosen), data.weather) };
   const frozen = data.today.iso === MOCK_TODAY.iso && data.today.nowHour === MOCK_TODAY.nowHour;
   const use24 = use24Hour(settings);
   // The weather scene across the whole page (cards turn frosted so it shows through).
+  const scene = sceneSky(data.today.nowHour, data.weather, settings);
   const review = reviewMode(data.today.nowHour, settings.windDown);
   const tomorrow = data.week?.find((d) => d.iso > data.today.iso) ?? null;
   const pageScene = settings.motion === "on" && settings.background === "scene";
@@ -56,6 +61,7 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
           className={`morning${settings.surface === "glass" ? " morning--glass" : ""}${settings.motion === "off" ? " morning--still" : ""}${pageScene ? " morning--scene" : ""}${settings.look === "clean" ? " morning--clean" : ""}${settings.calLook === "google" ? " morning--gcal" : ""}`}
           data-theme={settings.theme === "system" ? undefined : settings.theme}
           data-palette={settings.lightPalette}
+          data-lightsky={settings.lightSky}
         >
           {/* Everything above is unchanged. Experiment: below it, the day arc and
               the three columns (tasks / plan / replies) are replaced by a
@@ -65,7 +71,7 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
             <WeatherScene
               variant="page"
               sky={data.weather.sky}
-              isDay={data.today.nowHour >= data.weather.sunrise && data.today.nowHour < data.weather.sunset}
+              {...scene}
             />
           ) : null}
           {settings.surface === "glass" && settings.motion === "on" ? (
@@ -82,7 +88,7 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
                   settings.motion === "on" ? (
                     <WeatherScene
                       sky={data.weather.sky}
-                      isDay={data.today.nowHour >= data.weather.sunrise && data.today.nowHour < data.weather.sunset}
+                      {...scene}
                       celestial={false}
                     />
                   ) : null
@@ -137,7 +143,6 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
               reconnect={data.googleReconnect}
               tomorrow={tomorrow}
               focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
-              legend={data.calendars}
             />
             <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} ai={data.ai} clarifyCount={data.clarifyCount} todayIso={data.today.iso} nowHour={data.today.nowHour} tomorrow={tomorrow} agenda={data.agenda} canPlan={data.sources.calendar === "live"} />
           </div>
@@ -151,11 +156,12 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
             shownTheme={settings.theme}
             ambient={
               settings.topRow !== "classic" ? null : (
-                <AmbientButton today={data.today} weather={data.weather} use24={use24} theme={settings.theme} frozen={frozen} />
+                <AmbientButton today={data.today} weather={data.weather} use24={use24} theme={settings.theme} frozen={frozen} settings={settings} />
               )
             }
           />
           <UndoToast />
+          {data.sources.calendar === "live" ? <EventAlerts agenda={data.agenda} today={data.today} use24={use24} /> : null}
         </div>
       </TaskDetailProvider>
     </EventDetailProvider>

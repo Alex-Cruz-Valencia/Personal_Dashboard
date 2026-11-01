@@ -61,6 +61,13 @@ Nothing ordered. Pick from Later.
 - **Tomorrow:** plan onto tomorrow from the night review.
 - **Impact / effort:** Medium / M
 
+### B-13. Push notifications
+- **Problem:** event alerts only work with a dashboard tab open.
+- **Idea:** a service worker, saved device subscriptions and a scheduled server check. iPhone needs
+  the dashboard on the Home Screen, and Vercel's schedule may be too coarse for a 10-minute alert.
+- **Why later:** see first whether missed alerts actually happen.
+- **Impact / effort:** Medium / L
+
 ## Decided against for now
 
 - **A "does today fit" capacity line (from B-3).** Knowing whether there's enough time rarely changes
@@ -73,6 +80,8 @@ Nothing ordered. Pick from Later.
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
+| — | Event alerts, while a tab is open | #82 | 2026-11-01 |
+| — | Sky themes | #82 | 2026-11-01 |
 | B-3 | Plan the day: drag a task onto the calendar | #81 | 2026-11-01 |
 | B-4, B-7 | Day review: Overdue reset and End-of-day shutdown as one feature | #80 | 2026-11-01 |
 | B-8 | Suspected bugs checked: 7 fixed, 3 closed (below) | #79 | 2026-11-01 |

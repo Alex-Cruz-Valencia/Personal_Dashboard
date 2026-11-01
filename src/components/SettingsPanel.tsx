@@ -9,12 +9,16 @@ import {
   use24Hour,
   type Background,
   type LightPalette,
+  type LightSky,
   type Look,
   type DashboardSettings,
   type Density,
   type CalLook,
   type NoteStyle,
   type PastEvents,
+  type SkyPart,
+  type SkyTheme,
+  type SkyWeather,
   type TopRow,
   type Motion,
   type Surface,
@@ -22,6 +26,7 @@ import {
   type ThemeChoice,
   type TimeFormat,
 } from "@/lib/settings";
+import { EventAlertsField } from "./EventAlerts";
 import { Popover } from "./Popover";
 
 const ONE_YEAR = 60 * 60 * 24 * 365;
@@ -156,6 +161,58 @@ export function SettingsPanel({ settings, shownTheme }: { settings: DashboardSet
             ]}
             onPick={(background) => update({ background })}
           />
+          <Segmented<SkyTheme>
+            label="Sky"
+            value={settings.skyTheme}
+            options={[
+              ["time", "Time of day"],
+              ["plain", "Plain"],
+            ]}
+            onPick={(skyTheme) => update({ skyTheme })}
+          />
+          {settings.skyTheme === "time" ? (
+            <Segmented<LightSky>
+              label="Light sky"
+              value={settings.lightSky}
+              options={[
+                ["blue", "Pale blue"],
+                ["cream", "Cream"],
+              ]}
+              onPick={(lightSky) => update({ lightSky })}
+            />
+          ) : null}
+          {settings.skyTheme === "time" ? (
+            <Segmented<SkyPart>
+              label="Sky time"
+              value={settings.skyPart}
+              wrap
+              options={[
+                ["auto", "Auto"],
+                ["dawn", "Dawn"],
+                ["morning", "Morning"],
+                ["noon", "Noon"],
+                ["afternoon", "Afternoon"],
+                ["golden", "Golden"],
+                ["dusk", "Dusk"],
+                ["night", "Night"],
+              ]}
+              onPick={(skyPart) => update({ skyPart })}
+            />
+          ) : null}
+          <Segmented<SkyWeather>
+            label="Sky weather"
+            value={settings.skyWeather}
+            wrap
+            options={[
+              ["auto", "Auto"],
+              ["clear", "Clear"],
+              ["drizzle", "Drizzle"],
+              ["rain", "Rain"],
+              ["storm", "Storm"],
+              ["snow", "Snow"],
+            ]}
+            onPick={(skyWeather) => update({ skyWeather })}
+          />
           <Segmented<PastEvents>
             label="Past events"
             value={settings.pastEvents}
@@ -205,6 +262,7 @@ export function SettingsPanel({ settings, shownTheme }: { settings: DashboardSet
             onPick={(timeFormat) => update({ timeFormat })}
           />
 
+          <EventAlertsField />
           <div className="settings__row2">
             <HourField
               label="Day starts"
@@ -308,17 +366,20 @@ function Segmented<T extends string>({
   label,
   value,
   options,
+  wrap = false,
   onPick,
 }: {
   label: string;
   value: T;
   options: [T, string][];
+  /** Long lists run onto a second line. */
+  wrap?: boolean;
   onPick: (value: T) => void;
 }) {
   return (
     <div className="settings__field">
       <div className="settings__label">{label}</div>
-      <div className="settings__seg" role="group" aria-label={label}>
+      <div className={`settings__seg${wrap ? " settings__seg--wrap" : ""}`} role="group" aria-label={label}>
         {options.map(([val, text]) => (
           <button
             key={val}

@@ -8,7 +8,7 @@ import { getDaySummary } from "./anthropic/summary";
 import { config, features, forceMock, isDemoMode } from "./config";
 import { deterministicDayNote, WIND_DOWN_HOUR } from "./day-note";
 import type { NoteStyle } from "./settings";
-import { getAgenda, getAllDayEvents, getCalendarLegend } from "./google/calendar";
+import { getAgenda, getAllDayEvents } from "./google/calendar";
 import { getReplies, getTodoCount } from "./google/gmail";
 import { GoogleAuthError } from "./google/oauth";
 import { resolveLocation, type LocationOverride } from "./location";
@@ -125,7 +125,6 @@ export async function getDashboardData(
       canAddTasks: false,
       clarifyCount: null,
       allDay: [],
-      calendars: [],
       sources: {
         weather: "off",
         tasks: "off",
@@ -148,11 +147,6 @@ export async function getDashboardData(
   const weekTasks = features.todoist
     ? getWeekTasks(location.timezone).catch(() => null)
     : Promise.resolve(null);
-  // The calendar legend reuses the cached calendar list; failing just hides it.
-  const calendarLegend = features.google
-    ? getCalendarLegend().catch(() => [])
-    : Promise.resolve([]);
-
   // All-day banners are extra: failing just leaves them out.
   const allDayEvents = features.google
     ? getAllDayEvents(today.iso, location.timezone).catch(() => [] as AgendaEvent[])
@@ -263,6 +257,5 @@ export async function getDashboardData(
     canAddTasks: features.todoist,
     clarifyCount: counted.length ? counted.reduce((a, b) => a + b, 0) : null,
     allDay,
-    calendars: agenda.live ? await calendarLegend : [],
   };
 }

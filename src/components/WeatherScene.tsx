@@ -1,4 +1,5 @@
 import type { CSSProperties } from "react";
+import type { SkyTime } from "@/lib/day-part";
 import type { Sky } from "@/lib/types";
 import { MeteorField } from "./MeteorField";
 
@@ -23,6 +24,49 @@ const CARD_METEORS = [
   { x: 64, y: 4, a: 150, c: 23, d: -12, l: 80 },
   { x: 92, y: 14, a: 156, c: 31, d: -21, l: 100 },
 ];
+
+/** Fair-weather clouds: top %, width px, opacity, seconds to cross, start offset. */
+const PUFFS = [
+  { y: 8, w: 260, o: 0.75, c: 150, d: -40 },
+  { y: 38, w: 180, o: 0.55, c: 210, d: -130 },
+];
+const CARD_PUFFS = [
+  { y: 6, w: 150, o: 0.55, c: 120, d: -30 },
+  { y: 34, w: 100, o: 0.4, c: 170, d: -110 },
+];
+
+/** A loose V, in px inside the flock's box; each bird keeps its own wingbeat. */
+const FLOCK = [
+  { x: 52, y: 20, f: 0.42 },
+  { x: 34, y: 10, f: 0.5 },
+  { x: 36, y: 31, f: 0.46 },
+  { x: 14, y: 2, f: 0.38 },
+  { x: 17, y: 37, f: 0.54 },
+];
+
+function Puff({ y, w, o, c, d }: (typeof PUFFS)[number]) {
+  return (
+    <svg className="scene__puff" viewBox="0 0 200 74" style={{ "--y": `${y}%`, "--w": `${w}px`, "--o": o, "--c": c, "--d": `${d}s` } as CSSProperties}>
+      <circle cx="52" cy="50" r="24" />
+      <circle cx="90" cy="34" r="33" />
+      <circle cx="132" cy="44" r="27" />
+      <circle cx="164" cy="56" r="17" />
+      <rect x="30" y="52" width="150" height="22" rx="11" />
+    </svg>
+  );
+}
+
+function Flock({ y, c, d }: { y: number; c: number; d: number }) {
+  return (
+    <div className="scene__flock" style={{ "--y": `${y}%`, "--c": c, "--d": `${d}s` } as CSSProperties}>
+      {FLOCK.map((b) => (
+        <svg key={b.x + b.y} className="scene__bird" viewBox="0 0 16 7" style={{ "--x": `${b.x}px`, "--y": `${b.y}px`, "--f": b.f } as CSSProperties}>
+          <path d="M1 5Q4.5 0 8 5Q11.5 0 15 5" />
+        </svg>
+      ))}
+    </div>
+  );
+}
 
 function Particles({ n, className }: { n: number; className: string }) {
   return Array.from({ length: n }, (_, i) => (
@@ -52,6 +96,7 @@ export function WeatherScene({
   variant = "card",
   celestial = true,
   fenced = true,
+  time,
 }: {
   sky: Sky;
   isDay: boolean;
@@ -60,8 +105,12 @@ export function WeatherScene({
   celestial?: boolean;
   /** The page's meteors hide behind its cards; the ambient screen has none to hide behind. */
   fenced?: boolean;
+  /** ⚙ Sky → Time of day: paints the sky for this part of the day. Left out, the sky stays plain. */
+  time?: SkyTime;
 }) {
-  const { kind, windMph } = sky;
+  const { windMph } = sky;
+  // Sky themes show the sky itself: cloud cover and fog never draw over it. Plain keeps them.
+  const kind = time && (sky.kind === "partly" || sky.kind === "cloudy" || sky.kind === "fog") ? "clear" : sky.kind;
   // The page-wide scene covers the whole viewport, so it needs more of everything.
   const k = variant === "page" ? 3 : 1;
   const wet = kind === "drizzle" || kind === "rain" || kind === "storm";
@@ -69,9 +118,16 @@ export function WeatherScene({
   // Partly cloudy keeps the clear sky (sun, beams) with a couple of clouds passing. At night the
   // stars, meteors and moon always show, whatever the weather, with no clouds; rain and snow still fall.
   const open = kind === "clear" || kind === "partly";
+  // Morning through afternoon, under sky themes. Rain, fog and snow already fill the sky.
+  const daylight = time?.part === "morning" || time?.part === "noon" || time?.part === "afternoon";
 
   return (
-    <div className={`scene scene--${kind} ${isDay ? "scene--day" : "scene--night"}${variant === "page" ? " scene--page" : ""}`} aria-hidden>
+    <div
+      className={`scene scene--${kind} ${isDay ? "scene--day" : "scene--night"}${variant === "page" ? " scene--page" : ""}`}
+      data-part={time?.part}
+      style={time ? ({ "--sun-x": `${time.sunX}%`, "--sun-y": `${time.sunY}%` } as CSSProperties) : undefined}
+      aria-hidden
+    >
       {open && isDay ? (
         <>
           <span className="scene__wash" />
@@ -112,6 +168,19 @@ export function WeatherScene({
           <span className="scene__cloud scene__cloud--b" />
           {kind === "cloudy" || kind === "fog" ? <span className="scene__cloud scene__cloud--c" /> : null}
         </>
+      ) : null}
+      {daylight && kind === "clear"
+        ? (variant === "page" ? PUFFS : CARD_PUFFS).map((p) => <Puff key={p.y} {...p} />)
+        : null}
+      {daylight && open ? (
+        variant === "page" ? (
+          <>
+            <Flock y={18} c={70} d={-6} />
+            <Flock y={58} c={95} d={-50} />
+          </>
+        ) : celestial ? (
+          <Flock y={2} c={60} d={-8} />
+        ) : null
       ) : null}
       {kind === "fog" && isDay ? (
         <>

@@ -31,6 +31,8 @@
 - **Calendar look "google"** (⚙ Calendar, `settings.calLook`, `?cal=google`): `.morning--gcal` layer
   at the end of `globals.css` plus `lib/gcal-look.ts` (`cascade()`, `hourLabel`, `shortSpan`), applied
   in `DayCalendar` and `WeekStrip`. Default stays "dashboard".
+- **Hiding banners:** × on an all-day banner hides it from `DayCalendar` only (`lib/banner-state.ts`,
+  localStorage `dashboard_hidden_banners`, 90 days, with undo). Never writes to Google.
 - **All-day events**: `getAllDayEvents()` → `DashboardData.allDay` (banners in `DayCalendar`), and
   `allDay: true` entries (start 0, end 24) in `WeekDay.events`. Never put them in `agenda`: conflicts,
   next-up and free gaps read it.
@@ -43,15 +45,10 @@
   name (`src/lib/event-colors.ts`), never Google's hex. Blocks carry it as
   `data-color` and the page paints it with `--ev-<family>` (light and dark
   sets in `globals.css`). It overrides the meeting/focus/personal color only;
-  `kind` still drives labels and "where" text. The day calendar shows a legend
-  (`.vcal__legend`, `DashboardData.calendars` from `getCalendarLegend()`, two or
-  more calendars only): names come from `calendarLabel()` — the viewer's rename,
-  else primary → "Personal", another account → its domain ("Dartmouth",
-  "DALI"), a shared calendar → its title minus "[TEAM]" tags; Google's built-in
-  holiday/birthday/week-number calendars are left out. `GOOGLE_CALENDAR_COLORS`
-  (`config.google.calendarColors`, "Name=family,…" by calendar id or legend
-  name) overrides a calendar's color on the dashboard only — the env keeps
-  the viewer's calendar names out of the repo. 12/8/6px radii; no card shadow in dark,
+  `kind` still drives labels and "where" text.
+  `GOOGLE_CALENDAR_COLORS` (`config.google.calendarColors`, "Name=family,…" by calendar id or name)
+  overrides a calendar's color on the dashboard only — the env keeps the viewer's calendar names out of
+  the repo. There's no legend: it was removed on 2026-11-01 because calendars don't match categories. 12/8/6px radii; no card shadow in dark,
   two soft levels in light (`--shadow` cards, `--shadow-pop` popovers); light
   secondary text held to ~6–8:1 for daylight; selected chips carry a border +
   bold, not tint alone; a flat day-arc band, a global accent-colored focus ring, and **Solid is the default surface** (Glass is opt-in under ⚙ →
@@ -131,6 +128,9 @@
   It never writes to Todoist. HTML5 drag, so mouse only. Dragging a block (`isTaskBlock`, marked events
   only) past the calendar's edge pops it off as `.vcal__ghost` (portalled, so it carries `data-theme`);
   over `.column--tasks` a release deletes the event, not the task, with undo; elsewhere it goes back.
+- **Event alerts** (`EventAlerts.tsx`, `lib/event-alerts.ts`): opt-in per browser in ⚙ (localStorage
+  `dashboard_alerts`, sent keys in `dashboard_alerted`). Runs off the real clock in `today.timezone`, not
+  `today.nowHour`, so `?now=` previews can't fire one. Tab must be open; hidden tabs refresh every 5 min.
 - **One task menu:** date, priority, deadline and project are always set with Todoist's menu.
   `TaskMenu` is the pop-up on an existing task; `TaskFieldsMenu` (same file) is the same thing inside
   a form, writing nothing itself (`onChange`), and is used by `NewTaskForm` ("+ Add task", the email
@@ -140,6 +140,19 @@
   up to four lines from `briefLines()` (`src/lib/weather-brief.ts`): rain window against a meeting,
   wind, UV, sunset/light left, tomorrow after 5pm. Fed by optional `Weather` fields (`high`, `low`,
   `feelsLike`, `rainWindow`, `windPeak`, `uvPeak`, `tomorrow`) from `restOfToday()` in `open-meteo.ts`.
+- **Sky themes (2026-10-31):** ⚙ **Sky** (`settings.skyTheme`, `?skytheme=plain`, default "time"). `lib/day-part.ts`:
+  `dayPart()` gives dawn/morning/noon/afternoon/golden/dusk/night from the real sunrise and sunset, `skyTime()` adds
+  the sun's position; `WeatherScene` takes it as `time` (`data-part`, `--sun-x/y`). Palettes are `--sky-*` per part in
+  the "SKY THEMES" block at the end of `globals.css` (light, clay, dark, in that order); weather only veils them
+  (`--veil`, `--glow`). Colors the sky only, never cards or accents. `?part=golden` previews; `/sky?mode=dark|light|clay`
+  is the dev-only contact sheet. ⚙ **Sky time** (`settings.skyPart`, `?skypart=`) and **Sky weather** (`settings.skyWeather`,
+  `?skyweather=`) hold the sky at a pick (Night means the original sky and always shows the page dark; under Daylight the page follows the picked hour), "auto" by default; they change the sky only, never the clock, greeting or forecast
+  text, so scenes get `isDay` and `time` from `sceneSky()`. `Ambient` wears the same skies and follows the page's theme
+  and palette (`.ambient--sky`); its old sun-driven look remains under Plain. Glass's `SkyTint` is still separate.
+  **Night has no theme:** `sceneSky()` drops `time` then, so the original night sky, cards and Ambient stay untouched; don't add
+  a night palette. Partly cloudy, overcast and fog draw as clear under sky themes (no cloud cover or mist over the sky, and not offered in ⚙ Sky weather; Plain keeps them). Clear mornings, noons and afternoons get `Puff` clouds, and birds; noon and afternoon only get dark's blue and light's pale blue
+  (default; ⚙ **Light sky** `settings.lightSky`, `?lightsky=cream`, the one exception to no blue in light, with a clay counterpart).
+  Art stays in the background: working cards are 97% opaque under sky themes, the top card is see-through with its sky at 45%.
 - **Ambient** (`Ambient.tsx`): a full-screen clock over the sky (`WeatherScene` page variant with
   `fenced={false}` so meteors aren't cut out), opened from under the clock; any key/click exits.
 - **Top row (2026-10-30):** `settings.topRow` — "unified" (default, `TopUnified`: one

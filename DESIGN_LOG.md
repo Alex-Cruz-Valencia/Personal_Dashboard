@@ -18,6 +18,60 @@ Newest first. Each entry:
 **Tradeoffs / open questions** — what this costs, or what's still unresolved
 ```
 
+## 2026-11-01 — Hiding an all-day banner from the dashboard
+
+**Problem** — All-day events like "Daylight Saving Time ends" sit above the calendar and take up
+first-screen space, even though nothing needs doing about them.
+
+**Decision** — Each banner gets an × on hover that hides it from the day calendar, with undo. It's
+remembered in this browser only. Nothing changes in Google, and the event stays in the week view.
+A multi-day banner stays hidden for its whole run; a repeating one returns at its next occurrence.
+
+**Reasoning** — The clutter is a dashboard problem, not a calendar problem, so the fix shouldn't touch
+the calendar. Other people on a shared calendar can't be affected.
+
+**Alternatives considered** — Hiding only for today would bring a multi-week banner back every morning.
+A ⚙ filter by calendar is broader but blunter, since the same calendar holds useful banners.
+
+**Tradeoffs / open questions** — There's no list of hidden banners, so one is only recoverable by
+Undo or by clearing site data. Hiding doesn't carry over to another browser.
+
+## 2026-11-01 — Removing the calendar legend
+
+**Problem** — The row of colored dots above the calendar named each calendar, but read as a key to
+categories. It isn't one: an event's calendar says little about what kind of thing it is.
+
+**Decision** — Remove the legend. Events keep their colors.
+
+**Reasoning** — A key that doesn't match how I think about my day takes up first-screen space to
+mislead. Function over polish cuts both ways.
+
+**Alternatives considered** — An option under ⚙ keeps it for nobody. Coloring by real category
+would need a way to categorize events, which is a much bigger idea.
+
+**Tradeoffs / open questions** — Which calendar an event came from now only shows when you open it.
+
+## 2026-11-01 — Event alerts, while a tab is open
+
+**Problem** — Living in the dashboard all day doesn't help if a meeting starts while I'm heads-down
+in something else.
+
+**Decision** — An opt-in ⚙ Event alerts setting sends a system notification 10 minutes before each
+event while a dashboard tab is open. Clicking it opens the video link if there is one. Declined and
+free events stay silent, each event alerts once, and moving an event alerts again at the new time.
+
+**Reasoning** — The cheap version answers most of the need, since the tab is usually open, and adds
+nothing on the server. Real push needs a service worker, stored subscriptions and a scheduler, which
+isn't worth it until missed alerts prove to be a problem.
+
+**Alternatives considered** — Web push works with the page closed, and is in the backlog as B-13.
+Google's own notifications already exist, but can't be told apart from the dashboard's rules, such as
+staying quiet for free events.
+
+**Tradeoffs / open questions** — No tab, no alert. Throttled background tabs can run up to a minute
+late. If Google's notifications stay on, an event alerts twice. The setting lives per browser, since
+the permission does too.
+
 ## 2026-11-01 — Plan the day: drag a task onto the calendar
 
 **Problem** — Tasks and the calendar sat side by side with nothing joining them, so the plan for a
@@ -179,6 +233,64 @@ hover doesn't exist on a phone. "Same meeting" is an exact match on name, start 
 a copy with a renamed title or shifted time still shows as a conflict.
 
 ---
+
+## 2026-10-31 — The sky follows the day
+
+**Problem** — The dashboard knew only two times of day, sun up and sun down, and its top card
+looked the same at 8am and 5pm. Alex asked for themes for morning, noon, afternoon and night
+that fit the existing look.
+
+**Decision** — Seven parts of the day (dawn, morning, noon, afternoon, golden hour, dusk, night)
+counted from the real sunrise and sunset, under ⚙ **Sky** (Time of day, on by default, or Plain).
+Each part has one palette per theme. Weather doesn't get its own palettes: it veils the part's
+colors toward a grey and dims the horizon glow. The sun also walks its real arc across the card.
+
+**Reasoning** — Sun-based parts stay true in a Hanover November, when 5pm is already dusk; clock
+hours wouldn't. Part × weather would be 56 combinations in each of three palettes; seven palettes
+each with one veil rule cover them all, and a new weather needs one line.
+
+**Alternatives considered** — *Retinting cards and accents by the hour:* striking, but task colors
+and text contrast would change through the day. *A separate palette per combination:* too much to
+keep consistent. *Clouds at night:* left out, per the earlier "no clouds at night" decision; night
+weather shows as a greyer sky under the same stars.
+
+**Follow-up, same day: pick a sky, and Ambient joins in.** ⚙ **Sky time** and **Sky weather** (Auto
+by default) hold the sky at any part or weather, because Alex wanted to switch between them, not
+just preview by URL. A pick moves the sky only: clock, greeting and forecast stay true, so a
+held storm can't be mistaken for a forecast. It does stay until set back to Auto. The ambient
+screen now uses the same skies and follows the page's light or dark, where it used to follow
+the sun on its own; Plain keeps that older look.
+
+**Then: a brighter day, and something to watch.** Alex found daytime too dark, and wanted a daytime
+answer to the stars. Dark's morning, noon and afternoon moved from deep teal to a clear blue, held
+just dark enough for light text in the top card, and brighter on the page behind the cards where
+no text sits on the sky. Fair-weather clouds now sail past and small flocks of birds cross now and
+then, on clear and partly cloudy days, the way meteors cross at night. They're drawn in the top
+card too, since the page's only show between sections, but faintly there because they pass behind
+text. Light stays cream: it wasn't the dark one, and its no-blue rule was a deliberate choice.
+
+**Then: pale blue as a choice.** Alex wanted both, so ⚙ **Light sky** offers Cream (default) or Pale blue.
+It colors morning, noon and afternoon only, so low sun stays warm, and stays out of tokens: cards and
+accents keep no blue. Desert clay gets a dustier blue so it still sits with the sand.
+
+**Then: narrowed to daylight, and back into the background.** Alex liked pale blue enough to make it
+the default, but only for full daylight, and loves the original night sky. So night has no theme at
+all, it's the original scene and cards; morning went back to its earlier cream and teal; and blue,
+clouds and birds are noon and afternoon only. Art also moved out of the working cards: they're now
+97% opaque under the themes, while the top card turned see-through with its own sky at half strength.
+This replaces the bright sky in the top card and the night palettes described above. Clouds and
+birds then came back to morning at Alex's request; its colors stayed cream and teal. Picking Night now
+always shows the dark page, because the original night sky was made for it and Alex picked it to see that.
+
+**Then: no cloud cover over the sky.** Alex felt cloudy and fog hid the point of the background, and
+partly too. Under sky themes all three now draw as clear, and they're gone from ⚙ Sky weather.
+The tradeoff is that an overcast day shows a clear sky while the text still says overcast: the words
+carry the forecast, the background is there to be nice to look at. Plain keeps the old scenes.
+
+**Tradeoffs** — Only the sky changes, so most of the page stays calm and the effect is strongest
+in the top card. Text sitting on the sky needed help: the first dark golden hour left axis labels
+near 1.5:1, so the glow is capped and secondary text in the top card leans on the ink. Light
+keeps its no-blue rule, so light nights are plum, not navy.
 
 ## 2026-10-27 — From a display to a decision tool (the one-page story)
 

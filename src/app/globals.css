@@ -633,6 +633,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .settings__seg-btn.is-on {
   color: var(--accent); background: var(--accent-tint); border-color: transparent;
 }
+.settings__hint { margin: 0; font-size: 12px; line-height: 1.35; color: var(--ink-soft); }
 .settings__row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
 .settings__hour { display: flex; align-items: center; gap: 8px; }
 .settings__number {
@@ -2156,9 +2157,6 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .morning:not(.morning--clean) .vcal__event[data-color] { background: color-mix(in srgb, var(--ev) 18%, var(--surface)); border-color: color-mix(in srgb, var(--ev) 55%, var(--surface)); }
 .morning :is(.week__event, .week__banner)[data-color] { background: color-mix(in srgb, var(--ev) 18%, var(--surface)); border-color: color-mix(in srgb, var(--ev) 55%, var(--surface)); }
 /* the day calendar's legend: which color is which connected calendar */
-.vcal__legend { list-style: none; margin: 0; padding: 0 22px 10px; display: flex; flex-wrap: wrap; gap: 4px 14px; font-size: 12px; font-weight: 500; color: var(--ink-soft); }
-.vcal__legend li { display: inline-flex; align-items: center; gap: 6px; }
-.vcal__legend li::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--ev); }
 
 /* ===================== TASK MENU (right-click on a task, modelled on Todoist's) =====================
    Portalled outside .morning, so it carries Todoist's flag + date colors itself (light, dark, and
@@ -2528,6 +2526,16 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .vcal__allday { list-style: none; margin: 0; padding: 0 22px 10px; display: grid; gap: 3px; }
 .vcal__banner { display: block; width: 100%; box-sizing: border-box; border: 1px solid transparent; text-align: left; font-family: inherit; cursor: pointer; }
 .vcal__banner:hover { filter: brightness(0.97); }
+.vcal__allday-item { position: relative; }
+.vcal__allday-item .vcal__banner { padding-right: 28px; }
+.vcal__banner-hide {
+  position: absolute; top: 50%; right: 3px; transform: translateY(-50%); width: 22px; height: 22px; padding: 0;
+  border: 0; border-radius: 4px; background: none; color: var(--ink-soft); font: inherit; font-size: 15px; line-height: 1; cursor: pointer; opacity: 0;
+}
+.vcal__allday-item:hover .vcal__banner-hide, .vcal__banner-hide:focus-visible { opacity: 1; }
+.vcal__banner-hide:hover { color: var(--ink); background: var(--row-hover); }
+.vcal__banner-hide:focus-visible { outline: 2px solid var(--accent); outline-offset: -1px; }
+@media (hover: none) { .vcal__banner-hide { opacity: 1; } }
 .vcal__banner:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 .vcal__allday-more { border: 0; background: transparent; padding: 2px 0; font: inherit; font-size: 12px; font-weight: 600; color: var(--ink-soft); cursor: pointer; }
 .vcal__allday-more:hover { color: var(--ink); }
@@ -2640,3 +2648,136 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .taskedit__name:focus, .taskedit__name:focus-visible, .ramble__name:focus, .ramble__name:focus-visible { outline: none; box-shadow: none; }
 .taskedit__text:focus-visible, .taskedit__select:focus-visible, .taskedit__textarea:focus-visible, .taskedit__label-input:focus-visible, .taskmenu__input:focus-visible { outline: none; }
 .taskedit__text:focus, .taskedit__select:focus, .taskedit__textarea:focus, .taskedit__label-input:focus, .taskmenu__input:focus { border-color: var(--ink-faint); }
+
+/* ===================== SKY THEMES (⚙ Sky → Time of day, .scene[data-part]) =====================
+   The hour picks the colors, the weather greys them: --veil pulls the sky toward a grey, --glow
+   dims the light on the horizon. So seven palettes cover all eight weathers. Light has no blue.
+   Partly cloudy, overcast and fog draw as clear here (WeatherScene), so only wet weather and snow veil it.
+   Only the sky changes: cards, ink and accents stay as they are, so text never depends on the hour.
+   Order matters: clay and dark tie on specificity with the light rules and must follow them. */
+.scene[data-part] { --veil: 0%; --glow: 100%; --glow-cap: 0.6; --sky-moon: #8E7CA0; --sky-grey: var(--sky-fog); --sky-fog: #E4E1D9; --sky-wet: #DAD7CF; --sky-storm: #C9C6BF; --sky-snow: #EFEEEA; }
+.scene[data-part].scene--drizzle { --veil: 56%; --glow: 26%; --sky-grey: var(--sky-wet); }
+.scene[data-part].scene--rain { --veil: 68%; --glow: 16%; --sky-grey: var(--sky-wet); }
+.scene[data-part].scene--storm { --veil: 82%; --glow: 10%; --sky-grey: var(--sky-storm); }
+.scene[data-part].scene--snow { --veil: 62%; --glow: 26%; --sky-grey: var(--sky-snow); }
+.scene[data-part]::before {
+  content: ""; position: absolute; inset: 0;
+  background:
+    radial-gradient(80% 120% at var(--sun-x) 108%, color-mix(in srgb, var(--sky-glow) calc(var(--glow) * var(--glow-cap)), transparent), transparent 72%),
+    linear-gradient(to bottom, color-mix(in srgb, var(--sky-grey) var(--veil), var(--sky-top)), color-mix(in srgb, var(--sky-grey) var(--veil), var(--sky-mid)) 56%, color-mix(in srgb, var(--sky-grey) var(--veil), var(--sky-low)));
+}
+/* The sun walks its arc; the card clips it, so the low sun is a glow on the horizon. */
+.scene[data-part] .scene__sun { top: calc(var(--sun-y) - 170px); left: calc(var(--sun-x) - 170px); right: auto; }
+.scene[data-part] .scene__wash { display: none; }
+.scene[data-part] .scene__moon { box-shadow: inset -7px -3px 0 0 var(--sky-moon); }
+/* The art belongs to the background. Working cards all but close over it; the top card lets it through,
+   with its own sky at half strength so the two soften each other. Night has no data-part, so it keeps
+   the original see-through cards. */
+.scene--page[data-part]::before { opacity: 0.7; }
+.morning--scene:not(.morning--glass):has(.scene--page[data-part]) :is(.card, .attn):not(.card--scene) { background: color-mix(in srgb, var(--surface) 97%, transparent); -webkit-backdrop-filter: none; backdrop-filter: none; }
+.morning--scene:not(.morning--glass):has(.scene--page[data-part]) .card.card--scene { background: color-mix(in srgb, var(--surface) 62%, transparent); -webkit-backdrop-filter: blur(6px); backdrop-filter: blur(6px); }
+.card--scene > .scene[data-part]::before { opacity: 0.45; }
+/* Secondary text in the top card sits on a colored sky, so it leans on the ink, in every palette. */
+.card--scene:has(> .scene[data-part]) { --ink-soft: color-mix(in srgb, var(--ink) 86%, transparent); --ink-faint: color-mix(in srgb, var(--ink) 84%, transparent); }
+/* Stars thin out in twilight; low sun lights the undersides of clouds and warms the beams. */
+.scene:is([data-part="dawn"], [data-part="dusk"]) .scene__star { animation-name: scene-twinkle-faint; }
+@keyframes scene-twinkle-faint { 0%, 100% { opacity: 0.05; } 50% { opacity: 0.32; } }
+.card--scene .scene:is([data-part="dawn"], [data-part="golden"], [data-part="dusk"]) .scene__cloud { background: var(--sky-glow); opacity: 0.2; }
+.scene[data-part="golden"] .scene__beam { background: linear-gradient(to right, transparent, rgba(255, 176, 96, 0.24), rgba(255, 176, 96, 0.07) 62%, transparent); }
+
+/* Clean daylight */
+.scene[data-part="dawn"] { --sky-top: #F3E4E0; --sky-mid: #F8E6D8; --sky-low: #FBE3C8; --sky-glow: #F6B48F; }
+.scene[data-part="morning"] { --sky-top: #F4F1E6; --sky-mid: #F6F1DF; --sky-low: #FAEFCF; --sky-glow: #F7D79A; }
+.scene[data-part="noon"] { --sky-top: #F1F3E8; --sky-mid: #F5F5EB; --sky-low: #F7F5E9; --sky-glow: #E9E6BE; }
+.scene[data-part="afternoon"] { --sky-top: #F5EFDF; --sky-mid: #F7EAD0; --sky-low: #F8E3BE; --sky-glow: #F3C98A; }
+.scene[data-part="golden"] { --sky-top: #F6E3C6; --sky-mid: #F7D6AC; --sky-low: #F6C48F; --sky-glow: #F09A5A; }
+.scene[data-part="dusk"] { --sky-top: #E4D6E2; --sky-mid: #EFD3D2; --sky-low: #F5CDB8; --sky-glow: #E58E6E; }
+
+/* Desert clay */
+[data-palette="clay"]:is(.morning, .ambient) .scene[data-part] { --sky-moon: #A07868; --sky-fog: #E6D8C8; --sky-wet: #DDCDBB; --sky-storm: #CDBBA8; --sky-snow: #F0E8DE; }
+[data-palette="clay"]:is(.morning, .ambient) .scene[data-part="dawn"] { --sky-top: #F0DDD0; --sky-mid: #F4DCC6; --sky-low: #F6D6B6; --sky-glow: #EFA47C; }
+[data-palette="clay"]:is(.morning, .ambient) .scene[data-part="morning"] { --sky-top: #F2E7D6; --sky-mid: #F3E3C9; --sky-low: #F5DDB9; --sky-glow: #EEC084; }
+[data-palette="clay"]:is(.morning, .ambient) .scene[data-part="noon"] { --sky-top: #F4ECDE; --sky-mid: #F4E8D6; --sky-low: #F3E3CB; --sky-glow: #EBCFA0; }
+[data-palette="clay"]:is(.morning, .ambient) .scene[data-part="afternoon"] { --sky-top: #F2E3CC; --sky-mid: #F2D9B8; --sky-low: #F1CEA4; --sky-glow: #E6A96E; }
+[data-palette="clay"]:is(.morning, .ambient) .scene[data-part="golden"] { --sky-top: #F2D7B4; --sky-mid: #F0C89A; --sky-low: #EDB27C; --sky-glow: #DE8048; }
+[data-palette="clay"]:is(.morning, .ambient) .scene[data-part="dusk"] { --sky-top: #E2CDCB; --sky-mid: #EBC7BB; --sky-low: #EFBEA2; --sky-glow: #D4765A; }
+
+/* ⚙ Light sky → Pale blue: noon and afternoon only; everything else stays warm.
+   The opt-in exception to light's no-blue rule, kept at the same specificity so Dark below still wins. */
+[data-lightsky="blue"]:is(.morning, .ambient) .scene[data-part="noon"] { --sky-top: #CFE6F5; --sky-mid: #DDEEF7; --sky-low: #EAF4F6; --sky-glow: #FFF3C8; }
+[data-lightsky="blue"]:is(.morning, .ambient) .scene[data-part="afternoon"] { --sky-top: #D3E4F0; --sky-mid: #E1EAEC; --sky-low: #F2EAD8; --sky-glow: #F3C98A; }
+[data-lightsky="blue"]:where([data-palette="clay"]):is(.morning, .ambient) .scene[data-part="noon"] { --sky-top: #D3E2E9; --sky-mid: #E0E8E8; --sky-low: #EBEAE0; --sky-glow: #EBCFA0; }
+[data-lightsky="blue"]:where([data-palette="clay"]):is(.morning, .ambient) .scene[data-part="afternoon"] { --sky-top: #D8E0E2; --sky-mid: #E6E2D6; --sky-low: #EFDDC2; --sky-glow: #E6A96E; }
+
+/* Dark */
+[data-theme="dark"]:is(.morning, .ambient) .scene[data-part] { --glow-cap: 0.16; --sky-moon: rgba(200, 214, 255, 0.55); --sky-fog: #2C3036; --sky-wet: #22262D; --sky-storm: #15171D; --sky-snow: #3B414B; }
+[data-theme="dark"]:is(.morning, .ambient) .scene[data-part="dawn"] { --sky-top: #1C1B33; --sky-mid: #3A2440; --sky-low: #6B3B46; --sky-glow: #E98A6A; }
+[data-theme="dark"]:is(.morning, .ambient) .scene[data-part="morning"] { --sky-top: #12323A; --sky-mid: #1F4347; --sky-low: #2E4A42; --sky-glow: #E9B872; }
+[data-theme="dark"]:is(.morning, .ambient) .scene[data-part="noon"] { --sky-top: #1A5F9C; --sky-mid: #1F6AA5; --sky-low: #24679C; --sky-glow: #8FD3F0; }
+[data-theme="dark"]:is(.morning, .ambient) .scene[data-part="afternoon"] { --sky-top: #1E5C92; --sky-mid: #2F6A96; --sky-low: #356A8E; --sky-glow: #EDB56A; }
+[data-theme="dark"]:is(.morning, .ambient) .scene[data-part="golden"] { --sky-top: #2A2234; --sky-mid: #4F2E30; --sky-low: #5E3220; --sky-glow: #FF9E4A; }
+[data-theme="dark"]:is(.morning, .ambient) .scene[data-part="dusk"] { --sky-top: #191B3A; --sky-mid: #39224A; --sky-low: #6E2F46; --sky-glow: #F0705A; }
+@media (prefers-color-scheme: dark) {
+  :is(.morning, .ambient):not([data-theme]) .scene[data-part] { --glow-cap: 0.16; --sky-moon: rgba(200, 214, 255, 0.55); --sky-fog: #2C3036; --sky-wet: #22262D; --sky-storm: #15171D; --sky-snow: #3B414B; }
+  :is(.morning, .ambient):not([data-theme]) .scene[data-part="dawn"] { --sky-top: #1C1B33; --sky-mid: #3A2440; --sky-low: #6B3B46; --sky-glow: #E98A6A; }
+  :is(.morning, .ambient):not([data-theme]) .scene[data-part="morning"] { --sky-top: #12323A; --sky-mid: #1F4347; --sky-low: #2E4A42; --sky-glow: #E9B872; }
+  :is(.morning, .ambient):not([data-theme]) .scene[data-part="noon"] { --sky-top: #1A5F9C; --sky-mid: #1F6AA5; --sky-low: #24679C; --sky-glow: #8FD3F0; }
+  :is(.morning, .ambient):not([data-theme]) .scene[data-part="afternoon"] { --sky-top: #1E5C92; --sky-mid: #2F6A96; --sky-low: #356A8E; --sky-glow: #EDB56A; }
+  :is(.morning, .ambient):not([data-theme]) .scene[data-part="golden"] { --sky-top: #2A2234; --sky-mid: #4F2E30; --sky-low: #5E3220; --sky-glow: #FF9E4A; }
+  :is(.morning, .ambient):not([data-theme]) .scene[data-part="dusk"] { --sky-top: #191B3A; --sky-mid: #39224A; --sky-low: #6E2F46; --sky-glow: #F0705A; }
+}
+
+/* /sky, the dev contact sheet: one still frame of each scene */
+.skysheet { max-width: none; align-content: start; }
+.skysheet__nav { display: flex; gap: 16px; font-weight: 600; }
+.skysheet__nav a[aria-current] { color: var(--accent); }
+.skysheet__grid, .skysheet__row { display: grid; grid-template-columns: 76px repeat(7, minmax(0, 1fr)); gap: 8px; align-items: center; font-size: 12.5px; text-transform: capitalize; }
+.skysheet__row { grid-column: 1 / -1; }
+.skysheet__cell { display: block; height: 104px; padding: 0; }
+.skysheet .scene * { animation-play-state: paused; }
+
+/* ⚙ Sky time / Sky weather run long enough to wrap */
+.settings__seg--wrap { flex-wrap: wrap; }
+
+/* The ambient screen wears the same skies, at full strength: only the time sits on them. It follows
+   the page's theme here, where its plain look follows the sun. */
+.ambient--sky { color: var(--ink); background: var(--canvas); }
+.ambient.ambient--sky .scene.scene--page[data-part] { --glow-cap: 0.45; }
+.ambient--sky .scene--page[data-part]::before { opacity: 1; }
+.ambient--sky .scene--page .scene__star { background: var(--ink); box-shadow: none; }
+.ambient--sky .scene__cloud { background: var(--sky-glow, var(--ink-faint)); opacity: 0.16; }
+.ambient--sky.ambient--day .ambient__orb { top: calc(var(--sun-y) * 0.8 - 70px); left: calc(var(--sun-x) - 70px); right: auto; }
+.ambient--sky .ambient__time { text-shadow: none; }
+
+/* Dark's noon and afternoon are a real blue. Text on it needs all the ink it can get, the sun's glow stays low in
+   the top card, and the page behind the cards can go brighter because no text sits on it directly. */
+[data-theme="dark"]:is(.morning, .ambient) .scene:is([data-part="noon"], [data-part="afternoon"]) { --glow-cap: 0.07; }
+[data-theme="dark"]:is(.morning, .ambient) .card--scene:has(> .scene:is([data-part="noon"], [data-part="afternoon"])) { --ink-soft: var(--ink); --ink-faint: color-mix(in srgb, var(--ink) 94%, transparent); }
+[data-theme="dark"]:is(.morning, .ambient) .scene--page:is([data-part="noon"], [data-part="afternoon"])::before { opacity: 1; filter: brightness(1.4) saturate(1.1); }
+@media (prefers-color-scheme: dark) {
+  :is(.morning, .ambient):not([data-theme]) .scene:is([data-part="noon"], [data-part="afternoon"]) { --glow-cap: 0.07; }
+  :is(.morning, .ambient):not([data-theme]) .card--scene:has(> .scene:is([data-part="noon"], [data-part="afternoon"])) { --ink-soft: var(--ink); --ink-faint: color-mix(in srgb, var(--ink) 94%, transparent); }
+  :is(.morning, .ambient):not([data-theme]) .scene--page:is([data-part="noon"], [data-part="afternoon"])::before { opacity: 1; filter: brightness(1.4) saturate(1.1); }
+}
+
+/* Daytime's answer to the stars: fair-weather clouds sailing past, and a small flock now and then. */
+.scene[data-part] { --puff: #FFFFFF; --bird: #4A4C50; }
+[data-palette="clay"]:is(.morning, .ambient) .scene[data-part] { --puff: #FFF6EA; --bird: #5A4436; }
+[data-theme="dark"]:is(.morning, .ambient) .scene[data-part] { --puff: #EAF4FB; --bird: #0E2A3E; }
+.scene__puff { position: absolute; left: 0; top: var(--y); width: var(--w); fill: var(--puff); opacity: var(--o); filter: blur(1.5px); animation: scene-sail calc(var(--c) * 1s) linear var(--d) infinite; }
+@keyframes scene-sail { from { transform: translate3d(-40cqw, 0, 0); } to { transform: translate3d(115cqw, 0, 0); } }
+.scene--page .scene__puff { filter: blur(3px); }
+.scene__flock { position: absolute; left: 0; top: var(--y); width: 96px; height: 44px; opacity: 0; animation: scene-fly calc(var(--c) * 1s) linear var(--d) infinite; }
+@keyframes scene-fly {
+  0% { opacity: 0; transform: translate3d(-110px, 14px, 0); }
+  2%, 42% { opacity: 0.8; }
+  44%, 100% { opacity: 0; transform: translate3d(calc(100cqw + 20px), -18px, 0); }
+}
+.scene__bird { position: absolute; left: var(--x); top: var(--y); width: 16px; height: 7px; fill: none; stroke: var(--bird); stroke-width: 1.7; stroke-linecap: round; transform-origin: 50% 80%; animation: scene-flap calc(var(--f) * 1s) ease-in-out infinite alternate; }
+@keyframes scene-flap { to { transform: scaleY(0.35); } }
+@media (prefers-reduced-motion: reduce) { .scene__flock { display: none; } }
+@media (prefers-color-scheme: dark) { :is(.morning, .ambient):not([data-theme]) .scene[data-part] { --puff: #EAF4FB; --bird: #0E2A3E; } }
+/* In the top card they pass behind text, so they stay faint there and the birds keep above the greeting. */
+.card--scene .scene__puff { opacity: calc(var(--o) * 0.4); }
+.card--scene .scene__bird { opacity: 0.55; }
+[data-lightsky="blue"]:is(.morning, .ambient) .scene--page:is([data-part="noon"], [data-part="afternoon"])::before { opacity: 1; }

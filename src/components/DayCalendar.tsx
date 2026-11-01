@@ -4,13 +4,14 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { upNext } from "@/lib/attention";
+import { hideBanner, showBanner, useHiddenBanners } from "@/lib/banner-state";
 import { dateLineFor, decimalHourToTimeInput, formatHour, layoutOverlaps } from "@/lib/format";
 import { cascade, hourLabel, shortSpan, shortTime } from "@/lib/gcal-look";
 import { isTaskBlock, minutesLabel, taskMinutes } from "@/lib/plan";
 import { draggedTask, setDraggedTask } from "@/lib/task-drag";
 import type { ShownSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
-import type { AgendaEvent, ArcWindow, CalendarLegendItem, SliceSource, TodayInfo, WeekDay } from "@/lib/types";
+import type { AgendaEvent, ArcWindow, SliceSource, TodayInfo, WeekDay } from "@/lib/types";
 import { offerUndo, write } from "@/lib/undo";
 import { useNowSeconds } from "@/lib/use-now";
 import { EndOfDay } from "./EndOfDay";
@@ -76,8 +77,6 @@ interface DayCalendarProps {
   reconnect?: boolean;
   /** Tomorrow's agenda and tasks, for "Plan tomorrow" (null when neither source is readable). */
   tomorrow?: WeekDay | null;
-  /** Which color is which connected calendar; the legend shows when there are two or more. */
-  legend?: CalendarLegendItem[];
 }
 
 /**
@@ -87,7 +86,7 @@ interface DayCalendarProps {
  * Google is connected, drag one to move it, drag its bottom edge to resize it,
  * or drag on an empty stretch to add a new one. Nothing is saved until you let go.
  */
-export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settings, frozen = false, focusTask, editable = false, source = "live", reconnect = false, tomorrow = null, legend = [] }: DayCalendarProps) {
+export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, today, settings, frozen = false, focusTask, editable = false, source = "live", reconnect = false, tomorrow = null }: DayCalendarProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const focus = useFocus();
@@ -104,6 +103,8 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
   // A moved event shows at its new time at once; the override only applies to the
   // agenda it was made against, so the next server render replaces it.
   const [moved, setMoved] = useState<Record<string, Span & { base: AgendaEvent[] }>>({});
+  const hiddenBanners = useHiddenBanners();
+  const allDay = allAllDay.filter((e) => !hiddenBanners.has(e.id ?? e.name));
   const [gone, setGone] = useState<ReadonlySet<string>>(new Set());
   const agenda = rawAgenda.filter((e) => !e.id || !gone.has(e.id)).map((e) => {
     const m = e.id ? moved[e.id] : undefined;
@@ -523,25 +524,30 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
           </p>
         ) : null}
       </div>
-      {legend.length > 1 ? (
-        <ul className="vcal__legend" aria-label="Calendars">
-          {legend.map((c) => (
-            <li key={c.label} data-color={c.color}>
-              {c.label}
-            </li>
-          ))}
-        </ul>
-      ) : null}
-
       {allDay.length ? (
         <ul className="vcal__allday" aria-label="All day">
-          {(showAllDay ? allDay : allDay.slice(0, ALL_DAY_SHOWN)).map((e) => (
-            <li key={e.id ?? e.name}>
-              <button type="button" className="week__banner vcal__banner" data-color={e.color} title={e.name} onClick={(ev) => open(e, ev.currentTarget)}>
-                {e.name}
-              </button>
-            </li>
-          ))}
+          {(showAllDay ? allDay : allDay.slice(0, ALL_DAY_SHOWN)).map((e) => {
+            const key = e.id ?? e.name;
+            return (
+              <li key={key} className="vcal__allday-item">
+                <button type="button" className="week__banner vcal__banner" data-color={e.color} title={e.name} onClick={(ev) => open(e, ev.currentTarget)}>
+                  {e.name}
+                </button>
+                <button
+                  type="button"
+                  className="vcal__banner-hide"
+                  aria-label={`Hide ${e.name} from the dashboard`}
+                  title="Hide from the dashboard. It stays in Google Calendar."
+                  onClick={() => {
+                    hideBanner(key);
+                    offerUndo("Hidden from the dashboard", async () => showBanner(key));
+                  }}
+                >
+                  ×
+                </button>
+              </li>
+            );
+          })}
           {allDay.length > ALL_DAY_SHOWN ? (
             <li>
               <button type="button" className="vcal__allday-more" onClick={() => setShowAllDay(!showAllDay)}>
