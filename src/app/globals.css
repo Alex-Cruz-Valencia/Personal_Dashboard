@@ -350,6 +350,12 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .task--p2 .task__check { border-color: var(--p2); background: var(--p2-tint); }
 .task--p3 .task__check { border-color: var(--p3); background: var(--p3-tint); }
 .task__check:hover { border-color: var(--ink); }
+/* A fingertip's worth of target around the small ring. */
+@media (pointer: coarse) {
+  .task__check { position: relative; }
+  .task__check::before { content: ""; position: absolute; inset: -13px; }
+  .tasks__adds .tasks__add { min-height: 44px; }
+}
 .task__body { display: grid; gap: 4px; }
 .task__name { font-size: 14.5px; font-weight: 500; line-height: 1.35; }
 .task--p1 .task__name { font-weight: 600; }
@@ -2294,6 +2300,17 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .resolve__btn { font: inherit; font-size: 13px; font-weight: 600; padding: 6px 12px; border-radius: var(--radius-sm); border: 1px solid var(--line); background: var(--surface-2); color: var(--ink); cursor: pointer; }
 .resolve__btn--ok { background: var(--accent); border-color: var(--accent); color: var(--surface); }
 .resolve__btn:focus-visible, .resolve__event:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+
+/* The one pending undo: a small sheet at the bottom of the page. */
+.undo {
+  position: fixed; z-index: 60; left: 50%; bottom: 20px; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 14px; max-width: calc(100vw - 32px); padding: 9px 10px 9px 16px;
+  background: var(--surface); color: var(--ink); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow-pop);
+  font-family: var(--font-body); font-size: 14px; font-weight: 500;
+}
+.undo__btn { font: inherit; font-weight: 600; padding: 4px 8px; border: 0; border-radius: var(--radius-sm); background: none; color: var(--accent); cursor: pointer; }
+.undo__btn:hover { background: var(--row-hover); }
+.undo__btn:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* ===================== AMBIENT (a screen to leave up: the time over the sky) ===================== */
 .ambient-btn {

@@ -53,6 +53,7 @@ export async function PATCH(
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+  if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
 
   if (body.priority !== undefined && ![1, 2, 3].includes(body.priority)) {
     return NextResponse.json(
@@ -66,7 +67,7 @@ export async function PATCH(
   const isIso = (v: unknown) => typeof v === "string" && /^\d{4}-\d{2}-\d{2}$/.test(v);
   const problem =
     (body.content !== undefined && !(typeof body.content === "string" && body.content.trim() && body.content.length <= 500) && "content must be non-empty text") ||
-    (body.description !== undefined && !(typeof body.description === "string" && body.description.length <= 2000) && "description is too long") ||
+    (body.description !== undefined && !(typeof body.description === "string" && body.description.length <= 16000) && "description is too long") ||
     (body.due !== undefined && body.due !== null && !(typeof body.due === "string" && body.due.length <= 100) && "due is too long") ||
     (body.deadline !== undefined && body.deadline !== null && !isIso(body.deadline) && "deadline must be YYYY-MM-DD") ||
     (body.durationMinutes !== undefined && body.durationMinutes !== null &&

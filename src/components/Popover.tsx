@@ -36,6 +36,8 @@ interface PopoverProps {
   align?: "center" | "point" | "side";
   /** Change this when the content changes size after opening, so the card is placed again. */
   layoutKey?: string;
+  /** Unsaved work inside: a stray click or Esc leaves it open, and only its own buttons close it. */
+  hold?: boolean;
   className?: string;
   ariaLabel: string;
   children: ReactNode;
@@ -53,11 +55,16 @@ export function Popover({
   closeOnScroll = false,
   align = "center",
   layoutKey,
+  hold = false,
   className,
   ariaLabel,
   children,
 }: PopoverProps) {
   const ref = useRef<HTMLDivElement>(null);
+  const holdRef = useRef(hold);
+  useEffect(() => {
+    holdRef.current = hold;
+  }, [hold]);
   const [pos, setPos] = useState<{ top: number; left: number; maxHeight: number }>(
     { top: -9999, left: -9999, maxHeight: 400 },
   );
@@ -136,16 +143,22 @@ export function Popover({
       onClose();
     };
     const onKey = (e: KeyboardEvent) => {
-      if (e.key === "Escape") close();
+      if (e.key === "Escape" && !holdRef.current) close();
     };
-    const onScrollOrResize = () => close();
+    const onScroll = () => close();
+    // A phone's keyboard and address bar change the height alone; that isn't a new layout.
+    let width = window.innerWidth;
+    const onResize = () => {
+      if (window.innerWidth !== width) close();
+      width = window.innerWidth;
+    };
     const onDown = (e: PointerEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) close();
+      if (ref.current && !ref.current.contains(e.target as Node) && !holdRef.current) close();
     };
 
     window.addEventListener("keydown", onKey);
-    window.addEventListener("resize", onScrollOrResize);
-    if (closeOnScroll) window.addEventListener("scroll", onScrollOrResize, true);
+    window.addEventListener("resize", onResize);
+    if (closeOnScroll) window.addEventListener("scroll", onScroll, true);
     // Defer so the click that opened this doesn't immediately close it.
     const t = window.setTimeout(
       () => document.addEventListener("pointerdown", onDown),
@@ -154,8 +167,8 @@ export function Popover({
 
     return () => {
       window.removeEventListener("keydown", onKey);
-      window.removeEventListener("resize", onScrollOrResize);
-      window.removeEventListener("scroll", onScrollOrResize, true);
+      window.removeEventListener("resize", onResize);
+      window.removeEventListener("scroll", onScroll, true);
       window.clearTimeout(t);
       document.removeEventListener("pointerdown", onDown);
     };

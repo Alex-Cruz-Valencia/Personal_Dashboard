@@ -3,6 +3,8 @@
 import { useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { buildTasks, taskCountLabel } from "@/lib/format";
+import { uncompleteRequest } from "@/lib/task-undo";
+import { offerUndo, write } from "@/lib/undo";
 import { use24Hour, type ShownSettings, type Theme } from "@/lib/settings";
 import type { SliceSource, Task } from "@/lib/types";
 import { NewTaskForm } from "./NewTaskForm";
@@ -38,6 +40,13 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
   const taskIds = new Set(tasks.map((t) => t.id));
   const doneVisible = new Set([...done].filter((id) => taskIds.has(id)));
 
+  const undone = (id: string) =>
+    setDone((s) => {
+      const n = new Set(s);
+      n.delete(id);
+      return n;
+    });
+
   const mark = (id: string) => {
     setError(null);
     setBusy((s) => new Set(s).add(id));
@@ -46,13 +55,16 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
       .then((res) => {
         if (!res.ok) throw new Error();
         router.refresh();
+        const task = tasks.find((t) => t.id === id);
+        if (!task) return;
+        const back = uncompleteRequest(task);
+        offerUndo("Task completed", async () => {
+          await write(back.path, back.method, back.body);
+          undone(id);
+        });
       })
       .catch(() => {
-        setDone((s) => {
-          const n = new Set(s);
-          n.delete(id);
-          return n;
-        });
+        undone(id);
         setError("Couldn't complete that task — try again.");
       })
       .finally(() => {
@@ -182,6 +194,11 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
 function AddTask({ theme, todayIso, onAdded }: { theme: Theme; todayIso: string; onAdded: () => void }) {
   const btn = useRef<HTMLButtonElement>(null);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const [typed, setTyped] = useState(false);
+  const close = () => {
+    setAnchor(null);
+    setTyped(false);
+  };
 
   return (
     <>
@@ -194,18 +211,19 @@ function AddTask({ theme, todayIso, onAdded }: { theme: Theme; todayIso: string;
         + Add task
       </button>
       {anchor ? (
-        <Popover anchor={anchor} theme={theme} onClose={() => setAnchor(null)} ariaLabel="New task" className="taskedit">
+        <Popover anchor={anchor} theme={theme} onClose={close} hold={typed} ariaLabel="New task" className="taskedit">
           <div className="taskedit__head">
             <span className="taskedit__eyebrow">New task</span>
-            <button type="button" className="taskedit__close" onClick={() => setAnchor(null)} aria-label="Close">
+            <button type="button" className="taskedit__close" onClick={close} aria-label="Close">
               ×
             </button>
           </div>
           <NewTaskForm
             todayIso={todayIso}
-            onCancel={() => setAnchor(null)}
+            onCancel={close}
+            onDirty={setTyped}
             onAdded={() => {
-              setAnchor(null);
+              close();
               onAdded();
             }}
           />

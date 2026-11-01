@@ -4,6 +4,8 @@ import { useEffect, useMemo, useRef, useState, type KeyboardEvent, type ReactNod
 import { useRouter } from "next/navigation";
 import { formatHour } from "@/lib/format";
 import { loadTaskMeta, type TaskMeta } from "@/lib/task-meta";
+import { changeText, revertPatch } from "@/lib/task-undo";
+import { offerUndo, write } from "@/lib/undo";
 import type { Theme } from "@/lib/settings";
 import type { Project, Section, Task } from "@/lib/types";
 import { Popover } from "./Popover";
@@ -46,9 +48,9 @@ function quickDates(todayIso: string) {
   return [
     { key: "today", label: "Today", date: todayIso },
     { key: "tomorrow", label: "Tomorrow", date: addDays(todayIso, 1) },
-    { key: "weekend", label: "This weekend", date: addDays(todayIso, (6 - dow + 7) % 7 || 7) },
+    { key: "weekend", label: "This weekend", date: addDays(todayIso, (6 - dow + 7) % 7) },
     { key: "nextweek", label: "Next week", date: addDays(todayIso, (1 - dow + 7) % 7 || 7) },
-  ] as const;
+  ].filter((d, i, all) => all.findIndex((x) => x.date === d.date) === i); // on a Saturday, "this weekend" is today
 }
 
 export function TaskMenu({
@@ -112,7 +114,12 @@ export function TaskMenu({
   const act = async (path: string, method: "PATCH" | "POST" | "DELETE", body?: unknown) => {
     if (await send(path, method, body)) onClose();
   };
-  const patch = (body: Record<string, unknown>) => act(`/api/tasks/${id}`, "PATCH", body);
+  const patch = async (body: Record<string, unknown>) => {
+    if (!(await send(`/api/tasks/${id}`, "PATCH", body))) return;
+    const back = revertPatch(task, body);
+    if (back) offerUndo(changeText(body), () => write(`/api/tasks/${id}`, "PATCH", back));
+    onClose();
+  };
 
   const setDate = (date: string | null) => patch({ date });
   const setP = (p: TodoistP) => {

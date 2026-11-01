@@ -31,7 +31,7 @@ export async function GET(request: Request) {
     await writeGoogleTokens(tokens);
     home.searchParams.set("google", "connected");
   } catch (err) {
-    home.searchParams.set("google", `error:${encodeURIComponent((err as Error).message)}`);
+    home.searchParams.set("google", `error:${(err as Error).message}`);
   }
 
   return NextResponse.redirect(home);

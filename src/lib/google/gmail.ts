@@ -110,6 +110,9 @@ function classify(
   return { note: "FYI", urgency: 3 };
 }
 
+/** Enough that a count on the page is the real one on any normal day. */
+const MAX_REPLIES = 20;
+
 export async function getReplies(): Promise<Reply[]> {
   const listUrl = new URL(`${BASE}/messages`);
   listUrl.searchParams.set("q", config.google.gmailQuery);
@@ -164,7 +167,7 @@ export async function getReplies(): Promise<Reply[]> {
         a.urgency - b.urgency ||
         ageMinutes(a.age) - ageMinutes(b.age),
     )
-    .slice(0, 6);
+    .slice(0, MAX_REPLIES);
 }
 
 /** Rough re-parse of "18h" / "2d" back to minutes, for sorting only. */
@@ -244,6 +247,23 @@ export async function trashMessage(id: string): Promise<void> {
     method: "POST",
   });
   if (!res.ok) throw new Error(`Gmail trash responded ${res.status}`);
+}
+
+/** Undo of `trashMessage`. */
+export async function untrashMessage(id: string): Promise<void> {
+  const res = await googleFetch(`${BASE}/messages/${id}/untrash`, { method: "POST" });
+  if (!res.ok) throw new Error(`Gmail untrash responded ${res.status}`);
+}
+
+/** Undo of `moveMessageToLabel`: back in the inbox, off the label. */
+export async function unmoveMessage(id: string, labelName: string): Promise<void> {
+  const labelId = await findOrCreateLabelId(labelName);
+  const res = await googleFetch(`${BASE}/messages/${id}/modify`, {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ addLabelIds: ["INBOX"], removeLabelIds: [labelId] }),
+  });
+  if (!res.ok) throw new Error(`Gmail modify responded ${res.status}`);
 }
 
 /**
@@ -441,10 +461,33 @@ export async function clearTodoLabel(id: string): Promise<void> {
   if (label) await modifyThread(id, { removeLabelIds: [label] });
 }
 
-/** Filed: under `labelName` (created if new), out of the to-do label and out of the inbox. */
-export async function fileTodoThread(id: string, labelName: string): Promise<void> {
+/**
+ * Filed: under `labelName` (created if new), out of the to-do label and out of the inbox.
+ * Resolves to whether it was in the inbox, so an undo puts it back only if it was.
+ */
+export async function fileTodoThread(id: string, labelName: string): Promise<boolean> {
   const [target, todo] = await Promise.all([findOrCreateLabelId(labelName), todoLabelId()]);
+  const before = await googleFetch(`${BASE}/threads/${id}?format=minimal`);
+  if (!before.ok) throw new Error(`Gmail thread responded ${before.status}`);
+  const { messages = [] } = (await before.json()) as { messages?: { labelIds?: string[] }[] };
+  const wasInbox = messages.some((m) => m.labelIds?.includes("INBOX"));
   await modifyThread(id, { addLabelIds: [target], removeLabelIds: [...(todo ? [todo] : []), "INBOX"] });
+  return wasInbox;
+}
+
+/** Undo of clearing or filing: back on the to-do label, and off `labelName` if it was filed. */
+export async function restoreTodoThread(id: string, labelName?: string, inbox = false): Promise<void> {
+  const [todo, target] = await Promise.all([todoLabelId(), labelName ? findOrCreateLabelId(labelName) : null]);
+  await modifyThread(id, {
+    addLabelIds: [...(todo ? [todo] : []), ...(inbox ? ["INBOX"] : [])],
+    removeLabelIds: target ? [target] : [],
+  });
+}
+
+/** Undo of `trashThread`. */
+export async function untrashThread(id: string): Promise<void> {
+  const res = await googleFetch(`${BASE}/threads/${id}/untrash`, { method: "POST" });
+  if (!res.ok) throw new Error(`Gmail untrash responded ${res.status}`);
 }
 
 /** The whole conversation goes to Trash, recoverable in Gmail for 30 days. */

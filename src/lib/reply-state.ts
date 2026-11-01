@@ -66,6 +66,13 @@ export function snoozeReply(id: string, hours = SNOOZE_HOURS) {
   set(make(snoozed, s.cleared));
 }
 
+export function unsnoozeReply(id: string) {
+  const s = current();
+  const snoozed = Object.fromEntries(Object.entries(s.snoozed).filter(([k]) => k !== id));
+  writeSnoozed(snoozed);
+  set(make(snoozed, s.cleared));
+}
+
 export function hideReply(id: string) {
   const s = current();
   set(make(s.snoozed, new Set(s.cleared).add(id)));

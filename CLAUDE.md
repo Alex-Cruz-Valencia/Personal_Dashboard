@@ -274,6 +274,17 @@
   says ok. `EventDetail` debounces reschedules (one PATCH once fields settle);
   events clipped to 00:00/24:00 (they span past today) can't be dragged or
   re-timed here.
+- **Undo** (`lib/undo.ts`, `UndoToast`, reverse logic in `lib/task-undo.ts`): one pending offer, shown
+  eight seconds; writes happen at once and undo is a real reverse write. Any new one-click write calls
+  `offerUndo(text, fn)`, unless it can't be reversed (deleting a Todoist task), which keeps a confirm.
+  Reverse routes: `POST /api/tasks/[id]/reopen`, `POST /api/replies/[id]/restore`,
+  `POST /api/clarify/thread/[id]` (`untrash`, `restore`), PATCH `/api/events/[id]` `{ restore: true }`.
+- **Tests:** `npm test` (vitest, `src/**/*.test.ts`). Pure logic in `src/lib` gets a test with any change.
+- **`BACKLOG.md`** holds open product work and why it's ranked as it is; decided work moves to
+  `DESIGN_LOG.md`. Add to it when something is deferred.
+- `getAgenda` and `getWeekAgendas` leave out declined events and timed working-location markers.
+  `AgendaEvent.free` (Google "free") stays drawn but is out of conflicts, free gaps and booked hours.
+- `Popover`'s `hold` keeps it open on outside click and Esc while a form has unsaved content.
 - **Never send email.** Drafts only. `googleFetch` calls `assertNoSend`
   (`src/lib/google/no-send.ts`, which also blocks the `/upload/...send` form and
   any `/batch` request) and `scripts/check-no-send.mjs` runs before

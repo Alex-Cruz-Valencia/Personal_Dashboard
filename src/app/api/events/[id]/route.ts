@@ -1,7 +1,7 @@
 import { revalidateTag } from "next/cache";
 import { NextResponse } from "next/server";
 import { features } from "@/lib/config";
-import { CALENDAR_TAG, deleteEvent, getEventDetails, setRsvp, updateEvent, type EventPatch } from "@/lib/google/calendar";
+import { CALENDAR_TAG, deleteEvent, getEventDetails, restoreEvent, setRsvp, updateEvent, type EventPatch } from "@/lib/google/calendar";
 import { resolveLocation } from "@/lib/location";
 import { rejectCrossSite } from "@/lib/request-guard";
 
@@ -25,6 +25,8 @@ interface PatchBody {
   endTime?: string;
   /** Answer the invitation (this occurrence). */
   rsvp?: "accepted" | "declined" | "tentative";
+  /** Bring back an event just deleted here. */
+  restore?: boolean;
 }
 
 /** What the event card loads when it opens: repeat rule, guests, reminders, calendar. */
@@ -58,6 +60,7 @@ export async function PATCH(
   } catch {
     return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
   }
+  if (!body || typeof body !== "object") return NextResponse.json({ error: "Invalid JSON body" }, { status: 400 });
 
   if (body.rsvp !== undefined) {
     if (!["accepted", "declined", "tentative"].includes(body.rsvp)) {
@@ -65,6 +68,16 @@ export async function PATCH(
     }
     try {
       await setRsvp(id, body.rsvp);
+      revalidateTag(CALENDAR_TAG, { expire: 0 });
+      return NextResponse.json({ ok: true });
+    } catch (err) {
+      return NextResponse.json({ error: (err as Error).message }, { status: 502 });
+    }
+  }
+
+  if (body.restore === true) {
+    try {
+      await restoreEvent(id);
       revalidateTag(CALENDAR_TAG, { expire: 0 });
       return NextResponse.json({ ok: true });
     } catch (err) {

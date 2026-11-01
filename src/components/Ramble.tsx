@@ -42,6 +42,11 @@ function speechApi(): (new () => Recognition) | null {
 export function RambleButton({ theme, todayIso, onAdded }: { theme: Theme; todayIso: string; onAdded: () => void }) {
   const btn = useRef<HTMLButtonElement>(null);
   const [anchor, setAnchor] = useState<DOMRect | null>(null);
+  const [said, setSaid] = useState(false);
+  const close = () => {
+    setAnchor(null);
+    setSaid(false);
+  };
   return (
     <>
       <button
@@ -54,12 +59,13 @@ export function RambleButton({ theme, todayIso, onAdded }: { theme: Theme; today
         <MicIcon /> Ramble
       </button>
       {anchor ? (
-        <Popover anchor={anchor} theme={theme} onClose={() => setAnchor(null)} ariaLabel="Ramble" className="taskedit ramble">
+        <Popover anchor={anchor} theme={theme} onClose={close} hold={said} ariaLabel="Ramble" className="taskedit ramble">
           <RamblePanel
             todayIso={todayIso}
-            onClose={() => setAnchor(null)}
+            onClose={close}
+            onDirty={setSaid}
             onAdded={() => {
-              setAnchor(null);
+              close();
               onAdded();
             }}
           />
@@ -74,7 +80,7 @@ type Row = RambleTask & { on: boolean; dueText?: string; deadline?: string; sect
 
 const rowDue = (t: Row) => t.dueText ?? (t.dueDate ? (t.time ? `${t.dueDate} ${t.time}` : t.dueDate) : "");
 
-function RamblePanel({ todayIso, onClose, onAdded }: { todayIso: string; onClose: () => void; onAdded: () => void }) {
+function RamblePanel({ todayIso, onClose, onDirty, onAdded }: { todayIso: string; onClose: () => void; onDirty: (dirty: boolean) => void; onAdded: () => void }) {
   const [text, setText] = useState("");
   const [interim, setInterim] = useState("");
   const [listening, setListening] = useState(false);
@@ -87,6 +93,11 @@ function RamblePanel({ todayIso, onClose, onAdded }: { todayIso: string; onClose
   const rec = useRef<Recognition | null>(null);
   // Read after mount: the server doesn't know whether this browser can listen.
   const [canListen, setCanListen] = useState(false);
+
+  const dirty = Boolean(text.trim() || interim || tasks?.length);
+  useEffect(() => {
+    onDirty(dirty);
+  }, [dirty, onDirty]);
   useEffect(() => {
     let alive = true;
     loadTaskMeta().then((m) => alive && setMeta(m));

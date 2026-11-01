@@ -9,6 +9,64 @@ for retrospectives, write-ups, and interview prep.
 Newest first. Each entry:
 
 ```
+## 2026-11-01 — Undo after writes
+
+**Problem** — The dashboard does more and more in one click: completing tasks, trashing and
+filing email, moving events. A slip meant opening Gmail, Todoist or Calendar to repair it, and the
+more actions moved into one click, the more care each click needed.
+
+**Decision** — One small "Task completed · Undo" sheet at the bottom of the page for eight seconds
+(hover holds it, ⌘Z works). It's offered for completing a task; date, priority, deadline and move
+from the task menu; trash, move and "Wait a day" on email; everything in Clarify that has a reverse;
+and moving, adding or deleting an event. Only the latest action can be undone. Every undo is a real
+reverse write, not a delayed send.
+
+**Reasoning** — Undo removes the fear from fast actions without adding a confirm step, which is what
+keeps triage quick. One slot matches Gmail and keeps the page calm. Doing the write at once means a
+closed tab can't lose it, and the state shown is always the real one.
+
+**Alternatives considered** — Delaying each write until the toast expires is simpler to reverse,
+but a closed laptop would silently drop actions. A history list of past actions is more powerful
+and more to look at. Confirm dialogs on everything would slow the thing this page is for.
+
+**Tradeoffs / open questions** — Deleting a Todoist task has no reverse, so it keeps its confirm
+and offers no undo. Edits typed in an open editor aren't covered: the old value is on screen and can
+be changed back there. Completing a repeating task is undone by putting its date back, because
+reopening one does nothing; Todoist's completion history keeps the entry. Saving a Clarify task puts
+it back in the Inbox with its old fields, and undoing a date clear on a repeating task restores the
+rule from today rather than the exact next date.
+
+## 2026-11-01 — Declined and "free" events stop counting as busy
+
+**Problem** — A declined meeting still drew on the calendar, raised conflicts and used up free
+time. So did anything marked "free" in Google, like a hold or a reminder.
+
+**Decision** — Declined events and timed working-location markers are hidden. Free events stay
+drawn but can't conflict, don't use up free time and don't count as booked.
+
+**Reasoning** — The page answers "what do I have to be at". A declined meeting is a no, and a free
+event is a note to self that's still worth seeing.
+
+**Alternatives considered** — Drawing declined events faintly, as Google does, keeps the option of
+changing your mind, at the cost of clutter on the first screen.
+
+**Tradeoffs / open questions** — Saying "Not going" makes an event disappear from the dashboard, so
+changing your mind later happens in Google Calendar.
+
+## 2026-11-01 — A stray click no longer loses a new task or a ramble
+
+**Problem** — The new task form and Ramble closed on any outside click or Esc, taking what you'd
+typed or said with them.
+
+**Decision** — Once there's content, only their own buttons close them. In Clarify, Esc from a field
+leaves the field, and a second Esc leaves Clarify.
+
+**Reasoning** — Losing a thought is far worse than one extra click to close. It extends the rule
+that an in-progress edit must never vanish, which until now covered only the editors.
+
+**Alternatives considered** — Keeping a saved draft would survive a closed tab too, but adds a state
+to explain for something that's rarely worth keeping past the moment.
+
 ## 2026-11-01 — Needs attention: one line of counts instead of a row of cards
 
 **Problem** — Each attention item was its own tinted card with three lines of text. Long

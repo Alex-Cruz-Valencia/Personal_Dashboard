@@ -14,6 +14,7 @@ import { TaskDetailProvider } from "./TaskDetail";
 import { SourceNotice } from "./SourceNotice";
 import { TaskList } from "./TaskList";
 import { TopUnified } from "./TopUnified";
+import { UndoToast } from "./UndoToast";
 import { WeatherCard } from "./WeatherCard";
 import { WeatherScene } from "./WeatherScene";
 import { WeekStrip } from "./WeekStrip";
@@ -21,13 +22,15 @@ import { WeekStrip } from "./WeekStrip";
 interface DashboardProps {
   data: DashboardData;
   settings: DashboardSettings;
+  /** Coming back from a Google sign-in that didn't work. */
+  connectFailed?: boolean;
 }
 
 /**
  * The full morning view. Layout and class names mirror the Claude Design
  * source exactly — see `globals.css` for the ported stylesheet.
  */
-export function Dashboard({ data, settings: chosen }: DashboardProps) {
+export function Dashboard({ data, settings: chosen, connectFailed = false }: DashboardProps) {
   // "timed" resolves to light or dark by the sun for this render; AutoRefresh's
   // minute re-render flips it at sunrise / sunset. The panel still sees the choice.
   const settings: ShownSettings = { ...chosen, theme: shownTheme(chosen.theme, data.today.nowHour, data.weather) };
@@ -97,7 +100,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
             </div>
           )}
 
-          <SourceNotice sources={data.sources} reconnect={data.googleReconnect} />
+          <SourceNotice sources={data.sources} reconnect={data.googleReconnect} connectFailed={connectFailed} />
 
           {/* Sample rows never count as things that need you; the notice above says what's missing. */}
           <AttentionStrip
@@ -144,6 +147,7 @@ export function Dashboard({ data, settings: chosen }: DashboardProps) {
               )
             }
           />
+          <UndoToast />
         </div>
       </TaskDetailProvider>
     </EventDetailProvider>

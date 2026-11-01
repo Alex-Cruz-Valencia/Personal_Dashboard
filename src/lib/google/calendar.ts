@@ -42,6 +42,8 @@ interface GCalEvent {
   guestsCanModify?: boolean;
   reminders?: { useDefault?: boolean; overrides?: { minutes?: number }[] };
   eventType?: string;
+  /** "transparent": shown as free in Google Calendar. */
+  transparency?: string;
   /** Set only when the event has its own color ("1"–"11"); otherwise it shows its calendar's. */
   colorId?: string;
   conferenceData?: {
@@ -165,6 +167,10 @@ function dedupeEvents<T extends { event: GCalEvent }>(events: T[]): T[] {
 
 const FOCUS_RE = /\b(focus|deep work|deep-work|heads?[- ]down|no meeting|writing|block)\b/i;
 
+/** Declined meetings and timed working-location markers aren't part of the day. */
+const isSkipped = (e: GCalEvent) =>
+  e.eventType === "workingLocation" || Boolean(e.attendees?.some((a) => a.self && a.responseStatus === "declined"));
+
 function classify(event: GCalEvent): EventKind {
   const summary = event.summary ?? "";
   if (event.eventType === "focusTime" || FOCUS_RE.test(summary)) return "focus";
@@ -187,7 +193,9 @@ function whereText(event: GCalEvent, kind: EventKind): string {
   return kind === "focus" ? "Blocked" : "Personal";
 }
 
-const URL_RE = /https?:\/\/[^\s<>"')]+/i;
+const URL_RE = /https?:\/\/[^\s<>"')]+/gi;
+const VIDEO_HOST = /^https?:\/\/([\w-]+\.)*(zoom\.us|meet\.google\.com|teams\.microsoft\.com|teams\.live\.com|webex\.com|whereby\.com|chime\.aws|meet\.jit\.si|bluejeans\.com|gotomeeting\.com)\//i;
+const videoLinkIn = (text?: string) => text?.match(URL_RE)?.find((u) => VIDEO_HOST.test(u));
 
 /** Best video-call URL for the event, if any. */
 function meetingLinkOf(event: GCalEvent): string | undefined {
@@ -196,9 +204,7 @@ function meetingLinkOf(event: GCalEvent): string | undefined {
     (p) => p.entryPointType === "video" && p.uri,
   );
   if (video?.uri) return video.uri;
-  const inLocation = event.location?.match(URL_RE)?.[0];
-  if (inLocation) return inLocation;
-  return event.description?.match(URL_RE)?.[0];
+  return videoLinkIn(event.location) ?? videoLinkIn(event.description);
 }
 
 /** Google returns description as HTML — flatten it to plain text. */
@@ -229,6 +235,7 @@ function cardFields(e: GCalEvent, kind: EventKind) {
     description: toPlainText(e.description),
     attendeeCount: others > 0 ? others + 1 : undefined,
     htmlLink: e.htmlLink,
+    free: e.transparency === "transparent" ? true : undefined,
   };
 }
 
@@ -285,7 +292,7 @@ export async function getAgenda(
 
   return dedupeEvents(
     events.filter(
-      ({ event: e }) => e.status !== "cancelled" && e.start?.dateTime && e.end?.dateTime,
+      ({ event: e }) => e.status !== "cancelled" && e.start?.dateTime && e.end?.dateTime && !isSkipped(e),
     ),
   )
     .map<AgendaEvent>(({ calendarId, calendarColor, event: e }) => {
@@ -341,6 +348,7 @@ export async function getWeekAgendas(
     throw new Error("Every discovered calendar failed");
   }
 
+  const seen = dayIsos.map(() => new Set<string>());
   results.forEach((result, i) => {
     if (result.status !== "fulfilled") return;
     for (const e of result.value) {
@@ -349,13 +357,19 @@ export async function getWeekAgendas(
           if (coversDay(e, day)) byDay[d].push(allDayEvent(calendarIds[i], calendars[i].color, e));
         });
       }
-      if (e.status === "cancelled" || !e.start?.dateTime || !e.end?.dateTime) continue;
+      if (e.status === "cancelled" || !e.start?.dateTime || !e.end?.dateTime || isSkipped(e)) continue;
       const startTs = e.start.dateTime;
       const endTs = e.end.dateTime;
       dayIsos.forEach((day, d) => {
         const start = decimalHourForTimestamp(startTs, day, timezone);
         const end = decimalHourForTimestamp(endTs, day, timezone);
         if (end <= start) return; // not on this day (both clamp to the same edge)
+        // One invitation on two calendars: same rule as `dedupeEvents`.
+        if (e.iCalUID) {
+          const key = `${e.iCalUID}|${startTs}`;
+          if (seen[d].has(key)) return;
+          seen[d].add(key);
+        }
         const kind = classify(e);
         byDay[d].push({
           id: compositeId(calendarIds[i], e.id),
@@ -553,6 +567,17 @@ export interface EventPatch {
   /** Rescheduling: both are required together (Google needs a valid pair). */
   start?: EventTimePatch;
   end?: EventTimePatch;
+}
+
+/** Undo of `deleteEvent`: Google keeps a deleted event as "cancelled", so this brings it back. */
+export async function restoreEvent(id: string): Promise<void> {
+  const { calendarId, eventId } = parseCompositeId(id);
+  const res = await googleFetch(eventUrl(calendarId, eventId), {
+    method: "PATCH",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ status: "confirmed" }),
+  });
+  if (!res.ok) throw new Error(writeErrorMessage("update", res.status));
 }
 
 /** Same single-occurrence semantics as `deleteEvent`. */

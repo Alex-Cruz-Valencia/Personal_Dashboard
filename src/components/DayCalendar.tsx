@@ -9,6 +9,7 @@ import { minutesLabel } from "@/lib/plan";
 import type { ShownSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
 import type { AgendaEvent, ArcWindow, CalendarLegendItem, SliceSource, TodayInfo, WeekDay } from "@/lib/types";
+import { offerUndo, write } from "@/lib/undo";
 import { useNowSeconds } from "@/lib/use-now";
 import { EndOfDay } from "./EndOfDay";
 import { useEventDetail } from "./EventDetail";
@@ -283,6 +284,7 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
   const suppressClick = useRef(false);
 
   const saveMove = async (id: string, span: Span) => {
+    const was = rawAgenda.find((e) => e.id === id);
     setMoved((m) => ({ ...m, [id]: { ...span, base: rawAgenda } }));
     try {
       const res = await fetch(`/api/events/${encodeURIComponent(id)}`, {
@@ -296,6 +298,16 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
       });
       if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error || "Couldn't move that event.");
       router.refresh();
+      if (was) {
+        offerUndo("Event moved", async () => {
+          await write(`/api/events/${encodeURIComponent(id)}`, "PATCH", {
+            date: today.iso,
+            startTime: decimalHourToTimeInput(was.start),
+            endTime: decimalHourToTimeInput(was.end),
+          });
+          setMoved((m) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== id)));
+        });
+      }
     } catch (e) {
       setMoved((m) => Object.fromEntries(Object.entries(m).filter(([k]) => k !== id)));
       tell((e as Error).message);
@@ -324,9 +336,11 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
         }),
       });
       if (!res.ok) throw new Error(((await res.json().catch(() => ({}))) as { error?: string }).error || "Couldn't add that event.");
+      const { id } = (await res.json()) as { id: string };
       setDraft(null);
       setDraftName("");
       router.refresh();
+      offerUndo("Event added", () => write(`/api/events/${encodeURIComponent(id)}`, "DELETE"));
     } catch (e) {
       tell((e as Error).message);
     }
@@ -575,7 +589,8 @@ export function DayCalendar({ agenda: rawAgenda, allDay = [], arc, today, settin
               const end = dragging ? dragging.end : e.end;
               // An event running past either end of today is drawn clipped; dragging it
               // would save the clipped times and cut the real event short.
-              const canEdit = editable && Boolean(e.id) && e.start > 0 && e.end < 24;
+              // The same goes for one past the hours shown: there's no room to drag it into.
+              const canEdit = editable && Boolean(e.id) && e.start > 0 && e.end < 24 && e.start >= arc.from && e.end <= maxHour;
               const top = y(start);
               const h = Math.max(20, y(end) - top - 2);
               const { lane, lanes: n } = lanes[i];
