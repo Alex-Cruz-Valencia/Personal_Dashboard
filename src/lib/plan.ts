@@ -27,6 +27,21 @@ export function taskMarker(taskId: string): string {
   return `[todoist:${taskId}]`;
 }
 
+const BLOCK_MARKER = /\[todoist:([\w-]+)\]/;
+
+/** A block made by dragging a task, as opposed to an event of its own. */
+export const isTaskBlock = (e: AgendaEvent) => BLOCK_MARKER.test(e.description ?? "");
+
+/** The event each task is blocked on, read back from the marker. The earliest wins if there are several. */
+export function blockedTasks(agenda: AgendaEvent[]): Map<string, AgendaEvent> {
+  const out = new Map<string, AgendaEvent>();
+  for (const e of [...agenda].sort((a, b) => a.start - b.start)) {
+    const id = BLOCK_MARKER.exec(e.description ?? "")?.[1];
+    if (id && !out.has(id)) out.set(id, e);
+  }
+  return out;
+}
+
 /**
  * The countdown at the top of the card. Deliberately name-free — the day arc
  * already says WHAT; this only says WHEN.

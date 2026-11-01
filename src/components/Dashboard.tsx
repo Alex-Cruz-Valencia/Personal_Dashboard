@@ -139,7 +139,7 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
               focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
               legend={data.calendars}
             />
-            <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} ai={data.ai} clarifyCount={data.clarifyCount} todayIso={data.today.iso} nowHour={data.today.nowHour} tomorrow={tomorrow} />
+            <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} ai={data.ai} clarifyCount={data.clarifyCount} todayIso={data.today.iso} nowHour={data.today.nowHour} tomorrow={tomorrow} agenda={data.agenda} canPlan={data.sources.calendar === "live"} />
           </div>
 
           {data.week ? <WeekStrip days={data.week} use24={use24} gcal={settings.calLook === "google"} /> : null}

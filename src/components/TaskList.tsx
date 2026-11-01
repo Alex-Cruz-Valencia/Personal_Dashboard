@@ -5,10 +5,13 @@ import { useRouter } from "next/navigation";
 import { buildTasks, taskCountLabel } from "@/lib/format";
 import { reviewMode, reviewTasks } from "@/lib/day-review";
 import { setReviewOpen, useReviewOpen } from "@/lib/review-state";
+import { formatHour } from "@/lib/format";
+import { blockedTasks } from "@/lib/plan";
+import { setDraggedTask } from "@/lib/task-drag";
 import { uncompleteRequest } from "@/lib/task-undo";
 import { offerUndo, write } from "@/lib/undo";
 import { use24Hour, type ShownSettings, type Theme } from "@/lib/settings";
-import type { SliceSource, Task, WeekDay } from "@/lib/types";
+import type { AgendaEvent, SliceSource, Task, WeekDay } from "@/lib/types";
 import { NewTaskForm } from "./NewTaskForm";
 import { Popover } from "./Popover";
 import { RambleButton } from "./Ramble";
@@ -30,9 +33,13 @@ interface TaskListProps {
   /** For the day review's mode, and what its end says about tomorrow. */
   nowHour: number;
   tomorrow: WeekDay | null;
+  /** Today's events, to show which tasks are already blocked on the calendar. */
+  agenda: AgendaEvent[];
+  /** The calendar is live, so a task can be dragged onto it. */
+  canPlan: boolean;
 }
 
-export function TaskList({ tasks, settings, source, ai = false, clarifyCount = null, todayIso, nowHour, tomorrow }: TaskListProps) {
+export function TaskList({ tasks, settings, source, ai = false, clarifyCount = null, todayIso, nowHour, tomorrow, agenda, canPlan }: TaskListProps) {
   const router = useRouter();
   const { openMenu, isSelected } = useTaskDetail();
   const [done, setDone] = useState<Set<string>>(new Set());
@@ -46,6 +53,7 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
   const rows = buildTasks(tasks, settings.density, source === "live" ? use24 : undefined);
   const taskIds = new Set(tasks.map((t) => t.id));
   const doneVisible = new Set([...done].filter((id) => taskIds.has(id)));
+  const blocked = blockedTasks(agenda);
 
   const undone = (id: string) =>
     setDone((s) => {
@@ -126,12 +134,21 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
             const isBusy = id ? busy.has(id) : false;
             const canCheck = Boolean(id) && !isBusy && !isDone;
             const task = tasks.find((x) => x.id === id);
+            const block = blocked.get(id);
             return (
               <li
                 key={id || `task${i}`}
                 className={`${t.cls}${isDone ? " task--done" : ""}${
                   task && isSelected(task) ? " task--selected" : ""
                 }`}
+                draggable={canPlan && Boolean(task) && !isDone}
+                onDragStart={(e) => {
+                  if (!task) return;
+                  setDraggedTask(task);
+                  e.dataTransfer.effectAllowed = "copy";
+                  e.dataTransfer.setData("text/plain", task.name);
+                }}
+                onDragEnd={() => setDraggedTask(null)}
                 onContextMenu={(e) => {
                   // Right-click anywhere on the row: Todoist's task menu, at the pointer.
                   const body = e.currentTarget.querySelector<HTMLElement>(".task__body");
@@ -158,7 +175,7 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
                   className="task__body"
                   role={task ? "button" : undefined}
                   tabIndex={task ? 0 : -1}
-                  title={task ? "Task menu" : undefined}
+                  title={task ? (canPlan ? "Click for the menu, or drag onto the calendar" : "Task menu") : undefined}
                   aria-haspopup={task ? "menu" : undefined}
                   // A click opens the same Todoist menu as a right-click; its Edit opens the full editor.
                   onClick={(e) => task && openMenu(task, e.clientX, e.clientY, e.currentTarget)}
@@ -173,6 +190,7 @@ export function TaskList({ tasks, settings, source, ai = false, clarifyCount = n
                   <div className="task__name">{t.name}</div>
                   <div className="task__meta">
                     {t.dueShown ? <span className="task__when">{t.dueShown}</span> : null}
+                    {block ? <span className="task__block">{formatHour(block.start, use24)} on calendar</span> : null}
                     {t.deadlineLabel ? (
                       <span className="task__deadline" title="Deadline">
                         <svg viewBox="0 0 16 16" width="12" height="12" aria-hidden="true">

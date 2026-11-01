@@ -238,7 +238,7 @@ export function EventRead({
 
       {description ? (
         <Row icon={<Notes />}>
-          <div className="gevent__notes"><Linked text={description} /></div>
+          <div className="gevent__notes"><Linked text={description.replace(/\s*\[todoist:[\w-]+\]/, "")} /></div>
         </Row>
       ) : null}
 
