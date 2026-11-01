@@ -5,6 +5,7 @@ import type { DashboardSettings } from "@/lib/settings";
 import type { AgendaEvent, ArcWindow, Weather } from "@/lib/types";
 import { TempCurve } from "./TempCurve";
 import { WeatherScene } from "./WeatherScene";
+import { sceneSky } from "@/lib/day-part";
 
 interface WeatherCardProps {
   weather: Weather;
@@ -23,7 +24,7 @@ export function WeatherCard({ weather, arc, agenda, nowHour, settings }: Weather
   return (
     <section className="card weather">
       {settings.motion === "on" ? (
-        <WeatherScene sky={weather.sky} isDay={nowHour >= weather.sunrise && nowHour < weather.sunset} />
+        <WeatherScene sky={weather.sky} {...sceneSky(nowHour, weather, settings)} />
       ) : null}
       {weather.place ? (
         <div className="weather__place">

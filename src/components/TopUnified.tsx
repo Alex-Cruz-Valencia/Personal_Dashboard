@@ -1,3 +1,4 @@
+import { sceneSky } from "@/lib/day-part";
 import { dateLineFor, greetingFor } from "@/lib/format";
 import { use24Hour } from "@/lib/settings";
 import type { DashboardSettings, Theme } from "@/lib/settings";
@@ -15,13 +16,12 @@ import { AmbientButton } from "./Ambient";
  */
 export function TopUnified({ data, settings, theme, frozen }: { data: DashboardData; settings: DashboardSettings; theme: Theme; frozen: boolean }) {
   const { weather, today } = data;
-  const isDay = today.nowHour >= weather.sunrise && today.nowHour < weather.sunset;
   const use24 = use24Hour(settings);
   const mode = settings.topRow;
   const hl = highLow(weather);
   return (
     <section className={`card card--scene topuni topuni--${mode}`}>
-      {settings.motion === "on" ? <WeatherScene sky={weather.sky} isDay={isDay} /> : null}
+      {settings.motion === "on" ? <WeatherScene sky={weather.sky} {...sceneSky(today.nowHour, weather, settings)} /> : null}
       <div className="topuni__head">
         <div className="topuni__hello">
           <div className="hello__date">{dateLineFor(today.iso)}</div>
@@ -50,7 +50,7 @@ export function TopUnified({ data, settings, theme, frozen }: { data: DashboardD
         </div>
         <div className="hello__time">
           <ClockCard today={today} use24={use24Hour(settings)} frozen={frozen} />
-          <AmbientButton today={today} weather={weather} use24={use24Hour(settings)} theme={theme} frozen={frozen} />
+          <AmbientButton today={today} weather={weather} use24={use24Hour(settings)} theme={theme} frozen={frozen} settings={settings} />
         </div>
       </div>
       {mode === "brief" ? (

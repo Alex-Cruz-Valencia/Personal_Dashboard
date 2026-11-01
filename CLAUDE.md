@@ -127,6 +127,19 @@
   up to four lines from `briefLines()` (`src/lib/weather-brief.ts`): rain window against a meeting,
   wind, UV, sunset/light left, tomorrow after 5pm. Fed by optional `Weather` fields (`high`, `low`,
   `feelsLike`, `rainWindow`, `windPeak`, `uvPeak`, `tomorrow`) from `restOfToday()` in `open-meteo.ts`.
+- **Sky themes (2026-10-31):** ⚙ **Sky** (`settings.skyTheme`, `?skytheme=plain`, default "time"). `lib/day-part.ts`:
+  `dayPart()` gives dawn/morning/noon/afternoon/golden/dusk/night from the real sunrise and sunset, `skyTime()` adds
+  the sun's position; `WeatherScene` takes it as `time` (`data-part`, `--sun-x/y`). Palettes are `--sky-*` per part in
+  the "SKY THEMES" block at the end of `globals.css` (light, clay, dark, in that order); weather only veils them
+  (`--veil`, `--glow`). Colors the sky only, never cards or accents. `?part=golden` previews; `/sky?mode=dark|light|clay`
+  is the dev-only contact sheet. ⚙ **Sky time** (`settings.skyPart`, `?skypart=`) and **Sky weather** (`settings.skyWeather`,
+  `?skyweather=`) hold the sky at a pick (Night means the original sky and always shows the page dark; under Daylight the page follows the picked hour), "auto" by default; they change the sky only, never the clock, greeting or forecast
+  text, so scenes get `isDay` and `time` from `sceneSky()`. `Ambient` wears the same skies and follows the page's theme
+  and palette (`.ambient--sky`); its old sun-driven look remains under Plain. Glass's `SkyTint` is still separate.
+  **Night has no theme:** `sceneSky()` drops `time` then, so the original night sky, cards and Ambient stay untouched; don't add
+  a night palette. Partly cloudy, overcast and fog draw as clear under sky themes (no cloud cover or mist over the sky, and not offered in ⚙ Sky weather; Plain keeps them). Clear mornings, noons and afternoons get `Puff` clouds, and birds; noon and afternoon only get dark's blue and light's pale blue
+  (default; ⚙ **Light sky** `settings.lightSky`, `?lightsky=cream`, the one exception to no blue in light, with a clay counterpart).
+  Art stays in the background: working cards are 97% opaque under sky themes, the top card is see-through with its sky at 45%.
 - **Ambient** (`Ambient.tsx`): a full-screen clock over the sky (`WeatherScene` page variant with
   `fenced={false}` so meteors aren't cut out), opened from under the clock; any key/click exits.
 - **Top row (2026-10-30):** `settings.topRow` — "unified" (default, `TopUnified`: one

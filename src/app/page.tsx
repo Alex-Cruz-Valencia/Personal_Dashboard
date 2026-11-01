@@ -4,6 +4,7 @@ import { Dashboard } from "@/components/Dashboard";
 import { LocationSync } from "@/components/LocationSync";
 import { config } from "@/lib/config";
 import { getDashboardData } from "@/lib/dashboard-data";
+import { DAY_PARTS, partHour } from "@/lib/day-part";
 import { parseLocationOverride } from "@/lib/location";
 import { parseSkyPreview } from "@/lib/weather/codes";
 import { PREFS_COOKIE, parseSettings, readStoredSettings } from "@/lib/settings";
@@ -30,9 +31,11 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     use24: settings.timeFormat === "24-hour",
     windDown: settings.windDown,
   });
-  const sky = parseSkyPreview(sp);
-  // Preview only: ?now=14.5 shows the page as if it were 2:30pm (greeting, scenes, curve). The live clock still runs.
-  const previewNow = Number(typeof sp.now === "string" ? sp.now : NaN);
+  const sky = parseSkyPreview(sp) ?? (settings.skyWeather === "auto" ? null : { ...data.weather.sky, kind: settings.skyWeather });
+  // Preview only: ?now=14.5 shows the page as if it were 2:30pm (greeting, scenes, curve), and ?part=golden
+  // jumps to that part of today's real sun. The live clock still runs.
+  const part = DAY_PARTS.find((p) => p === sp.part);
+  const previewNow = part ? partHour(part, data.weather) : Number(typeof sp.now === "string" ? sp.now : NaN);
   const shown = Number.isFinite(previewNow) && previewNow >= 0 && previewNow < 24 ? { ...data, today: { ...data.today, nowHour: previewNow } } : data;
   return (
     <>
