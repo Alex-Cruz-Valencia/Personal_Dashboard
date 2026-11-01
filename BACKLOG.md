@@ -73,7 +73,7 @@ Nothing ordered. Pick from Later.
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
-| B-3 | Plan the day: drag a task onto the calendar | pending | 2026-11-01 |
+| B-3 | Plan the day: drag a task onto the calendar | #81 | 2026-11-01 |
 | B-4, B-7 | Day review: Overdue reset and End-of-day shutdown as one feature | #80 | 2026-11-01 |
 | B-8 | Suspected bugs checked: 7 fixed, 3 closed (below) | #79 | 2026-11-01 |
 | B-1 | Undo after writes | #78 | 2026-11-01 |
