@@ -18,6 +18,18 @@ Newest first. Each entry:
 **Tradeoffs / open questions** — what this costs, or what's still unresolved
 ```
 
+## 2026-11-02 — "That's the day" comes with the dark; the clock is the way into Ambient
+
+**Problem / trigger** — At 8:26pm on a November night, with every event over, the calendar still showed bare hours: the goodnight scene waited for the 9pm wind-down hour, though it had been dark for three hours. And the "Ambient" pill under the clock was a permanent control for something used now and then, and it pulled the eye.
+
+**Decision** — (1) The scene now starts at nightfall (the end of dusk, from the real sunset) or at wind-down, whichever is first. Wind-down at midnight still turns it off. (2) The Ambient button is gone; clicking the clock (or Enter/Space on it) opens Ambient. It keeps a pointer cursor, a tooltip and the focus ring, and nothing else.
+
+**Reasoning** — The scene was held back so it wouldn't appear mid-afternoon; nightfall keeps that promise in summer (after 9pm in June, so wind-down still rules) while matching what's outside in winter. It reuses the sun timing the sky themes already use. The clock is what Ambient shows, so it's the natural thing to click.
+
+**Alternatives considered** — An earlier default wind-down (also moves the wind-down note and the night review, which have their own reasons); a fixed clock hour like 6pm (wrong across seasons); hiding the button until hover (still a control that appears and moves things, and nothing to find on touch).
+
+**Tradeoffs / open questions** — Ambient is less discoverable now: nothing says the clock is clickable apart from the cursor and tooltip. On a winter evening with nothing left, "Plan tomorrow" arrives earlier too, which seems right.
+
 ## 2026-11-01 — Hiding an all-day banner from the dashboard
 
 **Problem** — All-day events like "Daylight Saving Time ends" sit above the calendar and take up

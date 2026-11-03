@@ -11,7 +11,7 @@ import { FocusProvider } from "./Focus";
 import { EventAlerts } from "./EventAlerts";
 import { EventDetailProvider } from "./EventDetail";
 import { Footline } from "./Footline";
-import { AmbientButton } from "./Ambient";
+import { AmbientClock } from "./Ambient";
 import { HelloCard } from "./HelloCard";
 import { TaskDetailProvider } from "./TaskDetail";
 import { ReviewPrompt } from "./ReviewPrompt";
@@ -94,11 +94,13 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
                   ) : null
                 }
               >
-                <ClockCard
-                  today={data.today}
-                  use24={use24}
-                  frozen={frozen}
-                />
+                <AmbientClock today={data.today} weather={data.weather} use24={use24} theme={settings.theme} frozen={frozen} settings={settings}>
+                  <ClockCard
+                    today={data.today}
+                    use24={use24}
+                    frozen={frozen}
+                  />
+                </AmbientClock>
               </HelloCard>
               <WeatherCard
                 weather={data.weather}
@@ -142,6 +144,7 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
               source={data.sources.calendar}
               reconnect={data.googleReconnect}
               tomorrow={tomorrow}
+              sunset={data.weather.sunset}
               focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
             />
             <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} ai={data.ai} clarifyCount={data.clarifyCount} todayIso={data.today.iso} nowHour={data.today.nowHour} tomorrow={tomorrow} agenda={data.agenda} canPlan={data.sources.calendar === "live"} />
@@ -154,11 +157,6 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
             today={data.today}
             settings={chosen}
             shownTheme={settings.theme}
-            ambient={
-              settings.topRow !== "classic" ? null : (
-                <AmbientButton today={data.today} weather={data.weather} use24={use24} theme={settings.theme} frozen={frozen} settings={settings} />
-              )
-            }
           />
           <UndoToast />
           {data.sources.calendar === "live" ? <EventAlerts agenda={data.agenda} today={data.today} use24={use24} /> : null}

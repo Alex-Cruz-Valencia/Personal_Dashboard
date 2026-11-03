@@ -154,7 +154,8 @@
   (default; ⚙ **Light sky** `settings.lightSky`, `?lightsky=cream`, the one exception to no blue in light, with a clay counterpart).
   Art stays in the background: working cards are 97% opaque under sky themes, the top card is see-through with its sky at 45%.
 - **Ambient** (`Ambient.tsx`): a full-screen clock over the sky (`WeatherScene` page variant with
-  `fenced={false}` so meteors aren't cut out), opened from under the clock; any key/click exits.
+  `fenced={false}` so meteors aren't cut out), opened by clicking the clock (`AmbientClock`, Enter/Space
+  too; no button on the page); any key/click exits.
 - **Top row (2026-10-30):** `settings.topRow` — "unified" (default, `TopUnified`: one
   scenic card with greeting, clock, a one-line weather summary and the day's temperature
   curve as a full-width band, sun/moon included) or "classic" (`HelloCard` + `WeatherCard`),
@@ -181,7 +182,8 @@
   marker); no quotes around names. From `settings.windDown` (default 21,
   ⚙ "Wind down at") the note is a fixed wind-down line (no AI call) and
   `PlanCard` hides suggestions; before it, free time is capped at wind-down.
-  The calendar's "That's the day" scene (`EndOfDay`) also starts at this hour;
+  The calendar's "That's the day" scene (`EndOfDay`) starts at this hour or at
+  nightfall (`eveningFrom()` in `day-part.ts`: sunset + dusk), whichever is first;
   with nothing left today it then replaces the hours entirely. The page-wide
   `WeatherScene` (variant "page") adds meteors on clear nights and drifting
   sunbeams on clear days; `MeteorField` cuts every `.card`/`.attn` out of the

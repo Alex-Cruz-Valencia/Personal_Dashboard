@@ -7,7 +7,7 @@ import { briefLines, highLow, simpleOutlook, type BriefIcon } from "@/lib/weathe
 import { ClockCard } from "./ClockCard";
 import { TempCurve } from "./TempCurve";
 import { WeatherScene } from "./WeatherScene";
-import { AmbientButton } from "./Ambient";
+import { AmbientClock } from "./Ambient";
 
 /**
  * EXPERIMENT. One card for the top row: the greeting and the clock across the top, the weather
@@ -49,8 +49,9 @@ export function TopUnified({ data, settings, theme, frozen }: { data: DashboardD
           </div>
         </div>
         <div className="hello__time">
-          <ClockCard today={today} use24={use24Hour(settings)} frozen={frozen} />
-          <AmbientButton today={today} weather={weather} use24={use24Hour(settings)} theme={theme} frozen={frozen} settings={settings} />
+          <AmbientClock today={today} weather={weather} use24={use24Hour(settings)} theme={theme} frozen={frozen} settings={settings}>
+            <ClockCard today={today} use24={use24Hour(settings)} frozen={frozen} />
+          </AmbientClock>
         </div>
       </div>
       {mode === "brief" ? (
