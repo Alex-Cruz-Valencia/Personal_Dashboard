@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useRef, useState, type CSSProperties } from "react";
+import { useCallback, useEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import { createPortal } from "react-dom";
 import { sceneSky } from "@/lib/day-part";
 import { dateLineFor } from "@/lib/format";
@@ -17,16 +17,29 @@ import { WeatherScene } from "./WeatherScene";
 /** The ⚙ choices the ambient screen shares with the page. */
 type AmbientSky = Pick<DashboardSettings, "lightPalette" | "lightSky" | "skyTheme" | "skyPart">;
 
-export function AmbientButton(props: { today: TodayInfo; weather: Weather; use24: boolean; theme: Theme; frozen: boolean; settings: AmbientSky }) {
+/** The clock opens Ambient: click it, or Enter or Space on it. No button of its own on the page. */
+export function AmbientClock({
+  children,
+  ...props
+}: { children: ReactNode; today: TodayInfo; weather: Weather; use24: boolean; theme: Theme; frozen: boolean; settings: AmbientSky }) {
   const [on, setOn] = useState(false);
   return (
     <>
-      <button type="button" className="ambient-btn" onClick={() => setOn(true)} title="Ambient: just the time and the sky, full screen">
-        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" aria-hidden="true">
-          <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5" />
-        </svg>
-        Ambient
-      </button>
+      <div
+        role="button"
+        tabIndex={0}
+        className="ambient-open"
+        aria-label="Open Ambient, a full-screen clock"
+        title="Full-screen clock"
+        onClick={() => setOn(true)}
+        onKeyDown={(e) => {
+          if (e.key !== "Enter" && e.key !== " ") return;
+          e.preventDefault();
+          setOn(true);
+        }}
+      >
+        {children}
+      </div>
       {on ? <AmbientScreen {...props} onExit={() => setOn(false)} /> : null}
     </>
   );

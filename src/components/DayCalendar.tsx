@@ -4,6 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState, type CSSProp
 import { createPortal } from "react-dom";
 import { useRouter } from "next/navigation";
 import { upNext } from "@/lib/attention";
+import { eveningFrom } from "@/lib/day-part";
 import { hideBanner, showBanner, useHiddenBanners } from "@/lib/banner-state";
 import { dateLineFor, decimalHourToTimeInput, formatHour, layoutOverlaps } from "@/lib/format";
 import { cascade, hourLabel, shortSpan, shortTime } from "@/lib/gcal-look";
@@ -75,6 +76,8 @@ interface DayCalendarProps {
   source?: SliceSource;
   /** Google's stored sign-in is dead — offer a reconnect link on the tag. */
   reconnect?: boolean;
+  /** Today's sunset (decimal hours); the goodnight scene can start once it's dark. */
+  sunset?: number;
   /** Tomorrow's agenda and tasks, for "Plan tomorrow" (null when neither source is readable). */
   tomorrow?: WeekDay | null;
 }
@@ -86,7 +89,7 @@ interface DayCalendarProps {
  * Google is connected, drag one to move it, drag its bottom edge to resize it,
  * or drag on an empty stretch to add a new one. Nothing is saved until you let go.
  */
-export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, today, settings, frozen = false, focusTask, editable = false, source = "live", reconnect = false, tomorrow = null }: DayCalendarProps) {
+export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, today, settings, frozen = false, focusTask, editable = false, source = "live", reconnect = false, tomorrow = null, sunset }: DayCalendarProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const focus = useFocus();
@@ -135,9 +138,10 @@ export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, to
   const [showAllDay, setShowAllDay] = useState(false);
   // Nothing left today (events all over, or an empty day that has run out): the hours slide
   // away and "That's the day" takes the whole calendar. A firm pull up brings them back.
-  // "That's the day" belongs to the evening: it appears from the wind-down hour (⚙ Wind down at,
-  // 9pm by default), not as soon as the last meeting ends.
-  const sceneOn = nowHour >= settings.windDown;
+  // "That's the day" belongs to the evening: it appears once it's dark out (the end of dusk) or
+  // at the wind-down hour (⚙ Wind down at, 9pm by default), whichever is first, never as soon as
+  // the last meeting ends.
+  const sceneOn = nowHour >= eveningFrom(settings.windDown, sunset ?? 24);
   const dayDone = sceneOn && next === null && (agenda.length > 0 || nowHour >= arc.to);
   /** Where the calendar starts while the past is tucked away. */
   const tuckFrom = dayDone ? arc.to : Math.min(Math.max(Math.floor(nowHour - PAST_KEEP_H), arc.from), arc.to);

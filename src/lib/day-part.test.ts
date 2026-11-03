@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { dayPart, DAY_PARTS, partHour, sceneSky, skyTime } from "./day-part";
+import { DAY_PARTS, dayPart, eveningFrom, partHour, sceneSky, skyTime } from "./day-part";
 
 const sun = { sunrise: 6.5, sunset: 19.5 };
 
@@ -36,5 +36,19 @@ describe("sceneSky", () => {
 
   it("moves only the sky when a part is picked", () => {
     expect(sceneSky(23, sun, { skyTheme: "time", skyPart: "golden" }).time?.part).toBe("golden");
+  });
+});
+
+describe("eveningFrom", () => {
+  it("starts at nightfall when that's before wind-down", () => {
+    expect(eveningFrom(21, 16.9)).toBeCloseTo(17.65);
+  });
+
+  it("starts at wind-down when that's earlier than nightfall", () => {
+    expect(eveningFrom(19, 20.5)).toBe(19);
+  });
+
+  it("stays off when wind-down is midnight", () => {
+    expect(eveningFrom(24, 16.9)).toBe(24);
   });
 });

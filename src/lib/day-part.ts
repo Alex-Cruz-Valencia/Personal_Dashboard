@@ -32,6 +32,14 @@ export function dayPart(now: number, { sunrise, sunset }: Sun): DayPart {
   return now < solarNoon + NOON ? "noon" : "afternoon";
 }
 
+/**
+ * When the evening starts for "That's the day": nightfall (the end of dusk) or the wind-down
+ * hour, whichever comes first. Wind-down at midnight (24) still turns the scene off.
+ */
+export function eveningFrom(windDown: number, sunset: number): number {
+  return windDown >= 24 ? 24 : Math.min(windDown, sunset + DUSK);
+}
+
 /** An hour inside a part, for previews: `/?part=golden` works wherever the viewer's sun happens to set. */
 export function partHour(part: DayPart, { sunrise, sunset }: Sun): number {
   const solarNoon = (sunrise + sunset) / 2;
