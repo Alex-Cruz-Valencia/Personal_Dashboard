@@ -357,7 +357,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
   .tasks__adds .tasks__add { min-height: 44px; }
 }
 .task__body { display: grid; gap: 4px; }
-.task__name { font-size: 14.5px; font-weight: 500; line-height: 1.35; }
+.task__name { font-size: 14.5px; font-weight: 500; line-height: 1.35; overflow-wrap: anywhere; }
 .task--p1 .task__name { font-weight: 600; }
 .task__meta { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
 .task__tag { font-size: 10.5px; font-weight: 700; letter-spacing: 0.05em; color: var(--ink-soft); background: var(--surface-2); border: 1px solid var(--line); border-radius: 999px; padding: 2px 7px; }
@@ -1482,7 +1482,8 @@ a:hover { color: var(--ink); text-decoration: underline; }
    ========================================================================== */
 .twocol { --twocol-cap: min(78vh, 780px); display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(0, 1fr); gap: var(--gap); align-items: stretch; }
 .twocol > .card { min-height: 0; max-height: var(--twocol-cap); display: flex; flex-direction: column; }
-.twocol > .column--tasks .card__body { flex: 1; min-height: 0; overflow-y: auto; }
+/* Scrolls up and down only: a vertical swipe on a touch screen never drifts it sideways. */
+.twocol > .column--tasks .card__body { flex: 1; min-height: 0; overflow-y: auto; overflow-x: hidden; overscroll-behavior-x: none; touch-action: pan-y pinch-zoom; }
 
 .vcal__head { display: flex; align-items: center; gap: 12px; padding: 18px 22px 12px; flex-wrap: wrap; }
 .vcal__date { margin-left: 10px; font-family: var(--font-body); font-size: 13px; font-weight: 500; letter-spacing: 0; text-transform: none; color: var(--ink-soft); }
@@ -1552,7 +1553,9 @@ a:hover { color: var(--ink); text-decoration: underline; }
 .clock { display: grid; gap: 8px; justify-items: stretch; }
 .clock__time { display: flex; align-items: flex-start; gap: 6px; font-variant-numeric: tabular-nums; }
 .clock__hm { font-family: var(--font-display); font-size: clamp(48px, 5.2vw, 60px); font-weight: 500; line-height: 0.95; letter-spacing: -0.035em; background: linear-gradient(180deg, var(--ink) 30%, color-mix(in srgb, var(--ink) 52%, transparent)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-.clock__colon { display: inline; margin: 0 1px; animation: clock-colon 2s ease-in-out infinite; }
+/* The blink gives the colon its own layer, and Safari then leaves it out of the parent's
+   gradient text (an invisible colon), so it carries the same gradient itself. */
+.clock__colon { display: inline; margin: 0 1px; background: inherit; -webkit-background-clip: text; background-clip: text; animation: clock-colon 2s ease-in-out infinite; }
 .clock__side { display: grid; gap: 3px; padding-top: 6px; font-size: 12px; font-weight: 600; line-height: 1.1; color: var(--ink-faint); }
 .clock__sec { font-variant-numeric: tabular-nums; }
 .clock__ampm { text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-soft); }
