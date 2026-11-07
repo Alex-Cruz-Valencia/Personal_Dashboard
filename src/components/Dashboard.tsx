@@ -22,6 +22,7 @@ import { UndoToast } from "./UndoToast";
 import { WeatherCard } from "./WeatherCard";
 import { WeatherScene } from "./WeatherScene";
 import { WeekStrip } from "./WeekStrip";
+import { DashboardNav } from "./DashboardNav";
 
 interface DashboardProps {
   data: DashboardData;
@@ -77,6 +78,9 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
           {settings.surface === "glass" && settings.motion === "on" ? (
             <SkyTint today={data.today} sunrise={data.weather.sunrise} sunset={data.weather.sunset} frozen={frozen} />
           ) : null}
+          <div className="dashboard-shell">
+          <DashboardNav active="day" />
+          <div className="dashboard-content">
           {settings.topRow !== "classic" ? (
             <TopUnified data={data} settings={settings} theme={settings.theme} frozen={frozen} />
           ) : (
@@ -162,6 +166,8 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
           />
           <UndoToast />
           {data.sources.calendar === "live" ? <EventAlerts agenda={data.agenda} today={data.today} use24={use24} /> : null}
+          </div>
+          </div>
         </div>
       </TaskDetailProvider>
     </EventDetailProvider>
