@@ -2,6 +2,22 @@
 
 # Morning Dashboard — project notes
 
+- **Health page** (`/health`, 2026-11-07): `components/health/HealthDashboard.tsx`
+  renders sample training/strength/sleep plus real browser-local check-ins.
+  The large scenic header/ambient clock stay on My day; Health starts with a
+  compact title and training/strength/sleep/energy status against targets.
+  Trends explain the status; earlier sessions, history and sources expand on
+  demand. Keep shared typography, tokens, cards and row styles. `lib/health.ts` defines the view model,
+  sample records, validation and 90-entry retention. localStorage
+  `dashboard_health_v1` holds goals and dated check-ins. Never mix these with
+  sample trend records or imply Hevy is connected. Hevy, nutrition and
+  sleep/activity integrations are deferred. `DashboardNav` is a subtle,
+  icon rail on both pages (calendar / heart), inside `.dashboard-shell`
+  beside `.dashboard-content`. Labels appear on hover/focus without moving
+  content; Escape dismisses them. Links retain accessible names and 44px
+  targets. It stays on the left on phones too. It preserves
+  explicit presentation/location query overrides only.
+
 - **Design decisions get logged.** When a change is a design/product choice
   (not just an implementation detail) — a new UI pattern, a behavior
   tradeoff, a naming/copy call, a security or architecture decision with

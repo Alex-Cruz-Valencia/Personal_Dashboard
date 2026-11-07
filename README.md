@@ -20,6 +20,40 @@ npm run dev
 Open <http://localhost:3000>. With no configuration it renders the reference
 design with frozen mock data (**demo mode**).
 
+## Health page
+
+Use the calendar (**My day**) and heart (**Health**) icons in the narrow
+left navigation to switch between the morning dashboard and `/health`.
+Labels appear on hover or keyboard focus; Escape dismisses the label. The scenic header and ambient
+clock stay on My day. Health shares its display settings, palettes, and
+card/row styling, with a compact title and status-first layout. It provides:
+
+- A rolling seven-day training view with sample sessions and exercise details.
+- Strength trends for three example lifts, with four- and twelve-week views.
+- A status row for training against your target, comparable strength progress,
+  sleep against your target, and today's energy.
+- Sample sleep trends and a short list of follow-ups, each with source context.
+- A working daily check-in for energy, sleep, soreness, steps, water, and notes.
+- Editable training, sleep, steps, and hydration targets; example targets are
+  starting values, not personalized recommendations.
+- Expandable earlier workouts, check-in history, and source/integration details.
+  Nutrition remains a future integration, without occupying a full dashboard card.
+
+Check-ins and targets are stored only in this browser under
+`dashboard_health_v1`, with at most 90 dated check-ins retained. They do not
+sync or go to the server, Hevy, or an AI service. Today's check-in can be
+edited or deleted; clearing the site's browser storage removes all entries
+and targets. A date change opens a fresh daily check-in in the dashboard's
+resolved timezone.
+
+Hevy is **not connected yet**. `src/lib/health.ts` holds provider-independent
+workout/check-in types and example records; the UI lives in
+`src/components/health/`. A later server-side adapter can normalize Hevy's
+workout and exercise history into this model. See the
+[official Hevy API docs](https://api.hevyapp.com/docs/). No Hevy credentials
+are collected by this prototype. Sleep/activity and nutrition sources remain
+undecided.
+
 ## How data flows
 
 Every card renders from the typed model in [`src/lib/types.ts`](src/lib/types.ts).

@@ -3289,3 +3289,93 @@ versus N changes in the CSS.
 **Tradeoffs / open questions** — A reminder that a design system's own
 documented contract is worth grep-ing for before assuming a visual bug is a
 missing style, rather than a broken assumption.
+
+
+## 2026-11-07 — A health page inside the existing dashboard
+
+**Problem** — Physical health needs a home alongside daily planning: training
+consistency, strength progress, sleep, movement, and how the day actually
+feels. The first integration will be Hevy; the remaining sources are not
+yet chosen.
+
+**Decision** — Add `/health` and a quiet My day / Health navigation. Reuse the
+main dashboard's scenic header, date, ambient clock, appearance settings,
+palettes, typography, flat cards, hairline rows, and text actions. Training
+uses a rolling seven-day view, session details, and comparable working-set
+trends. Sleep shows duration without inventing a readiness score. Nutrition
+has a reserved section without simulated meal tracking.
+
+**Reasoning** — The useful questions are whether training is consistent,
+whether comparable lifts are improving, whether there is room for recovery,
+and whether energy feels good. A daily check-in adds the user's experience
+without pretending to infer it from a wearable. User feedback on the first
+visual pass confirmed that this should feel like another page of the same
+dashboard; shared components and styles carry that continuity.
+
+**Alternatives considered** — A separate wellness identity, a large editorial
+headline, more decorative icons and prominent action buttons; these made the
+page feel disconnected from My day. A composite health/recovery score was
+also avoided because there is no validated model or connected source.
+
+**Tradeoffs** — Workout, strength, sleep, and movement trend records remain
+explicit samples until adapters exist. Browser-local daily check-ins and
+editable targets work now, with a separate source label and a 90-entry
+retention limit. They do not sync across devices. Example targets are
+editable and not personalized recommendations. No health data goes to AI.
+Hevy authentication, source adapters, nutrition, and wearable data are later
+work; the provider-independent model leaves room for them.
+
+
+## 2026-11-07 — Less chrome, clearer questions
+
+**Problem** — The repeated scenic header took vertical space away from health
+information. Top navigation felt like tabs, and several cards repeated the
+same numbers without enough context for a decision.
+
+**Decision** — Leave the scenic header and ambient clock on My day. Both
+pages use a quiet left rail with text tiles. Health opens with compact status:
+training against a rolling seven-day target, comparable strength progress,
+sleep against a personal target, and the user's logged energy. Charts
+explain the status; a short follow-up list links to training, sleep and the
+check-in. Earlier workouts, check-in history and sources expand on demand.
+Steps and water use only manual entries; the illustrative movement average
+and large future-nutrition card are removed.
+
+**Reasoning** — The supplied dashboard-design article emphasizes status,
+context, explanation and a next action. These principles map to the user's
+goals of building muscle and feeling energized without adding a composite
+health score or prescribing a program. Source labels and time windows stay
+visible. There is no fake refresh time on sample health data.
+
+**Alternatives considered** — An icon-only rail would save width but lose
+the requested words. Moving navigation back to the top on phones would
+change the mental model. Keeping every detail visible would preserve the
+previous page's length and repetition.
+
+**Tradeoffs** — A narrow left rail takes some horizontal room on phones, so
+health cards stack and controls wrap. Workouts need an extra click for older
+sessions. The quiet shell changes the layout of both pages, while the
+existing My day workflows and header remain intact.
+
+
+## 2026-11-07 — Quiet icon navigation
+
+**Problem** — The visible My day / Health tiles still took more attention
+and horizontal room than the user wanted.
+
+**Decision** — Replace the labels with calendar and heart/pulse icons in a
+44px left rail. Reveal each label on hover or keyboard focus as an overlay,
+without shifting the dashboard. Escape dismisses it while preserving focus.
+Remove the rail's brand text, keep the active state quiet, and retain the
+existing palette tokens.
+
+**Reasoning** — Two familiar destinations work well as icons once their
+names remain discoverable. Explicit accessible link names, visible focus,
+44px targets and reduced-motion support keep the compact rail usable.
+
+**Alternatives considered** — Expanding the entire sidebar on hover would
+move content or obscure more of it. Permanent labels were the earlier
+choice, superseded by the user's request for less intrusive navigation.
+
+**Tradeoffs** — Labels take a hover or keyboard focus to reveal. Touch users
+can navigate with a single tap, and assistive technology always has names.
