@@ -68,6 +68,12 @@ Nothing ordered. Pick from Later.
 - **Why later:** see first whether missed alerts actually happen.
 - **Impact / effort:** Medium / L
 
+### B-14. "Leave by" for tomorrow's first event
+- **Problem:** Tomorrow at a glance says when the first event starts, not when to leave for it.
+- **Idea:** travel time from a maps API for events with a place, shown on the "First" line.
+- **Why later:** a new key and data source; see whether the start time is enough.
+- **Impact / effort:** Medium / M
+
 ## Decided against for now
 
 - **A "does today fit" capacity line (from B-3).** Knowing whether there's enough time rarely changes
@@ -80,6 +86,7 @@ Nothing ordered. Pick from Later.
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
+| — | Tomorrow at a glance in the evening card | — | 2026-11-06 |
 | — | Event alerts, while a tab is open | #82 | 2026-11-01 |
 | — | Sky themes | #82 | 2026-11-01 |
 | B-3 | Plan the day: drag a task onto the calendar | #81 | 2026-11-01 |

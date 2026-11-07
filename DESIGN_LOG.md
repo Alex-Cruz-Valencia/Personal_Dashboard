@@ -18,6 +18,18 @@ Newest first. Each entry:
 **Tradeoffs / open questions** — what this costs, or what's still unresolved
 ```
 
+## 2026-11-06 — Tomorrow at a glance in the evening card
+
+**Problem / trigger** — Once the day was done, the calendar said "That's the day." and "Tomorrow: 11 events · 1 task". A count says how busy tomorrow is, not what to get ready for: when it starts, what to wear, what matters most.
+
+**Decision** — The evening card now shows up to three lines: **First** (the first timed event, or "Nothing booked", plus the event count), **Weather** (tomorrow's high/low and condition, with rain only when it's 30% or more), and **Top task** (the most urgent task due tomorrow, earliest first, with how many more). Each line is left out when its source can't be read. All-day banners and "free" holds don't count as the first event. Built from data the page already loads (the week strip and the 2-day forecast), with no new fetch. Logic in `lib/tomorrow-glance.ts`.
+
+**Reasoning** — The evening is when tomorrow is worth a look, and this card is already where the eye lands after the day ends. Three facts answer "what do I need to know before bed" without opening the week view.
+
+**Alternatives considered** — A "leave by" time for the first event: needs a maps API and a key, so left for later. A separate card: more page for something only shown at night. An AI summary: slower and costs a call for three facts we already have.
+
+**Tradeoffs / open questions** — On a short calendar the weather line hides first, then the whole list. Long task names are cut with an ellipsis (full text on hover).
+
 ## 2026-11-02 — "That's the day" comes with the dark; the clock is the way into Ambient
 
 **Problem / trigger** — At 8:26pm on a November night, with every event over, the calendar still showed bare hours: the goodnight scene waited for the 9pm wind-down hour, though it had been dark for three hours. And the "Ambient" pill under the clock was a permanent control for something used now and then, and it pulled the eye.
