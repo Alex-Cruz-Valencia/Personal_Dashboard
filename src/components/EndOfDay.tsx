@@ -1,4 +1,5 @@
-import type { WeekDay } from "@/lib/types";
+import { tomorrowGlance } from "@/lib/tomorrow-glance";
+import type { Weather, WeekDay } from "@/lib/types";
 
 /** x, y, radius, twinkle delay (s) in the 600x320 drawing: all in the sky above the hills. */
 const STARS: [number, number, number, number][] = [
@@ -7,24 +8,22 @@ const STARS: [number, number, number, number][] = [
   [584, 36, 1.2, 2.7], [60, 150, 1.2, 0.3], [330, 150, 1.1, 1.9], [420, 150, 1.3, 2.5], [250, 130, 1.1, 3.6],
 ];
 
-const plural = (n: number, word: string) => `${n} ${word}${n === 1 ? "" : "s"}`;
-
-/** What tomorrow holds, in a few words ("3 events · 5 tasks"), or null when neither source is readable. */
-export function tomorrowSummary(day: WeekDay | null): string | null {
-  if (!day) return null;
-  const parts = [
-    day.events ? plural(day.events.length, "event") : null,
-    day.tasks ? plural(day.tasks.length, "task") : null,
-  ].filter(Boolean);
-  return parts.length ? parts.join(" · ") : null;
-}
-
 /**
  * The quiet end of the day, below the last hour: a sleepy little scene and a
  * way into tomorrow. Purely decorative apart from the button.
  */
-export function EndOfDay({ tomorrow, onPlan }: { tomorrow: WeekDay | null; onPlan: (button: HTMLElement) => void }) {
-  const summary = tomorrowSummary(tomorrow);
+export function EndOfDay({
+  tomorrow,
+  forecast,
+  use24,
+  onPlan,
+}: {
+  tomorrow: WeekDay | null;
+  forecast?: Weather["tomorrow"];
+  use24: boolean;
+  onPlan: (button: HTMLElement) => void;
+}) {
+  const glance = tomorrowGlance(tomorrow, forecast, use24);
   return (
     <div className="vcal__eod">
       <svg
@@ -71,7 +70,18 @@ export function EndOfDay({ tomorrow, onPlan }: { tomorrow: WeekDay | null; onPla
         </g>
       </svg>
       <p className="eod__title">That&apos;s the day.</p>
-      {summary ? <p className="eod__sub">Tomorrow: {summary}</p> : <p className="eod__sub">Nothing left but rest.</p>}
+      {glance.length ? (
+        <dl className="eod__glance" aria-label="Tomorrow at a glance">
+          {glance.map((l) => (
+            <div key={l.kind} className={`eod__line eod__line--${l.kind}`}>
+              <dt>{l.label}</dt>
+              <dd title={l.text}>{l.text}</dd>
+            </div>
+          ))}
+        </dl>
+      ) : (
+        <p className="eod__sub">Nothing left but rest.</p>
+      )}
       {tomorrow ? (
         <button type="button" className="vcal__btn eod__plan" onClick={(e) => onPlan(e.currentTarget)}>
           Plan tomorrow →

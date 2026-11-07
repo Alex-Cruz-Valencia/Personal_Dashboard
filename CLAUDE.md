@@ -184,7 +184,9 @@
   `PlanCard` hides suggestions; before it, free time is capped at wind-down.
   The calendar's "That's the day" scene (`EndOfDay`) starts at this hour or at
   nightfall (`eveningFrom()` in `day-part.ts`: sunset + dusk), whichever is first;
-  with nothing left today it then replaces the hours entirely. The page-wide
+  with nothing left today it then replaces the hours entirely. It shows **Tomorrow at a glance**
+  (`tomorrowGlance()` in `lib/tomorrow-glance.ts`: first timed event, `weather.tomorrow`, top task),
+  from the week strip's tomorrow and the 2-day forecast; no extra fetch. The page-wide
   `WeatherScene` (variant "page") adds meteors on clear nights and drifting
   sunbeams on clear days; `MeteorField` cuts every `.card`/`.attn` out of the
   meteor layer (clip-path, re-measured on scroll/resize) so meteors vanish

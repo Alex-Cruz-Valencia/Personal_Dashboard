@@ -12,7 +12,7 @@ import { isTaskBlock, minutesLabel, taskMinutes } from "@/lib/plan";
 import { draggedTask, setDraggedTask } from "@/lib/task-drag";
 import type { ShownSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
-import type { AgendaEvent, ArcWindow, SliceSource, TodayInfo, WeekDay } from "@/lib/types";
+import type { AgendaEvent, ArcWindow, SliceSource, TodayInfo, Weather, WeekDay } from "@/lib/types";
 import { offerUndo, write } from "@/lib/undo";
 import { useNowSeconds } from "@/lib/use-now";
 import { EndOfDay } from "./EndOfDay";
@@ -78,6 +78,8 @@ interface DayCalendarProps {
   reconnect?: boolean;
   /** Today's sunset (decimal hours); the goodnight scene can start once it's dark. */
   sunset?: number;
+  /** Tomorrow's forecast, for the end-of-day look at tomorrow. */
+  forecast?: Weather["tomorrow"];
   /** Tomorrow's agenda and tasks, for "Plan tomorrow" (null when neither source is readable). */
   tomorrow?: WeekDay | null;
 }
@@ -89,7 +91,7 @@ interface DayCalendarProps {
  * Google is connected, drag one to move it, drag its bottom edge to resize it,
  * or drag on an empty stretch to add a new one. Nothing is saved until you let go.
  */
-export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, today, settings, frozen = false, focusTask, editable = false, source = "live", reconnect = false, tomorrow = null, sunset }: DayCalendarProps) {
+export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, today, settings, frozen = false, focusTask, editable = false, source = "live", reconnect = false, tomorrow = null, sunset, forecast }: DayCalendarProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const focus = useFocus();
@@ -860,7 +862,7 @@ export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, to
           </div>
         </div>
         {sceneOn ? (
-          <EndOfDay tomorrow={tomorrow} onPlan={(b) => setPlanAnchor(b.getBoundingClientRect())} />
+          <EndOfDay tomorrow={tomorrow} forecast={forecast} use24={use24} onPlan={(b) => setPlanAnchor(b.getBoundingClientRect())} />
         ) : (
           <div className="vcal__eod-spacer" aria-hidden="true" />
         )}
