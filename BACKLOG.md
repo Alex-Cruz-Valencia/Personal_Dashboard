@@ -80,7 +80,7 @@ Nothing ordered. Pick from Later.
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
-| B-5 | Waiting on others | — | 2026-11-07 |
+| B-5 | Waiting on others | #86 | 2026-11-07 |
 | — | Tomorrow at a glance in the evening card | #85 | 2026-11-06 |
 | — | Event alerts, while a tab is open | #82 | 2026-11-01 |
 | — | Sky themes | #82 | 2026-11-01 |
