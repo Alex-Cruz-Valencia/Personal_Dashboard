@@ -28,16 +28,31 @@ Labels appear on hover or keyboard focus; Escape dismisses the label. The scenic
 clock stay on My day. Health shares its display settings, palettes, and
 card/row styling, with a compact title and status-first layout. It provides:
 
-- A rolling seven-day training view with sample sessions and exercise details.
-- Strength trends for three example lifts, with four- and twelve-week views.
-- A status row for training against your target, comparable strength progress,
-  sleep against your target, and today's energy.
-- Sample sleep trends and a short list of follow-ups, each with source context.
+- A rolling seven-day training view using Hevy when configured, with every
+  logged set, warm-up label, rep count, weight, cardio metric and effort rating.
+- A broad progression view with one matching-rep comparison per exercise,
+  median percentage change, directional bars, and four- or twelve-week views.
+  Comparison coverage is explicit; individual lift charts expand on demand.
+- A clickable training activity map and visual overview: weekly session ring,
+  strength-direction distribution, sleep bars, and today's energy dots.
+- Manual sleep trends and a short list of follow-ups, each with source context.
+  Only the unconfigured/public demo uses sample sleep and training data.
+- A shared seven-day timeline aligning Hevy workouts, FatSecret protein,
+  sleep and energy by local date. Browse twelve weeks and select a date for
+  daily fuel, same-day workout details, and manual check-in context.
+- Daily macro/meal views with optional user-set protein and calorie targets.
+  FatSecret diary authorization is still pending; nutrition stays unknown rather
+  than showing sample or zero intake. Targets are browser-local, with no default
+  calorie/protein prescription and no personal nutrition records saved locally.
 - A working daily check-in for energy, sleep, soreness, steps, water, and notes.
+  Water uses tappable bottles (empty → half → full → empty), with a remembered bottle
+  size in fluid ounces/mL; changing size preserves previously logged volume.
+  Dashboard bottle taps save water immediately, independently of check-ins.
 - Editable training, sleep, steps, and hydration targets; example targets are
   starting values, not personalized recommendations.
 - Expandable earlier workouts, check-in history, and source/integration details.
-  Nutrition remains a future integration, without occupying a full dashboard card.
+  FatSecret application authentication is prepared; personal diary authorization
+  is still required before nutrition data can be displayed.
 
 Check-ins and targets are stored only in this browser under
 `dashboard_health_v1`, with at most 90 dated check-ins retained. They do not
@@ -46,13 +61,57 @@ edited or deleted; clearing the site's browser storage removes all entries
 and targets. A date change opens a fresh daily check-in in the dashboard's
 resolved timezone.
 
-Hevy is **not connected yet**. `src/lib/health.ts` holds provider-independent
-workout/check-in types and example records; the UI lives in
-`src/components/health/`. A later server-side adapter can normalize Hevy's
-workout and exercise history into this model. See the
-[official Hevy API docs](https://api.hevyapp.com/docs/). No Hevy credentials
-are collected by this prototype. Sleep/activity and nutrition sources remain
-undecided.
+### Prepare the Hevy connection
+
+Hevy API access requires Hevy Pro. Generate a key in
+[Hevy developer settings](https://hevy.com/settings?developer), then put it in
+the gitignored `.env.local` file:
+
+```dotenv
+HEVY_API_KEY="your-key-here"
+```
+
+Keep the real key out of chat, source control, and `NEXT_PUBLIC_` variables.
+Restart the dev server after saving it, then open
+<http://localhost:3000/api/health/hevy>. A successful check returns
+`connected: true` and the workout count. Missing keys, rejected keys, rate
+limits and outages have distinct messages. `DASHBOARD_FORCE_MOCK=true`
+disables Hevy calls even when a key is present.
+
+The server-only client in `src/lib/hevy/client.ts` supports read-only,
+explicitly paginated workout history, routines, exercise metadata and preferred
+weight units. It uses a fixed Hevy origin, timeouts and no persistent caching;
+credentials and upstream error bodies are never returned or logged. The
+connection probe does not write to Hevy or return workout details.
+
+With a key configured, `/health` uses your **real Hevy training data**. The
+server adapter in `src/lib/hevy/data.ts` loads every history page (up to 100
+pages / 1,000 workouts), checks completeness against the workout count, and
+normalizes dates into the dashboard's timezone. It shares a five-minute
+in-memory workout cache between requests, coalesces concurrent refreshes,
+and reuses exercise metadata for up to an hour. Nothing writes to Hevy.
+
+Strength charts compare the same exercise at the same rep count, exclude
+warm-ups, use actual logged dates, and follow your Hevy kg/lb preference.
+They do not estimate 1RM or treat increasing assistance as progress. Primary
+muscle working-set totals and saved routines are available in expandable
+sections. Workout details preserve different sets rather than multiplying
+the first set across an exercise.
+
+A genuine empty history stays empty. During an outage, a labeled previous
+sync may be retained in memory for up to 24 hours; without a previous sync,
+training shows unavailable rather than substituting samples. Rejected
+credentials clear the cached training history. Optional exercise metadata
+failures are labeled and leave the workout list usable. The next refresh
+retries after a one-minute backoff.
+
+Sleep, energy, soreness, steps and water remain manual check-in data, with
+missing nights excluded from sleep averages. FatSecret personal diary access remains unconnected.
+See the [official Hevy API docs](https://api.hevyapp.com/docs/).
+
+For deployment, add `HEVY_API_KEY` only to the **private Vercel project** and
+redeploy that project. Leave it unset on the public demo. Local `.env.local`
+settings do not automatically transfer to Vercel.
 
 ## How data flows
 
@@ -317,3 +376,14 @@ Setup:
    Fly.io, Render, a VPS, a home server) — the file store just works there.
 5. Visit `/api/auth/google` on the **private** deployment once, after
    Redis is wired up, to (re)connect.
+
+### FatSecret application connection
+
+Set `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET` in ignored `.env.local`.
+Never use `NEXT_PUBLIC_` or commit actual values. `/api/health/fatsecret` checks
+application authentication server-side and returns no token. Forced mock mode
+disables calls. A successful check does **not** connect your existing food diary:
+that requires separate OAuth 1.0 Consumer Key/Secret and user authorization.
+The current app does not fetch personal FatSecret records. See the
+[capability research and dashboard plan](docs/fatsecret-integration.md) for the
+access distinction, next steps and proposed nutrition views.

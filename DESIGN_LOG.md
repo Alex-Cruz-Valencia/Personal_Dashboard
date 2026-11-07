@@ -3380,6 +3380,106 @@ choice, superseded by the user's request for less intrusive navigation.
 **Tradeoffs** — Labels take a hover or keyboard focus to reveal. Touch users
 can navigate with a single tap, and assistive technology always has names.
 
+
+## 2026-11-07 — Prepare read-only Hevy access
+
+**Problem** — The user has a Hevy API key and needs a way to configure it
+and verify access before sample training cards can be replaced safely.
+
+**Decision** — Add a server-only GET client for workout counts, paginated
+workouts, routines and exercise metadata. Keep `HEVY_API_KEY` in gitignored
+local configuration and the private deployment. An on-demand, same-origin
+`/api/health/hevy` probe returns connection status and workout count. It
+distinguishes missing/disabled configuration, rejected credentials, rate
+limits, unexpected responses and outages. Forced demo mode makes no calls.
+
+**Reasoning** — Authentication can be verified independently from the view
+adapter. Fixed-origin requests, no redirects, timeouts, response validation
+and sanitized errors keep the credential on the server. Explicit pagination
+avoids silently treating partial history as a complete dataset.
+
+**Alternatives considered** — Pasting a key in chat or browser storage would
+spread the credential unnecessarily. A broad generic API proxy would expand
+the surface beyond read-only integration. Immediately replacing sample
+charts before checking real records would risk misleading comparisons.
+
+**Tradeoffs** — Health cards retain sample labels until the next adapter
+step. Live account access cannot be verified until the user saves their key.
+Requests are not persistently cached during this preparation phase. Before
+wiring auto-refresh to live history, add bounded synchronization/caching
+that respects Hevy's limits. Nutrition and sleep sources remain separate.
+
+
+## 2026-11-07 — Connect the health view to real Hevy records
+
+**Problem** — API access has been verified, but the training and strength
+cards still show examples. The user wants their own data throughout.
+
+**Decision** — Load complete workout history, exercise metadata, saved
+routines and preferred weight units on the server. The health view displays
+real weekly sessions, all set details, comparable strength trends, primary
+muscle working-set totals and saved routines. Sleep/energy/activity remain
+manual entries; the connected view no longer shows sample sleep.
+
+**Reasoning** — Comparisons must use the same exercise and rep count, with
+warm-ups excluded and actual logged dates. Assisted movements must not
+reward more assistance as improved strength. Missing records must remain
+missing, including unlogged sleep nights. API keys stay server-side and
+Hevy access remains read-only.
+
+**Alternatives considered** — Fetching only the first history page would
+silently truncate trends. Interpolating weekly strength points would invent
+observations. Reusing sample data during outages would misrepresent the
+user's training. A persistent workout database adds unnecessary storage.
+
+**Tradeoffs** — A shared RAM cache refreshes workouts about every five
+minutes and exercise metadata hourly. Concurrent requests share a sync;
+lookup reads are limited to four at a time. A labeled previous sync may be
+shown for up to 24 hours on transient failures, with a one-minute retry
+backoff. Authentication failures clear old data. More than 1,000 workouts
+or inconsistent paging fail explicitly instead of producing partial totals.
+Optional metadata failures preserve workouts but label derived metrics as
+incomplete. Hevy data is never sent to AI.
+
+## 2026-11-07 — Broaden health progress and make the overview visual
+
+Problem: a single lift appeared to represent overall strength, and the summary was mostly numbers. The equal split layout also made sparse individual-lift charts disproportionately prominent.
+
+Decision: lead with a full-width progression panel showing median percentage change across comparable exercises, directional comparison bars, and a four- or twelve-week training activity map. Count each exercise once using the most frequently repeated exact rep count in the selected window (latest matching date breaks ties). Compare first and latest best working sets; classify changes within ±0.5% as steady. Show comparison coverage, unpaired exercises, and the method explicitly. Preserve individual charts in an expandable section. Use a weekly target ring, strength-direction distribution, miniature sleep bars and energy dots in the overview. Missing sleep stays visibly unlogged. The training map opens actual workouts. Guidance becomes a horizontal strip, with history and sleep below.
+
+Reasoning: the visual should answer how broadly training is progressing without implying that one exercise is representative or inventing an overall physiological score. Percentage comparisons allow different exercises equal weight without adding unlike loads. Alternatives included estimated one-rep maxima and total-volume scores; both would introduce additional assumptions or confound exercise mix and strength. Tradeoff: exact-rep matching leaves some workouts unpaired, and the median describes the logged subset rather than all physical strength. Coverage and caveats remain visible. Shared theme tokens and navigation are retained.
+
+## 2026-11-07 — Bottle-based water entry and meaningful strength status
+
+Problem: millilitre entry asks users to do arithmetic, while “0/3 improving” gives little context. Goal provenance was also unclear.
+
+Decision: use bottle icons with add/remove-one-bottle controls and common bottle sizes labelled in US fluid ounces and millilitres. Persist bottle size with the existing local journal; keep underlying volumes and existing records in mL so changing the display size never changes consumption. Partial bottles remain visible for existing values. Use the same controls for the daily water target. Goals explain that defaults originate in the app and edits stay in this browser. Strength status now reads “Holding steady”, “Trending up/down”, or “Building a baseline”, with median percentage change, directional counts and comparison coverage directly beneath it. Unavailable remains distinct.
+
+Tradeoffs: bottles represent estimated volume rather than precision measurements; changing size re-expresses the saved volume. Water still saves with the daily check-in, avoiding creating fictional sleep or energy entries just to log a drink. The goal defaults remain user-editable starters rather than inferred objectives or personalized guidance.
+
+## 2026-11-07 — Tap bottles to log half and full servings
+
+Decision: each bottle is a keyboard-accessible button cycling empty → half → full → empty. Bottles can be adjusted independently during entry, with visible half/full labels and an announced total. Remove the separate plus/minus controls. Enable the same direct interaction in Today's basics, saving water immediately without requiring sleep or energy. Store dated water totals separately in the existing browser journal (90-day retention); fall back to old check-in volumes for compatibility. Saving a check-in synchronizes its water total; deleting a check-in leaves independently logged water intact. Retain fractional millilitres for exact half servings of odd-sized bottles. Bottle-size changes preserve volume. Visual bottle arrangement resets to a compact fill after reload; the saved volume stays unchanged.
+
+Reasoning: tapping should work on the dashboard itself, and logging a drink must not fabricate the other check-in measurements. Keep provider data separate and preserve previous records. Legacy partial amounts remain exact until the user adjusts that bottle to a half or full serving.
+
+## 2026-11-07 — Prepare FatSecret without conflating database and diary access
+
+Problem: the supplied FatSecret application credentials use OAuth 2.0, while importing the user's existing food diary requires separately documented OAuth 1.0 delegation. A successful token request alone must not look like a synced nutrition dashboard.
+
+Decision: store real credentials only in the ignored local environment, read them through server-only config, request minimum basic scope, and expose a guarded no-store status check that never returns tokens. Cache expiring app tokens only in RAM and back off failures. Keep Sources explicit about diary authorization pending. Document capabilities and proposed visual nutrition cards in docs/fatsecret-integration.md. No fake nutrition, new empty API profile, inferred personal targets, or food-diary writes.
+
+Reasoning: shared food data and personal records have different permissions. The user currently only sees OAuth 2.0 credentials. Prepare and validate what those enable while making the remaining external access requirement explicit. Once separate consumer credentials are available, implement account consent and a read-only diary adapter. Alternatives included creating a new profile or treating app authentication as a user connection; neither would import the existing app records. Tradeoff: personal nutrition remains unavailable until FatSecret's user-delegation access is resolved.
+
+## 2026-11-07 — Align training, fuel and recovery by calendar date
+
+Problem: provider-specific panels require mentally matching dates, and FatSecret application authentication still cannot import the user's existing diary.
+
+Decision: add a shared weekly timeline with aligned training, protein, sleep and energy rows, navigation across twelve rolling weeks, and selectable dates. Below it, daily fuel shows four macro slots, optional user-set protein/calorie targets, meal breakdowns when actual records exist, same-day Hevy sessions, and manual sleep/energy/water. Each session opens its real sets. Today's intake is explicitly “logged so far”; other dates still acknowledge incomplete reporting. No targets are generated. Targets save in the existing browser journal; meals do not.
+
+Keep the FatSecret adapter honest: until user delegation is available it returns an authorization-pending state and no nutrition records, without token requests during every render. Missing diary days remain null, not zero or assumed fasting. Manual sleep is aligned to its check-in date (the preceding night), with this convention visible. Standalone water overrides historical check-in water for the same date. Training availability and sample provenance remain explicit. Coverage describes logged data, not adherence or causation.
+
+Alternatives: fabricate a nutrition demo, block all UI work on missing diary credentials, or infer targets from workouts. Instead, complete the unified UX and typed data boundary now, while keeping the external authorization requirement visible. Tradeoff: nutrition plots and meal rows remain empty in the real dashboard until a genuinely authorized diary adapter is implemented. This phase is the integrated presentation and data contract, not a completed personal FatSecret sync.
 ## 2026-11-07 — No "Focus 25" button on the calendar
 
 **Problem.** The calendar header carried a "Focus 25" button next to Now/Next. It was never

@@ -12,6 +12,12 @@ export async function GET() {
     integrations: {
       weather: { configured: features.weather, provider: "open-meteo" },
       todoist: { configured: features.todoist },
+      hevy: { configured: Boolean(config.hevy.apiKey), enabled: features.hevy },
+      fatsecret: {
+        configured: Boolean(config.fatsecret.clientId && config.fatsecret.clientSecret),
+        enabled: features.fatsecret,
+        diaryConnected: false,
+      },
       google: {
         configured: features.google,
         connected: features.google ? await isGoogleConnected() : false,

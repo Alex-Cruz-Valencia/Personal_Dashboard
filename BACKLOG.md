@@ -76,9 +76,9 @@ Nothing ordered. Pick from Later.
 - **New data sources (Slack, finances).** More to look at, when the real problem is deciding
   what to do with what's already here. Revisit once B-3 and B-4 have shipped.
 
-Health now has a separate `/health` prototype (2026-11-07), with sample trends
-and browser-local check-ins. Hevy integration and the choice of nutrition,
-sleep and activity sources remain future work.
+Health now has a separate `/health` page (2026-11-07), with real Hevy training
+history and browser-local check-ins. The choice of nutrition, sleep and
+activity sources remains future work.
 
 ## Done
 

@@ -3,20 +3,52 @@
 # Morning Dashboard — project notes
 
 - **Health page** (`/health`, 2026-11-07): `components/health/HealthDashboard.tsx`
-  renders sample training/strength/sleep plus real browser-local check-ins.
+  renders real Hevy training/strength plus browser-local check-ins. Only an
+  unconfigured/forced demo shows sample training and sleep.
   The large scenic header/ambient clock stay on My day; Health starts with a
   compact title and training/strength/sleep/energy status against targets.
+  A full-width overall progression panel compares one matching-rep series per
+  exercise with median percentage change, directional bars, and a training map.
+  Overview visuals show sessions, strength direction, sleep, and energy.
+  Individual lift charts expand on demand. `lib/health-progress.ts` owns the
+  aggregation; sparse comparisons and coverage must stay explicit.
   Trends explain the status; earlier sessions, history and sources expand on
   demand. Keep shared typography, tokens, cards and row styles. `lib/health.ts` defines the view model,
   sample records, validation and 90-entry retention. localStorage
   `dashboard_health_v1` holds goals and dated check-ins. Never mix these with
-  sample trend records or imply Hevy is connected. Hevy, nutrition and
+  sample trend records. The read-only Hevy client lives in
+  `lib/hevy/client.ts`: server-only GETs for workout count/history, routines,
+  and exercise metadata. `HEVY_API_KEY` belongs only in gitignored `.env.local`
+  and the private deployment. `/api/health/hevy` checks access without
+  exposing the key or raw workouts; forced demo mode disables calls.
+  `lib/hevy/data.ts` loads complete history, normalizes local dates, caches
+  workouts in RAM for 5 minutes and templates for an hour, and labels stale
+  reads (up to 24h). No disk/Redis workout storage. Strength compares the same
+  exercise and rep count using actual dates; warm-ups/assistance are excluded.
+  Keep empty/unavailable states distinct from demo. Sleep comes from manual
+  check-ins in the connected view, not the sample curve. Nutrition and
   sleep/activity integrations are deferred. `DashboardNav` is a subtle,
   icon rail on both pages (calendar / heart), inside `.dashboard-shell`
   beside `.dashboard-content`. Labels appear on hover/focus without moving
   content; Escape dismisses them. Links retain accessible names and 44px
   targets. It stays on the left on phones too. It preserves
   explicit presentation/location query overrides only.
+
+- **FatSecret** (`lib/fatsecret/client.ts`): server-only OAuth 2.0 app-token
+  support with basic scope; credentials live in ignored `.env.local`. Never
+  expose tokens through `/api/health/fatsecret`, which checks application auth
+  only. Existing food diaries require separate OAuth 1.0 consumer credentials
+  plus account delegation; that flow is not implemented. Don't mark diary sync
+  connected or create an empty API profile as a substitute. Capability research,
+  API restrictions and the proposed nutrition UX are in
+  `docs/fatsecret-integration.md`. `lib/fatsecret/data.ts` explicitly returns
+  not-configured/authorization-pending/disabled states without remote calls.
+  `ConnectedHealth.tsx` joins local calendar dates via `lib/health-timeline.ts`,
+  displaying a navigable shared week and selected-day fuel/workout/check-in
+  context. Diary records remain absent until real authorization is implemented.
+  `lib/nutrition.ts` defines the provider-independent nutrition model and optional
+  user-set targets; only targets go into the local health journal, never meals.
+  Preserve unknown versus zero and label today's intake as logged so far.
 
 - **Design decisions get logged.** When a change is a design/product choice
   (not just an implementation detail) — a new UI pattern, a behavior
