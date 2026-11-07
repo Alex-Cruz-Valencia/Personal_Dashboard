@@ -86,7 +86,7 @@ Nothing ordered. Pick from Later.
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
-| — | Tomorrow at a glance in the evening card | — | 2026-11-06 |
+| — | Tomorrow at a glance in the evening card | #85 | 2026-11-06 |
 | — | Event alerts, while a tab is open | #82 | 2026-11-01 |
 | — | Sky themes | #82 | 2026-11-01 |
 | B-3 | Plan the day: drag a task onto the calendar | #81 | 2026-11-01 |
