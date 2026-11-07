@@ -72,6 +72,9 @@
     Reply chips open `ReplyQueue` (Reply in Gmail, Wait a day, Move, Trash); a chip
     with several conflicts lists them first (`ChipItems`).
     The same meeting on two calendars (`sameMeeting`) isn't a conflict.
+  - **Waiting on others** (`lib/waiting.ts` `pickWaiting`, `getWaiting()` in `gmail.ts`, `DashboardData.waiting`):
+    sent threads with my message last, 2–21 days old, that asked something. The chip opens `WaitingList`;
+    Later/Done reuse the reply snooze (thread ids), with undo. Gmail reads only.
   - Reply visibility is shared client state in `src/lib/reply-state.ts`
     (session-cleared + "Wait" snoozes in localStorage `dashboard_snoozed`, 24h);
     `EmailList`, the strip and the queue all filter by it. Snooze never touches Gmail.

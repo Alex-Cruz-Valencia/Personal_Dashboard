@@ -18,6 +18,18 @@ Newest first. Each entry:
 **Tradeoffs / open questions** — what this costs, or what's still unresolved
 ```
 
+## 2026-11-07 — Waiting on others
+
+**Problem / trigger** — Needs attention tracked replies I owe, never the ones I'm owed. An email I sent asking for something could go unanswered for two weeks with nothing on the page to say so.
+
+**Decision** — A new chip, "N waiting on others", from sent threads where the last real message is mine, sent 2 to 21 days ago, to someone other than me and not a no-reply address, and that asked for something (a "?", or phrases like "let me know", "could you", "any update" in the subject or the start of the email). The chip opens a list: who, subject, days waiting, with Open in Gmail, **Later** (hide for 3 days) and **Done** (hide for good), both with undo. Reads only; Later and Done never touch Gmail. Logic in `lib/waiting.ts`, the read in `getWaiting()`.
+
+**Reasoning** — The hard part is telling a real "waiting" from an FYI. Requiring an ask keeps the count honest at the cost of missing some; Done handles the rest without a setup step. Two days is the earliest a missing answer means anything; past three weeks it's either dead or handled elsewhere. Later and Done reuse the reply snooze (`reply-state.ts`), so there's no new storage.
+
+**Alternatives considered** — Counting every unanswered sent email: on real data most were FYIs. A Gmail label I'd apply when sending: more reliable but one more thing to remember. A "nudge" draft: possible later, but drafts-only means it still needs me in Gmail.
+
+**Tradeoffs / open questions** — Gmail's snippet is only the first line or two, so a question further down is missed. On the day it shipped, none of my four sent threads in the window counted: three asked nothing in their opening lines, and the fourth had no one else to wait on. The chip stays hidden when nothing counts.
+
 ## 2026-11-06 — Tomorrow at a glance in the evening card
 
 **Problem / trigger** — Once the day was done, the calendar said "That's the day." and "Tomorrow: 11 events · 1 task". A count says how busy tomorrow is, not what to get ready for: when it starts, what to wear, what matters most.

@@ -23,12 +23,6 @@ Nothing ordered. Pick from Later.
 
 ## Later
 
-### B-5. Waiting on others
-- **Problem:** the strip tracks replies I owe, not emails I sent that nobody answered.
-- **Idea:** one more chip, from sent threads with no reply after a few days.
-- **Open question:** telling a real "waiting" from a sent FYI. Probably needs an explicit mark.
-- **Impact / effort:** Medium / M
-
 ### B-6. Meeting prep
 - **Problem:** finding the context for the next meeting means searching mail and docs by hand.
 - **Idea:** before a meeting, show recent emails with the guests, linked docs and related tasks.
@@ -86,6 +80,7 @@ Nothing ordered. Pick from Later.
 
 | ID | Item | PR | Date |
 | --- | --- | --- | --- |
+| B-5 | Waiting on others | — | 2026-11-07 |
 | — | Tomorrow at a glance in the evening card | #85 | 2026-11-06 |
 | — | Event alerts, while a tab is open | #82 | 2026-11-01 |
 | — | Sky themes | #82 | 2026-11-01 |

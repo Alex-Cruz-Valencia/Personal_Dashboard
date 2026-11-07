@@ -4,10 +4,11 @@ import { useState } from "react";
 import { attentionChips, buildAttention, type AttentionChip, type AttentionItem } from "@/lib/attention";
 import { dismissConflict, useDismissedConflicts } from "@/lib/conflict-state";
 import { formatHour } from "@/lib/format";
-import { useHiddenReplyIds } from "@/lib/reply-state";
+import { snoozeReply, unsnoozeReply, useHiddenReplyIds } from "@/lib/reply-state";
 import { setReviewOpen } from "@/lib/review-state";
 import type { Theme } from "@/lib/settings";
-import type { AgendaEvent, Reply, Task } from "@/lib/types";
+import { offerUndo } from "@/lib/undo";
+import type { AgendaEvent, Reply, Task, Waiting } from "@/lib/types";
 import { useEventDetail } from "./EventDetail";
 import { Popover } from "./Popover";
 import { ReplyQueue } from "./ReplyQueue";
@@ -34,6 +35,7 @@ export function AttentionStrip({
   agenda,
   tasks,
   replies,
+  waiting = [],
   nowHour,
   theme,
   aiDraft,
@@ -51,6 +53,8 @@ export function AttentionStrip({
   agenda: AgendaEvent[];
   tasks: Task[];
   replies: Reply[];
+  /** Sent emails nobody has answered yet. */
+  waiting?: Waiting[];
   nowHour: number;
   theme: Theme;
 }) {
@@ -59,9 +63,12 @@ export function AttentionStrip({
   const [open, setOpen] = useState<{ item: AttentionItem; anchor: DOMRect } | null>(null);
   const [resolving, setResolving] = useState<{ item: AttentionItem; el: HTMLElement } | null>(null);
   const [picking, setPicking] = useState<{ chip: AttentionChip; el: HTMLElement } | null>(null);
+  const [waitingAt, setWaitingAt] = useState<HTMLElement | null>(null);
 
   const live = replies.filter((r) => !r.id || !hidden.has(r.id));
-  const items = buildAttention({ agenda, tasks, replies: live, nowHour, todayIso }).filter(
+  // "Later" and "Done" hide a sent thread with the same snooze replies use; nothing touches Gmail.
+  const stillWaiting = waiting.filter((w) => !hidden.has(w.id));
+  const items = buildAttention({ agenda, tasks, replies: live, waiting: stillWaiting, nowHour, todayIso }).filter(
     (it) => !it.okKey || !okConflicts.has(it.okKey),
   );
 
@@ -92,9 +99,10 @@ export function AttentionStrip({
                 className={`attn__chip attn__chip--${chip.kind}`}
                 title={about}
                 aria-label={`${chip.count} ${chip.label}. ${about}`}
-                aria-haspopup={first.replyIds?.length || first.events ? "dialog" : undefined}
+                aria-haspopup={first.replyIds?.length || first.events || first.waitingIds ? "dialog" : undefined}
                 onClick={(e) => {
-                  if (first.replyIds?.length) setOpen({ item: first, anchor: e.currentTarget.getBoundingClientRect() });
+                  if (first.kind === "waiting") setWaitingAt(e.currentTarget);
+                  else if (first.replyIds?.length) setOpen({ item: first, anchor: e.currentTarget.getBoundingClientRect() });
                   else if (first.kind === "overdue") setReviewOpen(true);
                   else if (chip.items.length > 1) setPicking({ chip, el: e.currentTarget });
                   else if (first.events && first.okKey) setResolving({ item: first, el: e.currentTarget });
@@ -131,10 +139,51 @@ export function AttentionStrip({
           onClose={() => setPicking(null)}
         />
       ) : null}
+      {waitingAt && stillWaiting.length ? (
+        <WaitingList waiting={stillWaiting} anchorEl={waitingAt} theme={theme} onClose={() => setWaitingAt(null)} />
+      ) : null}
       {resolving ? (
         <ConflictCard item={resolving.item} anchorEl={resolving.el} theme={theme} use24={use24} onClose={() => setResolving(null)} />
       ) : null}
     </section>
+  );
+}
+
+/** "Later" brings a thread back after this long; "Done" outlasts the three weeks it would show. */
+const LATER_HOURS = 72;
+const DONE_HOURS = 24 * 30;
+
+/** Sent emails waiting on an answer: open the thread, look again later, or let it go. */
+function WaitingList({ waiting, anchorEl, theme, onClose }: { waiting: Waiting[]; anchorEl: HTMLElement; theme: Theme; onClose: () => void }) {
+  const [anchor] = useState(() => anchorEl.getBoundingClientRect());
+  const hide = (w: Waiting, hours: number, text: string) => {
+    snoozeReply(w.id, hours);
+    offerUndo(text, async () => unsnoozeReply(w.id));
+  };
+  return (
+    <Popover anchor={anchor} theme={theme} onClose={onClose} ariaLabel="Waiting on others" className="resolve waitlist">
+      <p className="resolve__title">Waiting on others</p>
+      <p className="resolve__detail">Sent by you, no answer yet. Later and Done only hide it here.</p>
+      <ul className="waitlist__rows">
+        {waiting.map((w) => (
+          <li key={w.id} className="waitlist__row">
+            <a className="waitlist__open" href={w.url} target="_blank" rel="noopener noreferrer" title="Open in Gmail">
+              <span className="waitlist__to">{w.to}</span>
+              <span className="waitlist__subject">{w.subject}</span>
+            </a>
+            <span className="waitlist__days">{w.days}d</span>
+            <span className="waitlist__acts">
+              <button type="button" className="waitlist__btn" onClick={() => hide(w, LATER_HOURS, `Hidden for 3 days: ${w.subject}`)}>
+                Later
+              </button>
+              <button type="button" className="waitlist__btn" onClick={() => hide(w, DONE_HOURS, `No longer waiting: ${w.subject}`)}>
+                Done
+              </button>
+            </span>
+          </li>
+        ))}
+      </ul>
+    </Popover>
   );
 }
 

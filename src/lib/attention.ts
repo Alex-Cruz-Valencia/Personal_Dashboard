@@ -6,14 +6,14 @@
  */
 
 import { minutesLabel } from "./plan";
-import type { AgendaEvent, Reply, Task } from "./types";
+import type { AgendaEvent, Reply, Task, Waiting } from "./types";
 
 /** Back-to-back events closer than this are flagged as a tight turnaround. */
 export const TIGHT_GAP_MINUTES = 10;
 /** Events this long are treated as all-day banners, not conflicts. */
 const ALL_DAY_HOURS = 12;
 
-export type AttentionKind = "conflict" | "tight" | "overdue" | "reply";
+export type AttentionKind = "conflict" | "tight" | "overdue" | "reply" | "waiting";
 
 export interface AttentionItem {
   id: string;
@@ -28,6 +28,8 @@ export interface AttentionItem {
   target: "arc" | "tasks" | "replies";
   /** For reply items: the messages it counts, so the strip can open them. */
   replyIds?: string[];
+  /** For "waiting on others": the sent threads it counts. */
+  waitingIds?: string[];
   /** For conflicts and tight turnarounds: the two events, so the strip can offer to edit them. */
   events?: AgendaEvent[];
   /**
@@ -65,11 +67,13 @@ export function buildAttention(input: {
   agenda: AgendaEvent[];
   tasks: Task[];
   replies: Reply[];
+  /** Sent emails nobody has answered yet. */
+  waiting?: Waiting[];
   nowHour: number;
   /** Ties a dismissed conflict to today, so "It's fine" doesn't carry over to a repeat tomorrow. */
   todayIso?: string;
 }): AttentionItem[] {
-  const { agenda, tasks, replies, nowHour, todayIso = "" } = input;
+  const { agenda, tasks, replies, waiting = [], nowHour, todayIso = "" } = input;
   const items: AttentionItem[] = [];
 
   // Only what's still ahead (or underway) matters for conflicts and gaps.
@@ -170,6 +174,21 @@ export function buildAttention(input: {
     });
   }
 
+  // Waiting on others: last, since it's someone else's move.
+  if (waiting.length) {
+    const o = waiting.reduce((m, w) => (w.days > m.days ? w : m), waiting[0]);
+    items.push({
+      id: "waiting",
+      kind: "waiting",
+      label: "Waiting on",
+      title: `${plural(waiting.length, "email")} with no answer yet`,
+      detail: `Longest: ${o.to}, ${plural(o.days, "day")}`,
+      count: waiting.length,
+      target: "replies",
+      waitingIds: waiting.map((w) => w.id),
+    });
+  }
+
   return items;
 }
 
@@ -187,6 +206,7 @@ function chipLabel(id: string, n: number): string {
   if (id === "tight") return n === 1 ? "tight turnaround" : "tight turnarounds";
   if (id === "overdue") return "overdue";
   if (id === "reply-blocking") return "blocking someone";
+  if (id === "waiting") return "waiting on others";
   return n === 1 ? "reply waiting" : "replies waiting";
 }
 
