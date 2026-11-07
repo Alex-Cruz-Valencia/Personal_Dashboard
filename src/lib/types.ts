@@ -219,6 +219,19 @@ export interface Reply {
   urgency: Urgency;
 }
 
+/** An email I sent that nobody has answered yet ("Waiting on others"). */
+export interface Waiting {
+  /** Gmail thread id. */
+  id: string;
+  /** Who it went to: "Priya Raman", or "Sam Lee +1". */
+  to: string;
+  subject: string;
+  /** Whole days since I sent it. */
+  days: number;
+  /** The thread in Gmail, in the connected account. */
+  url: string;
+}
+
 /** The visible span of the day on the arc. */
 export interface ArcWindow {
   from: number;
@@ -285,6 +298,8 @@ export interface DashboardData {
   tasks: Task[];
   agenda: AgendaEvent[];
   replies: Reply[];
+  /** Sent emails still waiting on an answer; empty when Gmail isn't connected or can't be read. */
+  waiting: Waiting[];
   arc: ArcWindow;
   /** The weather card's own window — same end as `arc`, an independently
    *  configurable start (see `DashboardSettings.weatherStart`). */

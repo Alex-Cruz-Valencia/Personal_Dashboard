@@ -14,7 +14,8 @@
 import "server-only";
 import { config } from "@/lib/config";
 import { relativeAge } from "@/lib/time";
-import type { ClarifyItem, Reply, Urgency } from "@/lib/types";
+import type { ClarifyItem, Reply, Urgency, Waiting } from "@/lib/types";
+import { pickWaiting, WAIT_MAX_DAYS, WAIT_MIN_DAYS, type ThreadLite } from "@/lib/waiting";
 import { encodeAddresses, htmlToText, mimeHeader, replyRecipient } from "./mail-text";
 import { googleFetch } from "./tokens";
 
@@ -507,4 +508,47 @@ export async function untrashThread(id: string): Promise<void> {
 export async function trashThread(id: string): Promise<void> {
   const res = await googleFetch(`${BASE}/threads/${id}/trash`, { method: "POST" });
   if (!res.ok) throw new Error(`Gmail trash responded ${res.status}`);
+}
+
+/**
+ * Sent threads still waiting on an answer. Reads only: a thread list from Sent, then each thread's
+ * headers and snippets. `pickWaiting` decides which count.
+ */
+export async function getWaiting(): Promise<Waiting[]> {
+  const listUrl = new URL(`${BASE}/threads`);
+  listUrl.searchParams.set("q", `in:sent -in:chats newer_than:${WAIT_MAX_DAYS + 1}d older_than:${WAIT_MIN_DAYS}d`);
+  listUrl.searchParams.set("maxResults", "30");
+  const opts = { next: { revalidate: 300, tags: [GMAIL_TAG] } };
+  const [listRes, me] = await Promise.all([googleFetch(listUrl, opts), getAccountEmail()]);
+  if (!listRes.ok) throw new Error(`Gmail sent threads responded ${listRes.status}`);
+  const ids = (((await listRes.json()) as { threads?: { id: string }[] }).threads ?? []).map((t) => t.id);
+
+  const settled = await Promise.allSettled(
+    ids.map(async (id) => {
+      const url = new URL(`${BASE}/threads/${id}`);
+      url.searchParams.set("format", "metadata");
+      for (const h of ["From", "To", "Subject"]) url.searchParams.append("metadataHeaders", h);
+      const res = await googleFetch(url, opts);
+      if (!res.ok) throw new Error(`Gmail thread ${id} responded ${res.status}`);
+      return (await res.json()) as GmailThread;
+    }),
+  );
+  const threads = settled.flatMap<ThreadLite>((r) =>
+    r.status === "fulfilled"
+      ? [
+          {
+            id: r.value.id,
+            messages: (r.value.messages ?? []).map((m) => ({
+              from: header(m, "From"),
+              to: header(m, "To"),
+              subject: header(m, "Subject"),
+              snippet: m.snippet ?? "",
+              at: Number(m.internalDate),
+              draft: m.labelIds?.includes("DRAFT") ?? false,
+            })),
+          },
+        ]
+      : [],
+  );
+  return pickWaiting(threads, me, Date.now()).map((w) => ({ ...w, url: mailUrl(me, `all/${w.id}`) }));
 }

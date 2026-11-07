@@ -9,7 +9,7 @@ import { config, features, forceMock, isDemoMode } from "./config";
 import { deterministicDayNote, WIND_DOWN_HOUR } from "./day-note";
 import type { NoteStyle } from "./settings";
 import { getAgenda, getAllDayEvents } from "./google/calendar";
-import { getReplies, getTodoCount } from "./google/gmail";
+import { getReplies, getTodoCount, getWaiting } from "./google/gmail";
 import { GoogleAuthError } from "./google/oauth";
 import { resolveLocation, type LocationOverride } from "./location";
 import {
@@ -32,6 +32,7 @@ import type {
   SourceStatus,
   Task,
   TodayInfo,
+  Waiting,
   Weather,
 } from "./types";
 import { reverseGeocode } from "./weather/geocode";
@@ -117,6 +118,7 @@ export async function getDashboardData(
       tasks: MOCK_TASKS,
       agenda: MOCK_AGENDA,
       replies: MOCK_REPLIES,
+      waiting: [],
       arc: MOCK_ARC,
       weatherArc: MOCK_ARC,
       googleReconnect: false,
@@ -151,6 +153,9 @@ export async function getDashboardData(
   const allDayEvents = features.google
     ? getAllDayEvents(today.iso, location.timezone).catch(() => [] as AgendaEvent[])
     : Promise.resolve([] as AgendaEvent[]);
+
+  // Sent mail nobody has answered; extra, like the banners.
+  const waiting: Promise<Waiting[]> = features.google ? getWaiting().catch(() => []) : Promise.resolve([]);
 
   // The count on the Clarify button; a source that fails just isn't counted.
   const clarifyCounts = Promise.all([
@@ -248,6 +253,8 @@ export async function getDashboardData(
     tasks: tasks.value,
     agenda: agenda.value,
     replies: replies.value,
+    // Extra, so it fails quietly: no sample data stands in for it.
+    waiting: replies.live ? await waiting : [],
     arc,
     weatherArc,
     sources,

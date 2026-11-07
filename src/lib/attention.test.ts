@@ -47,3 +47,16 @@ describe("chips", () => {
     expect(attentionChips(build([ev("A", 10, 11), ev("B", 10.5, 11.5)]))[0].label).toBe("conflict");
   });
 });
+
+describe("waiting on others", () => {
+  it("rolls sent emails into one chip, naming the longest wait", () => {
+    const waiting = [
+      { id: "a", to: "Sam", subject: "S", days: 3, url: "" },
+      { id: "b", to: "Priya", subject: "P", days: 8, url: "" },
+    ];
+    const items = buildAttention({ agenda: [], tasks: [], replies: [], waiting, nowHour: 9 });
+    expect(items).toHaveLength(1);
+    expect(items[0]).toMatchObject({ kind: "waiting", count: 2, detail: "Longest: Priya, 8 days", waitingIds: ["a", "b"] });
+    expect(attentionChips(items)[0].label).toBe("waiting on others");
+  });
+});
