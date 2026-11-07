@@ -152,3 +152,17 @@ an intentional pending boundary: OAuth 1.0 user consent, delegated token storage
 validated diary normalization, attribution, and real diary end-to-end verification
 remain prerequisites for personal nutrition sync. No nutrition values are
 fabricated while those are missing.
+
+## Live diagnostic update
+
+A subsequent read-only food search returned FatSecret error 21 (IP restriction),
+even though the token request succeeded. Treat these as separate checks:
+application authentication does not by itself verify food endpoint access. Add
+the current requesting server's public outbound IP under the application's IP
+Restrictions and repeat the lookup. A localhost/private LAN address does not
+identify that outbound address, and the hosted deployment may use a different
+one. Passing this check still does not delegate access to a member's diary.
+
+After the user added the source IP to the allowlist, a repeat food search
+succeeded and returned a nutrition description. Food database access is now
+verified from this environment; personal diary authorization remains separate.

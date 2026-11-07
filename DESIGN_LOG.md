@@ -3540,3 +3540,7 @@ exists, but is a suggestion, not a habit).
 
 **Tradeoffs.** The label name is hardcoded; renaming it in Gmail hides the button until the
 name matches again.
+
+## 2026-11-07 — Keep missing-data displays quiet
+
+Decision: return to the prior empty-data presentation after trying contextual information icons. Remove the icon component, hover popovers, styling and related assertions. Preserve the existing data-source status and empty-value handling. The user prefers a quieter dashboard without extra missing-data controls.
