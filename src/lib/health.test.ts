@@ -4,6 +4,27 @@ import { dayOffset, HEALTH_GOALS, hoursLabel, readHealthJournal, validCheckin, v
 const checkin: HealthCheckin = { energy: 3, soreness: "low", sleep: 7.5, steps: null, water: 1250, note: "Felt good after a walk." };
 
 describe("health journal", () => {
+  it("saves standalone water without inventing a check-in and retains exact half bottles", () => {
+    const result = readHealthJournal(JSON.stringify({ waterDays: { "2026-11-07": 177.5, "2026-11-06": -2, "2026-02-30": 500, "2026-11-05": "500" } }));
+    expect(result.waterDays).toEqual({ "2026-11-07": 177.5 });
+    expect(result.days).toEqual({});
+    expect(validGoals({ ...HEALTH_GOALS, water: 532.5 })).toBe(true);
+  });
+  it("bounds standalone water history without dropping valid recent entries", () => {
+    const waterDays = Object.fromEntries(Array.from({ length: 100 }, (_, i) => [dayOffset("2026-11-07", -i), 500]));
+    const result = readHealthJournal(JSON.stringify({ waterDays }));
+    expect(Object.keys(result.waterDays!)).toHaveLength(90);
+    expect(result.waterDays!["2026-11-07"]).toBe(500);
+    expect(result.waterDays![dayOffset("2026-11-07", -99)]).toBeUndefined();
+  });
+  it("remembers only supported bottle sizes without changing existing water entries", () => {
+    const data = { goals: HEALTH_GOALS, days: { "2026-11-07": checkin }, bottleMl: 710 };
+    const result = readHealthJournal(JSON.stringify(data));
+    expect(result.bottleMl).toBe(710);
+    expect(result.days["2026-11-07"].water).toBe(1250);
+    expect(readHealthJournal(JSON.stringify({ ...data, bottleMl: 0 })).bottleMl).toBeUndefined();
+    expect(readHealthJournal(JSON.stringify({ ...data, bottleMl: "500" })).bottleMl).toBeUndefined();
+  });
   it("recovers from corrupt and unexpected storage without losing the page", () => {
     for (const raw of [null, "{", "null", "42", "[]"]) {
       expect(readHealthJournal(raw)).toEqual({ goals: HEALTH_GOALS, days: {} });

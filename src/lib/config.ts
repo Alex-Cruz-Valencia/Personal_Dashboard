@@ -54,6 +54,17 @@ export const config = {
     filter: str("TODOIST_FILTER") ?? "(today | overdue)",
   },
 
+  /** Hevy is read only here. Keep this key out of public/demo deployments. */
+  hevy: {
+    apiKey: str("HEVY_API_KEY"),
+  },
+
+  /** Application-level food database access; not permission to read a personal diary. */
+  fatsecret: {
+    clientId: str("FATSECRET_CLIENT_ID"),
+    clientSecret: str("FATSECRET_CLIENT_SECRET"),
+  },
+
   google: {
     clientId: str("GOOGLE_CLIENT_ID"),
     clientSecret: str("GOOGLE_CLIENT_SECRET"),
@@ -124,6 +135,8 @@ export const isDemoMode =
 export const forceMock = process.env.DASHBOARD_FORCE_MOCK === "true";
 
 export const features = {
+  fatsecret: !forceMock && Boolean(config.fatsecret.clientId && config.fatsecret.clientSecret),
+  hevy: !forceMock && Boolean(config.hevy.apiKey),
   weather:
     !forceMock &&
     config.weather.setting !== "false" &&

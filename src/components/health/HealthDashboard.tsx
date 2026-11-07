@@ -3,9 +3,14 @@
 import { useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from "react";
 import {
   dayOffset, healthDate, HEALTH_STORAGE_KEY, hoursLabel, readHealthJournal,
-  SAMPLE_LIFTS, SAMPLE_SLEEP, SAMPLE_WORKOUTS, validCheckin, validGoals, workoutSets, workoutVolume,
-  type HealthCheckin, type HealthGoals, type HealthJournal, type HealthWorkout,
+  SAMPLE_SLEEP, displayWeight, muscleSets, validCheckin, validGoals, workoutSets, workoutVolume,
+  type HealthCheckin, type HealthGoals, type HealthJournal, type HealthWorkout, type TrainingData,
 } from "@/lib/health";
+import { ConnectedHealth } from "./ConnectedHealth";
+import type { NutritionData } from "@/lib/nutrition";
+import { WaterBottles } from "./WaterBottles";
+import { ProgressOverview } from "./ProgressOverview";
+import { overallProgress } from "@/lib/health-progress";
 import "./health.css";
 
 type IconName = "strength" | "moon" | "sun" | "walk" | "drop" | "leaf" | "arrow" | "check";
@@ -61,8 +66,10 @@ function HealthDialog({ title, onClose, children }: { title: string; onClose: ()
   </dialog>;
 }
 
-function CheckinForm({ value, onSave, onDelete }: { value?: HealthCheckin; onSave: (value: HealthCheckin) => boolean; onDelete: () => void }) {
+function CheckinForm({ value, initialWater, initialBottleMl, onSave, onDelete }: { value?: HealthCheckin; initialWater: number; initialBottleMl: number; onSave: (value: HealthCheckin, bottleMl: number) => boolean; onDelete: () => void }) {
   const [energy, setEnergy] = useState(value?.energy ?? 3);
+  const [water, setWater] = useState(initialWater);
+  const [bottleMl, setBottleMl] = useState(initialBottleMl);
   const [error, setError] = useState("");
   return <form onSubmit={(event) => {
     event.preventDefault();
@@ -70,168 +77,149 @@ function CheckinForm({ value, onSave, onDelete }: { value?: HealthCheckin; onSav
     const checkin = {
       energy, soreness: form.get("soreness"), sleep: Number(form.get("sleep")),
       steps: form.get("steps") === "" ? null : Number(form.get("steps")),
-      water: Number(form.get("water")), note: String(form.get("note") ?? "").trim(),
+      water, note: String(form.get("note") ?? "").trim(),
     };
     if (!validCheckin(checkin)) { setError("Check the values and try again."); return; }
-    if (!onSave(checkin)) setError("This browser couldn't save your check-in. Your entries are still here; try again.");
+    if (!onSave(checkin, bottleMl)) setError("This browser couldn't save your check-in. Your entries are still here; try again.");
   }}>
-    <p className="health-muted">A minute for you. Saved only in this browser, separate from the sample data.</p>
+    <p className="health-muted">A minute for you. Saved only in this browser. These entries are separate from Hevy.</p>
     <fieldset className="health-energy"><legend>How is your energy today?</legend><div>{[1, 2, 3, 4, 5].map((number) => <label key={number} className={energy === number ? "is-selected" : ""}><input type="radio" name="energy" value={number} checked={energy === number} onChange={() => setEnergy(number)} /><span>{number}</span></label>)}</div><p><span>Running low</span><span>Full of energy</span></p></fieldset>
     <div className="health-form-grid">
       <label>Last night’s sleep <span>hours</span><input name="sleep" type="number" min="0" max="24" step="0.25" required defaultValue={value?.sleep ?? ""} placeholder="e.g. 7.5" /></label>
       <label>Muscle soreness<select name="soreness" defaultValue={value?.soreness ?? "low"}><option value="low">Low</option><option value="moderate">Moderate</option><option value="high">High</option></select></label>
       <label>Steps so far <span>optional</span><input name="steps" type="number" min="0" max="100000" step="1" defaultValue={value?.steps ?? ""} placeholder="e.g. 6200" /></label>
-      <label>Water so far <span>mL</span><input name="water" type="number" min="0" max="20000" step="1" required defaultValue={value?.water ?? 0} /></label>
+
     </div>
+    <fieldset className="health-water-field"><legend>Water so far</legend><WaterBottles water={water} onChange={setWater} bottleMl={bottleMl} onSizeChange={setBottleMl}/></fieldset>
     <label className="health-note-label">Anything to remember? <span>optional</span><textarea name="note" maxLength={500} rows={3} defaultValue={value?.note ?? ""} placeholder="What helped you feel good? What felt off?" /></label>
     {error ? <p role="alert" className="health-error">{error}</p> : null}
     <div className="health-form-actions">{value ? <button type="button" className="health-btn health-btn--quiet" onClick={onDelete}>Delete check-in</button> : null}<button className="health-btn health-btn--primary" type="submit">Save check-in</button></div>
   </form>;
 }
 
-function GoalsForm({ goals, onSave }: { goals: HealthGoals; onSave: (value: HealthGoals) => boolean }) {
+function GoalsForm({ goals, initialBottleMl, onSave }: { goals: HealthGoals; initialBottleMl: number; onSave: (value: HealthGoals, bottleMl: number) => boolean }) {
+  const [water, setWater] = useState(goals.water);
+  const [bottleMl, setBottleMl] = useState(initialBottleMl);
   const [error, setError] = useState("");
   return <form onSubmit={(event) => {
     event.preventDefault();
     const form = new FormData(event.currentTarget);
-    const next = Object.fromEntries(["sessions", "sleep", "steps", "water"].map((key) => [key, Number(form.get(key))]));
+    const next = { ...Object.fromEntries(["sessions", "sleep", "steps"].map((key) => [key, Number(form.get(key))])), water };
     if (!validGoals(next)) { setError("Check the targets and try again."); return; }
-    if (!onSave(next)) setError("This browser couldn't save your targets. Try again.");
+    if (!onSave(next, bottleMl)) setError("This browser couldn't save your targets. Try again.");
   }}>
-    <p className="health-muted">Start with targets that fit your life. These example values are editable; they aren’t personal recommendations.</p>
+    <p className="health-muted">Start with targets that fit your life. These starting targets come from the app, not Hevy. Your edits stay in this browser; they aren’t personal recommendations.</p>
     <div className="health-form-grid">
       <label>Training <span>sessions / 7 days</span><input name="sessions" type="number" min="1" max="7" step="1" required defaultValue={goals.sessions} /></label>
       <label>Sleep <span>hours / night</span><input name="sleep" type="number" min="1" max="24" step="0.25" required defaultValue={goals.sleep} /></label>
       <label>Movement <span>steps / day</span><input name="steps" type="number" min="100" max="100000" step="1" required defaultValue={goals.steps} /></label>
-      <label>Water <span>mL / day</span><input name="water" type="number" min="100" max="20000" step="1" required defaultValue={goals.water} /></label>
+
     </div>
+    <fieldset className="health-water-field"><legend>Daily water target</legend><WaterBottles water={water} onChange={setWater} bottleMl={bottleMl} onSizeChange={setBottleMl}/></fieldset>
     {error ? <p role="alert" className="health-error">{error}</p> : null}
     <div className="health-form-actions"><button className="health-btn health-btn--primary" type="submit">Save targets</button></div>
   </form>;
 }
 
-function StrengthChart({ today }: { today: string }) {
-  const [selected, setSelected] = useState(0);
-  const [weeks, setWeeks] = useState(4);
-  const lift = SAMPLE_LIFTS[selected];
-  const values = lift.values.slice(-weeks);
-  const low = Math.floor((Math.min(...values) - 5) / 5) * 5;
-  const high = Math.ceil((Math.max(...values) + 5) / 5) * 5;
-  const x = (index: number) => 45 + index / (values.length - 1) * 320;
-  const y = (value: number) => 142 - (value - low) / (high - low) * 110;
-  const points = values.map((value, index) => `${x(index)},${y(value)}`).join(" ");
-  const delta = values[values.length - 1] - values[0];
-  return <section className="card health-panel health-strength" aria-labelledby="strength-title">
-    <div className="health-panel__head"><h2 id="strength-title"><Icon name="strength" />Strength progress</h2><span className="health-source">Sample</span></div>
-    <div className="health-chart-controls"><label className="health-sr-only" htmlFor="health-lift">Exercise</label><select id="health-lift" value={selected} onChange={(event) => setSelected(Number(event.target.value))}>{SAMPLE_LIFTS.map((item, index) => <option key={item.name} value={index}>{item.name}</option>)}</select><div className="health-segments" aria-label="Chart period">{[4, 12].map((period) => <button type="button" key={period} aria-pressed={weeks === period} onClick={() => setWeeks(period)}>{period} weeks</button>)}</div></div>
-    <div className="health-lift-value"><strong>{values[values.length - 1]}<small> kg × {lift.reps}</small></strong><span>+{delta} kg over {weeks} weeks</span></div>
-    <svg className="health-strength-chart" viewBox="0 0 400 182" role="img" aria-label={`${lift.name}, best working set for ${lift.reps} reps: ${values.map((value, index) => `${healthDate(dayOffset(today, -(values.length - 1 - index) * 7))}: ${value} kg`).join('; ')}`}>
-      {[low, (low + high) / 2, high].map((value) => <g key={value}><line x1="45" x2="384" y1={y(value)} y2={y(value)} className="health-gridline" /><text x="0" y={y(value) + 4}>{value}</text></g>)}
-      <polygon points={`45,142 ${points} 365,142`} className="health-chart-fill" />
-      <polyline points={points} fill="none" className="health-chart-line" />
-      {values.map((value, index) => <circle key={index} cx={x(index)} cy={y(value)} r="3.5" className="health-chart-dot"><title>{`${healthDate(dayOffset(today, -(values.length - 1 - index) * 7))}: ${value} kg × ${lift.reps}`}</title></circle>)}
-      <text x="45" y="174">{healthDate(dayOffset(today, -(weeks - 1) * 7))}</text><text x="365" y="174" textAnchor="end">{healthDate(today)}</text>
-    </svg>
-    <p className="health-caption">Best working set each week, compared at the same rep count.</p>
-  </section>;
+function WorkoutDetail({ workout, today, unit, label }: { workout: HealthWorkout; today: string; unit: "kg" | "lbs"; label: string }) {
+  const description = (set: HealthWorkout["exercises"][number]["sets"][number], kind?: string) => {
+    const parts: string[] = [];
+    if (set.weight !== null) parts.push(`${displayWeight(set.weight, unit)} ${unit}${kind === "bodyweight_assisted_reps" ? " assistance" : ""}`);
+    if (set.reps !== null) parts.push(`${set.reps} reps`);
+    if (set.duration != null) parts.push(`${Math.round(set.duration)} sec`);
+    if (set.distance != null) parts.push(`${set.distance.toLocaleString()} m`);
+    if (set.rpe != null) parts.push(`RPE ${set.rpe}`);
+    return parts.join(" · ") || "No metrics logged";
+  };
+  const volume = workoutVolume(workout);
+  return <><p className="health-muted">{label} · {healthDate(workout.date ?? dayOffset(today, -workout.daysAgo))} · {workout.minutes} min · {workoutSets(workout)} working sets</p>
+    {workout.notes ? <p className="health-personal-note">{workout.notes}</p> : null}
+    <div className="health-workout-detail">{workout.exercises.map((exercise, i) => <section className="health-exercise-detail" key={`${exercise.id ?? exercise.name}:${i}`}><h3>{exercise.name}</h3>{exercise.notes ? <p className="health-caption">{exercise.notes}</p> : null}{exercise.sets.map((set, index) => <div className="health-set" key={index}><span>{index + 1}{set.type && set.type !== "normal" ? ` · ${set.type === "warmup" ? "warm-up" : set.type}` : ""}</span><span>{description(set, exercise.kind)}</span></div>)}</section>)}</div>
+    {volume > 0 ? <p className="health-caption">External load × reps: {displayWeight(volume, unit).toLocaleString()} {unit}. Warm-ups and assisted movements excluded.</p> : null}
+  </>;
 }
 
-function WorkoutDetail({ workout, today }: { workout: HealthWorkout; today: string }) {
-  return <><p className="health-muted">Sample workout · {healthDate(dayOffset(today, -workout.daysAgo))} · {workout.minutes} min · {workoutSets(workout)} working sets</p><div className="health-workout-detail">{workout.exercises.map((exercise) => <div key={exercise.name}><strong>{exercise.name}</strong><span>{exercise.sets.length} × {exercise.sets[0].reps} · {exercise.sets[0].weight} kg</span></div>)}</div><p className="health-caption">Total load moved: {workoutVolume(workout).toLocaleString()} kg. This is example data, not a workout prescription.</p></>;
-}
-
-export function HealthDashboard({ today }: { today: string }) {
+export function HealthDashboard({ today, timezone, training, nutrition }: { today: string; timezone: string; training: TrainingData; nutrition: NutritionData }) {
   const raw = useSyncExternalStore(subscribe, snapshot, serverSnapshot);
   const journal = useMemo(() => readHealthJournal(raw), [raw]);
   const checkin = journal.days[today];
   const { goals } = journal;
+  const water = journal.waterDays?.[today] ?? checkin?.water ?? 0;
+  const waterLogged = journal.waterDays?.[today] !== undefined || !!checkin;
   const [dialog, setDialog] = useState<"checkin" | "goals" | HealthWorkout | null>(null);
   const [notice, setNotice] = useState("");
-  const sleepAverage = SAMPLE_SLEEP.reduce((sum, hours) => sum + hours, 0) / SAMPLE_SLEEP.length;
-  const sleepGap = Math.max(0, Math.round((goals.sleep - sleepAverage) * 60));
-  const nightsAtTarget = SAMPLE_SLEEP.filter((hours) => hours >= goals.sleep).length;
-  const sessions = SAMPLE_WORKOUTS.length;
+  const demo = training.source === "sample";
+  const available = training.source !== "unavailable";
+  const sourceLabel = demo ? "Sample" : training.source === "cached" ? "Hevy · last sync" : !available ? "Hevy unavailable" : "Hevy";
+  const recentDays = Array.from({ length: 7 }, (_, i) => dayOffset(today, i - 6));
+  const week = training.workouts.filter((w) => w.daysAgo >= 0 && w.daysAgo <= 6);
+  const sleepValues = demo ? SAMPLE_SLEEP : recentDays.map((date) => journal.days[date]?.sleep ?? null);
+  const loggedSleep = sleepValues.filter((v): v is number => v !== null);
+  const sleepAverage = loggedSleep.length ? loggedSleep.reduce((sum, hours) => sum + hours, 0) / loggedSleep.length : null;
+  const sleepGap = sleepAverage !== null ? Math.max(0, Math.round((goals.sleep - sleepAverage) * 60)) : null;
+  const nightsAtTarget = loggedSleep.filter((hours) => hours >= goals.sleep).length;
+  const sessions = week.length;
   const sessionsLeft = Math.max(0, goals.sessions - sessions);
-  const trainingMinutes = SAMPLE_WORKOUTS.reduce((sum, workout) => sum + workout.minutes, 0);
-  const bench = SAMPLE_LIFTS[0];
-  const strengthGain = bench.values[bench.values.length - 1] - bench.values[bench.values.length - 4];
-  const recentDays = Array.from({ length: 7 }, (_, index) => dayOffset(today, index - 6));
+  const trainingMinutes = week.reduce((sum, w) => sum + w.minutes, 0);
+  const progress = overallProgress(training.lifts, today, 4);
+  const muscles = muscleSets(week);
   const checkinCount = recentDays.filter((date) => journal.days[date]).length;
   const saved = (next: HealthJournal, message: string) => {
     if (!persist(next)) return false;
     setNotice(message); setDialog(null); return true;
   };
   const workoutRow = (workout: HealthWorkout) => <button key={workout.id} type="button" className="health-workout" onClick={() => setDialog(workout)}>
-    <span className="health-workout__date"><small>{healthDate(dayOffset(today, -workout.daysAgo), { month: "short" })}</small><strong>{healthDate(dayOffset(today, -workout.daysAgo), { day: "numeric" })}</strong></span>
+    <span className="health-workout__date"><small>{healthDate(workout.date!, { month: "short" })}</small><strong>{healthDate(workout.date!, { day: "numeric" })}</strong></span>
     <span className="health-workout__name"><strong>{workout.title}</strong><small>{workout.exercises.length} exercises · {workoutSets(workout)} sets · {workout.minutes} min</small></span><Icon name="arrow" />
   </button>;
   return <main className="health" id="health-main">
-    <header className="health-titlebar">
-      <div><h1>Health</h1><p>{healthDate(today, { weekday: "long", month: "long", day: "numeric" })}</p></div>
-      <div className="health-header__actions"><button className="health-btn health-btn--quiet" type="button" onClick={() => setDialog("goals")}>Edit targets</button><button className="health-btn health-btn--primary" type="button" onClick={() => setDialog("checkin")}>{checkin ? "Edit check-in" : "Daily check-in"}</button></div>
-    </header>
+    <header className="health-titlebar"><div><h1>Health</h1><p>{healthDate(today, { weekday: "long", month: "long", day: "numeric" })}</p></div><div className="health-header__actions"><button className="health-btn health-btn--quiet" type="button" onClick={() => setDialog("goals")}>Edit targets</button><button className="health-btn health-btn--primary" type="button" onClick={() => setDialog("checkin")}>{checkin ? "Edit check-in" : "Daily check-in"}</button></div></header>
+    <div className="health-preview-note"><span>{demo ? "Training & sleep: sample data" : available ? `${sourceLabel} · ${training.workouts.length} workouts · Synced ${training.syncedAt ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: timezone }).format(new Date(training.syncedAt)) : "—"}` : "Hevy unavailable"} · Check-ins: your entries</span><a href="#health-sources">Sources</a></div>
+    {training.message ? <p className="source-notice" role="status">{training.message}</p> : null}
 
-    <div className="health-preview-note"><span>Training, strength & sleep: sample data · Check-ins: your entries</span><a href="#health-sources">Sources</a></div>
-
-    <section className="card health-overview" aria-label="Health at a glance">
-      <div><span className="health-stat-label">Training</span><strong>{sessions}<small> / {goals.sessions} sessions</small></strong><span className="health-stat-note">{sessionsLeft ? `${sessionsLeft} session${sessionsLeft === 1 ? "" : "s"} to your target` : "Target met"}</span><span className="health-caption">Last 7 days · Sample</span></div>
-      <div><span className="health-stat-label">Strength</span><strong>+{strengthGain}<small> kg</small></strong><span className="health-stat-note">Bench press · same 8 reps</span><span className="health-caption">Over 4 weeks · Sample</span></div>
-      <div><span className="health-stat-label">Sleep</span><strong>{hoursLabel(sleepAverage)}</strong><span className="health-stat-note">{sleepGap ? `${sleepGap} min below ${hoursLabel(goals.sleep)} target` : `At your ${hoursLabel(goals.sleep)} target`}</span><span className="health-caption">Nightly average · 7 nights · Sample</span></div>
-      <div><span className="health-stat-label">Energy</span><strong>{checkin ? <>{checkin.energy}<small> / 5</small></> : <span className="health-no-value">Not logged</span>}</strong><button type="button" className="health-text-btn" onClick={() => setDialog("checkin")}>{checkin ? "Edit today’s check-in" : "How do you feel today?"}</button><span className="health-caption">Today · Your entry</span></div>
+    <section className="card health-overview health-overview--visual" aria-label="Health at a glance">
+      <div><span className="health-stat-label">Training rhythm</span><div className="health-ring" role="img" aria-label={available ? `${sessions} of ${goals.sessions} target sessions in the last seven days` : 'Training unavailable'}><svg viewBox="0 0 100 100" aria-hidden="true"><circle className="health-ring-track" cx="50" cy="50" r="42"/><circle className="health-ring-fill" cx="50" cy="50" r="42" pathLength="100" strokeDasharray={`${available ? Math.min(100, sessions / goals.sessions * 100) : 0} 100`}/></svg><strong>{available ? sessions : '—'}<small> / {goals.sessions}</small></strong></div><span className="health-stat-note">{available ? sessionsLeft ? `${sessionsLeft} sessions to your weekly target` : 'Weekly target met' : 'Awaiting Hevy'}</span><span className="health-caption">Last 7 days · {sourceLabel}</span></div>
+      <div><span className="health-stat-label">Strength direction</span><strong className="health-strength-takeaway">{!available ? 'Unavailable' : progress.median === null ? 'Building a baseline' : progress.median > .5 ? 'Trending up' : progress.median < -.5 ? 'Trending down' : 'Holding steady'}</strong><div className="health-direction-track" role="img" aria-label={`${progress.improving} improving, ${progress.steady} steady, ${progress.declining} declining exercises`}>{progress.rows.length ? <><span data-direction="up" style={{flex: progress.improving}}/><span data-direction="steady" style={{flex: progress.steady}}/><span data-direction="down" style={{flex: progress.declining}}/></> : null}</div><span className="health-stat-note">{progress.median === null ? available ? 'Repeat comparable sets to reveal a trend.' : 'Awaiting Hevy' : `${progress.median > 0 ? '+' : ''}${progress.median.toFixed(1)}% typical change · ${progress.improving} up, ${progress.steady} steady, ${progress.declining} down`}</span><span className="health-caption">{progress.rows.length} exercises compared · {progress.unpaired} need more data<br/>Last 4 weeks · {sourceLabel}</span></div>
+      <div><span className="health-stat-label">Sleep rhythm</span><strong>{sleepAverage !== null ? hoursLabel(sleepAverage) : '—'}<small> average</small></strong><div className="health-mini-nights" role="img" aria-label={`${loggedSleep.length} nights logged of seven; target ${goals.sleep} hours`}>{sleepValues.map((hours, i) => <div key={i} title={`${healthDate(recentDays[i])}: ${hours === null ? 'not logged' : hoursLabel(hours)}`}><span data-empty={hours === null} style={{height: hours === null ? '8px' : `${Math.max(3,Math.min(100, hours / Math.max(10,goals.sleep,...loggedSleep) * 100))}%`}}/></div>)}</div><span className="health-stat-note">{sleepGap === null ? 'Add sleep to reveal your rhythm' : sleepGap > 0 ? `${sleepGap} min below your sleep target` : 'At your sleep target'}</span><span className="health-caption">{loggedSleep.length} of 7 nights · {demo ? 'Sample' : 'Your entries'}</span></div>
+      <div><span className="health-stat-label">Energy today</span><strong>{checkin ? ['','Low','Low','Steady','Good','High'][checkin.energy] : <span className="health-no-value">Not logged</span>}</strong><div className="health-energy-dots" role="img" aria-label={checkin ? `Energy ${checkin.energy} out of 5` : 'Energy not logged'}>{[1,2,3,4,5].map(n => <span key={n} data-active={!!checkin && n <= checkin.energy}/>)}</div><button type="button" className="health-text-btn" onClick={() => setDialog("checkin")}>{checkin ? 'Update your energy' : 'How do you feel today?'} <Icon name="arrow" /></button><span className="health-caption">Today · Your entry</span></div>
     </section>
 
-    <div className="health-main-grid">
-      <StrengthChart today={today} />
-      <section className="card health-panel health-priorities" aria-labelledby="priorities-title">
-        <div className="health-panel__head"><h2 id="priorities-title">What matters now</h2></div>
-        <div className="health-priority"><span className="health-priority__label">Consistency <small>Sample</small></span><p>{sessionsLeft ? `${sessionsLeft} more session${sessionsLeft === 1 ? "" : "s"} to your training target.` : "Your training target is met."}</p><span className="health-caption">{sessions} sessions in the last 7 days.</span><a className="health-text-btn" href="#health-training">Review your training <Icon name="arrow" /></a></div>
-        <div className="health-priority"><span className="health-priority__label">Rest <small>Sample</small></span><p>{nightsAtTarget} of 7 nights reached your sleep target.</p><a className="health-text-btn" href="#health-sleep">See the pattern <Icon name="arrow" /></a></div>
+    <ConnectedHealth today={today} training={training} journal={journal} nutrition={nutrition} onWorkout={setDialog} onCheckin={() => setDialog("checkin")} onGoals={(nutritionGoals) => { if (!persist({ ...journal, nutritionGoals })) return false; setNotice("Nutrition targets saved on this device."); return true; }}/>
+    <ProgressOverview training={training} today={today} onWorkout={setDialog}/>
+    <div className="health-main-grid health-main-grid--visual">
+      <section className="card health-panel health-priorities" aria-labelledby="priorities-title"><div className="health-panel__head"><h2 id="priorities-title">What matters now</h2></div>
+        <div className="health-priority"><span className="health-priority__label">Consistency <small>{sourceLabel}</small></span><p>{!available ? "Training data is temporarily unavailable." : sessionsLeft ? `${sessionsLeft} more session${sessionsLeft === 1 ? "" : "s"} to your training target.` : "Your training target is met."}</p><span className="health-caption">{available ? `${sessions} sessions in the last 7 days.` : "We’ll retry on refresh."}</span><a className="health-text-btn" href="#health-training">Review your training <Icon name="arrow" /></a></div>
+        <div className="health-priority"><span className="health-priority__label">Rest <small>{demo ? "Sample" : "Your entries"}</small></span><p>{loggedSleep.length ? `${nightsAtTarget} of ${loggedSleep.length} logged nights reached your sleep target.` : "Your sleep hasn’t been logged this week."}</p><button className="health-text-btn" type="button" onClick={() => setDialog("checkin")}>Log sleep & soreness <Icon name="arrow" /></button></div>
         <div className="health-priority"><span className="health-priority__label">How you feel <small>Your entry</small></span><p>{!checkin ? "A check-in adds the part the charts can’t tell." : checkin.energy <= 2 ? "You logged lower energy today." : checkin.energy >= 4 ? "You logged good energy today." : "You logged steady energy today."}</p>{checkin ? <span className="health-caption">Soreness: {checkin.soreness} · Sleep: {hoursLabel(checkin.sleep)}</span> : null}<button type="button" className="health-text-btn" onClick={() => setDialog("checkin")}>{checkin ? "Update your check-in" : "Add your check-in"} <Icon name="arrow" /></button></div>
       </section>
 
-      <section className="card health-panel" id="health-training" aria-labelledby="training-title">
-        <div className="health-panel__head"><h2 id="training-title">Training consistency</h2><span className="health-source">Sample · Hevy preview</span></div>
-        <p className="health-panel__intro">{healthDate(recentDays[0])}–{healthDate(today)} · {trainingMinutes} min across {sessions} sessions</p>
-        <div className="health-training-week" aria-label="Sample training, last seven days">{recentDays.map((date, index) => {
-          const workout = SAMPLE_WORKOUTS.find((item) => item.daysAgo === 6 - index);
-          return <div key={date} className={index === 6 ? "is-today" : ""}><span>{healthDate(date, { weekday: "short" })}</span>{workout ? <button type="button" aria-label={`${workout.title}, ${healthDate(date)}, sample workout`} onClick={() => setDialog(workout)}><Icon name="check" /></button> : <span className="health-rest" aria-label="No sample workout">—</span>}<small>{index === 6 ? "Today" : workout ? workout.title.startsWith("Upper") ? "Upper" : "Lower" : "Rest"}</small></div>;
+      <section className="card health-panel" id="health-training" aria-labelledby="training-title"><div className="health-panel__head"><h2 id="training-title">Training consistency</h2><span className="health-source">{sourceLabel}</span></div><p className="health-panel__intro">{healthDate(recentDays[0])}–{healthDate(today)} · {available ? `${trainingMinutes} min across ${sessions} sessions` : "Unavailable"}</p>
+        <div className="health-training-week" aria-label="Training, last seven days">{recentDays.map((date, index) => {
+          const daily = training.workouts.filter((w) => w.date === date);
+          return <div key={date} className={index === 6 ? "is-today" : ""}><span>{healthDate(date, { weekday: "short" })}</span>{daily.length ? <button type="button" aria-label={`${daily.length} session${daily.length === 1 ? "" : "s"}, ${healthDate(date)}. Latest: ${daily[0].title}`} onClick={() => setDialog(daily[0])}><Icon name="check" /></button> : <span className="health-rest" aria-label={available ? "No logged workout" : "Unavailable"}>—</span>}<small>{index === 6 ? "Today" : daily.length ? `${daily.length} session${daily.length === 1 ? "" : "s"}` : available ? "Rest" : "—"}</small></div>;
         })}</div>
-        <div className="health-section-label"><h3>Latest session</h3><span>Open for exercises</span></div>
-        {workoutRow(SAMPLE_WORKOUTS[0])}
-        <details className="health-disclosure"><summary>Earlier sessions <span>{SAMPLE_WORKOUTS.length - 1} workouts</span></summary><div className="health-workouts">{SAMPLE_WORKOUTS.slice(1).map(workoutRow)}</div></details>
+        {training.workouts.length ? <><div className="health-section-label"><h3>Latest session</h3><span>Open for all sets</span></div>{workoutRow(training.workouts[0])}<details className="health-disclosure"><summary>Earlier sessions <span>{training.workouts.length - 1} workouts</span></summary><div className="health-workouts health-workouts--history">{training.workouts.slice(1).map(workoutRow)}</div></details></> : <p className="health-muted health-empty">{available ? "No workouts logged in Hevy yet." : "Your workout history will appear when Hevy is available."}</p>}
+        {muscles.length ? <details className="health-disclosure"><summary>Sets by muscle <span>Last 7 days</span></summary><div className="health-muscles">{muscles.map(({ muscle, sets }) => <div key={muscle}><span>{muscle.replaceAll("_", " ")}</span><strong>{sets} sets</strong></div>)}</div><p className="health-caption">Primary muscle only. Warm-ups excluded; secondary muscles are not double-counted.</p></details> : null}
       </section>
 
-      <section className="card health-panel" id="health-sleep" aria-labelledby="sleep-title">
-        <div className="health-panel__head"><h2 id="sleep-title">Sleep consistency</h2><span className="health-source">Sample</span></div>
-        <p className="health-panel__intro">{nightsAtTarget} of 7 nights at your {hoursLabel(goals.sleep)} target</p>
-        <div className="health-sleep-chart" role="img" aria-label={`Sample sleep for the last seven nights: ${SAMPLE_SLEEP.map(hoursLabel).join(', ')}. Target ${hoursLabel(goals.sleep)}.`}>
-          <div className="health-sleep-chart__target" style={{ bottom: `${Math.min(100, goals.sleep / Math.max(10, goals.sleep) * 100)}%` }}><span>Target</span></div>
-          {SAMPLE_SLEEP.map((hours, index) => <div className="health-sleep-chart__day" key={index}><span className="health-sleep-chart__value" style={{ bottom: `${hours / Math.max(10, goals.sleep) * 100}%` }}>{hours}h</span><div style={{ height: `${hours / Math.max(10, goals.sleep) * 100}%` }} data-met={hours >= goals.sleep} /><span className="health-sleep-chart__label">{healthDate(dayOffset(today, index - 6), { weekday: "narrow" })}</span></div>)}
-        </div><p className="health-caption">Last 7 nights · Sleep duration</p>
+      <section className="card health-panel" id="health-sleep" aria-labelledby="sleep-title"><div className="health-panel__head"><h2 id="sleep-title">Sleep consistency</h2><span className="health-source">{demo ? "Sample" : "Your entries"}</span></div><p className="health-panel__intro">{loggedSleep.length ? `${nightsAtTarget} of ${loggedSleep.length} logged nights at your ${hoursLabel(goals.sleep)} target` : "Log sleep in your daily check-in to start a trend."}</p>
+        {loggedSleep.length ? <><div className="health-sleep-chart" role="img" aria-label={`Sleep in the last seven nights: ${sleepValues.map((v) => v === null ? 'not logged' : hoursLabel(v)).join(', ')}. Target ${hoursLabel(goals.sleep)}.`}>
+          <div className="health-sleep-chart__target" style={{ bottom: `${goals.sleep / Math.max(10, goals.sleep, ...loggedSleep) * 100}%` }}><span>Target</span></div>
+          {sleepValues.map((hours, i) => <div className="health-sleep-chart__day" key={i}><span className="health-sleep-chart__value" style={{ bottom: `${(hours ?? 0) / Math.max(10, goals.sleep, ...loggedSleep) * 100}%` }}>{hours === null ? "—" : `${hours}h`}</span><div style={{ height: `${(hours ?? 0) / Math.max(10, goals.sleep, ...loggedSleep) * 100}%` }} data-met={hours !== null && hours >= goals.sleep} /><span className="health-sleep-chart__label">{healthDate(recentDays[i], { weekday: "narrow" })}</span></div>)}
+        </div><p className="health-caption">Last 7 nights · Missing nights are not counted as zero.</p></> : <button className="health-text-btn health-empty" type="button" onClick={() => setDialog("checkin")}>Log last night’s sleep <Icon name="arrow" /></button>}
       </section>
     </div>
 
-    <section className="card health-panel" aria-labelledby="foundations-title">
-      <div className="health-panel__head"><h2 id="foundations-title">Today’s basics</h2><button type="button" className="health-text-btn" onClick={() => setDialog("checkin")}>{checkin ? "Update" : "Log today"} <Icon name="arrow" /></button></div>
-      <div className="health-basics-grid">
-        <div className="health-foundation"><div><span>Movement</span><strong>{checkin?.steps != null ? checkin.steps.toLocaleString() : "—"}<small> / {goals.steps.toLocaleString()} steps</small></strong></div>{checkin?.steps != null ? <Meter value={checkin.steps} goal={goals.steps} label="Today's manually logged steps" /> : <p className="health-caption">Not logged today</p>}</div>
-        <div className="health-foundation"><div><span>Water</span><strong>{checkin ? (checkin.water / 1000).toLocaleString() : "—"}<small> / {(goals.water / 1000).toLocaleString()} L</small></strong></div>{checkin ? <Meter value={checkin.water} goal={goals.water} label="Today's manually logged water in milliliters" /> : <p className="health-caption">Not logged today</p>}</div>
-      </div>
-      {checkin?.note ? <p className="health-personal-note health-basics-note">Your note: {checkin.note}</p> : null}
-      <p className="health-caption">Your entries · Targets are editable</p>
-    </section>
-
+    <section className="card health-panel" aria-labelledby="foundations-title"><div className="health-panel__head"><h2 id="foundations-title">Today’s basics</h2><button type="button" className="health-text-btn" onClick={() => setDialog("checkin")}>{checkin ? "Update" : "Log today"} <Icon name="arrow" /></button></div><div className="health-basics-grid">
+      <div className="health-foundation"><div><span>Movement</span><strong>{checkin?.steps != null ? checkin.steps.toLocaleString() : "—"}<small> / {goals.steps.toLocaleString()} steps</small></strong></div>{checkin?.steps != null ? <Meter value={checkin.steps} goal={goals.steps} label="Today's manually logged steps" /> : <p className="health-caption">Not logged today</p>}</div>
+      <div className="health-foundation health-foundation--water"><div><span>Water</span><WaterBottles water={water} onChange={(amount) => { if (persist({ ...journal, waterDays: { ...journal.waterDays, [today]: amount } })) setNotice("Water saved on this device."); else setNotice("This browser could not save your water. Please try again."); }} bottleMl={journal.bottleMl ?? 500} goal={goals.water}/>{!waterLogged ? <p className="health-caption">Not logged today</p> : null}<button type="button" className="health-text-btn" onClick={() => setDialog("checkin")}>Bottle size & check-in <Icon name="arrow" /></button></div></div>
+    </div>{checkin?.note ? <p className="health-personal-note health-basics-note">Your note: {checkin.note}</p> : null}<p className="health-caption">Your entries · Targets are editable</p></section>
     {Object.keys(journal.days).length > 0 ? <details className="health-disclosure health-journal-disclosure"><summary>Check-in history <span>{checkinCount} in the last 7 days</span></summary><div className="health-journal">{Object.entries(journal.days).sort(([a], [b]) => b.localeCompare(a)).slice(0, 7).map(([date, entry]) => <div key={date}><strong>{healthDate(date)}</strong><span>Energy {entry.energy}/5 · {hoursLabel(entry.sleep)} sleep · {entry.soreness} soreness</span>{entry.note ? <p>{entry.note}</p> : null}</div>)}</div></details> : null}
-
-    <details className="health-disclosure health-connections" id="health-sources"><summary>Sources & what’s next <span>Hevy · sleep & activity · nutrition</span></summary><div className="health-connections__items"><span><strong>Hevy</strong><small>Sample workouts and strength. Not connected.</small></span><span><strong>Sleep & activity</strong><small>Sleep is sample data. Steps are logged manually.</small></span><span><strong>Nutrition</strong><small>Meals and protein tracking will come later.</small></span></div></details>
-    <p className="health-storage-note">Your check-ins and targets stay in this browser · Up to 90 daily entries · No device sync</p>
-    <p className="health-live-notice" role="status">{notice}</p>
-
+    {!demo && training.routines !== null ? <details className="health-disclosure"><summary>Your routines <span>{training.routines.length} saved in Hevy</span></summary><div className="health-muscles">{training.routines.length ? training.routines.map((r) => <div key={r.id}><span>{r.name}</span><strong>{r.exercises} exercises</strong></div>) : <p className="health-caption">No saved routines.</p>}</div></details> : null}
+    <details className="health-disclosure" id="health-sources"><summary>Sources & what’s next <span>Hevy · check-ins · nutrition</span></summary><div className="health-connections__items"><span><strong>Hevy</strong><small>{demo ? "Sample workouts and strength. No live connection." : !available ? "Hevy isn’t reachable. Training data is temporarily unavailable." : `${sourceLabel}: ${training.workouts.length} workouts loaded. Refreshes about every 5 minutes while open.`}</small></span><span><strong>Sleep & activity</strong><small>{demo ? "Sample sleep." : "Sleep, energy, soreness and steps come from your check-ins. Water can also be logged directly by tapping bottles."}</small></span><span><strong>Nutrition · FatSecret</strong><small>{nutrition.status === "authorization_required" ? "Application credentials configured. Your food diary still needs account authorization; meals and macros are not syncing yet." : nutrition.status === "connected" ? "Your FatSecret food diary is shown by calendar date alongside training and check-ins." : nutrition.status === "disabled" ? "FatSecret is disabled in demo mode." : nutrition.status === "unavailable" ? "FatSecret could not load your diary. Missing nutrition is not counted as zero." : "FatSecret will provide meals and nutrition after it is connected."}</small></span></div></details>
+    <p className="health-storage-note">Check-ins and targets stay in this browser · Hevy reads are cached briefly on the server · No writes to Hevy</p><p className="health-live-notice" role="status">{notice}</p>
     {dialog ? <HealthDialog title={dialog === "checkin" ? "Today’s check-in" : dialog === "goals" ? "Your health targets" : dialog.title} onClose={() => setDialog(null)}>
-      {dialog === "checkin" ? <CheckinForm value={checkin} onSave={(value) => saved({ ...journal, days: { ...journal.days, [today]: value } }, "Today’s check-in saved on this device.")} onDelete={() => {
-        const days = { ...journal.days }; delete days[today];
-        if (!saved({ ...journal, days }, "Today’s check-in deleted.")) setNotice("This browser couldn't delete your check-in. Please try again.");
-      }} /> : dialog === "goals" ? <GoalsForm goals={goals} onSave={(value) => saved({ ...journal, goals: value }, "Your targets are saved on this device.")} /> : <WorkoutDetail workout={dialog} today={today} />}
+      {dialog === "checkin" ? <CheckinForm value={checkin} initialWater={water} initialBottleMl={journal.bottleMl ?? 500} onSave={(value, bottleMl) => saved({ ...journal, bottleMl, waterDays: { ...journal.waterDays, [today]: value.water }, days: { ...journal.days, [today]: value } }, "Today’s check-in saved on this device.")} onDelete={() => { const days = { ...journal.days }; delete days[today]; if (!saved({ ...journal, days }, "Today’s check-in deleted.")) setNotice("This browser couldn't delete your check-in. Please try again."); }} /> : dialog === "goals" ? <GoalsForm goals={goals} initialBottleMl={journal.bottleMl ?? 500} onSave={(value, bottleMl) => saved({ ...journal, bottleMl, goals: value }, "Your targets are saved on this device.")} /> : <WorkoutDetail workout={dialog} today={today} unit={training.weightUnit} label={sourceLabel} />}
     </HealthDialog> : null}
   </main>;
 }
