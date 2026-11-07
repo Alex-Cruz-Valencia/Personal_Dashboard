@@ -36,6 +36,7 @@ export function AttentionStrip({
   tasks,
   replies,
   waiting = [],
+  okShared = [],
   nowHour,
   theme,
   aiDraft,
@@ -55,11 +56,13 @@ export function AttentionStrip({
   replies: Reply[];
   /** Sent emails nobody has answered yet. */
   waiting?: Waiting[];
+  /** Conflicts marked "It's fine" today on any device. */
+  okShared?: string[];
   nowHour: number;
   theme: Theme;
 }) {
   const hidden = useHiddenReplyIds();
-  const okConflicts = useDismissedConflicts();
+  const okConflicts = useDismissedConflicts(okShared);
   const [open, setOpen] = useState<{ item: AttentionItem; anchor: DOMRect } | null>(null);
   const [resolving, setResolving] = useState<{ item: AttentionItem; el: HTMLElement } | null>(null);
   const [picking, setPicking] = useState<{ chip: AttentionChip; el: HTMLElement } | null>(null);

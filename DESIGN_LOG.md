@@ -3396,3 +3396,27 @@ from the task it's about is the more deliberate path anyway, so nothing is lost.
 hide the button behind ⚙ (a setting for a button nobody wants).
 
 **Tradeoffs.** No one-click "just focus" without picking a task first.
+
+## 2026-11-07 — "It's fine" holds on every device
+
+**Problem.** Marking a calendar conflict "It's fine" on the laptop didn't carry over to the
+iPad. The choice lived only in that browser's localStorage, so the same conflict had to be
+dismissed again on each device, sometimes several times a day.
+
+**Decision.** Save each "It's fine" on the server for the day, in the same private Redis that
+holds the Google sign-in (or the gitignored `.data/` file locally), and send today's list with
+every page render. The browser still keeps its own copy, so the warning disappears at once
+and still works where there's no store (the public demo, which fails closed). Other devices
+pick it up on their next refresh, within a minute.
+
+**Reasoning.** The key already names the two events, their exact times and today's date, so
+"for the day" and "until either event moves" come for free: a new day or a moved event makes
+a new key and the warning returns. Nothing new to learn, no sign-in, and Google is untouched.
+
+**Alternatives.** A cookie (per device, same problem); writing a marker into the Google event
+(touches real data and other guests could see it); a full sync layer for every local
+preference (much bigger than the problem).
+
+**Tradeoffs.** Keys include event ids and times, stored in the private Redis next to the
+tokens. Other local-only choices (snoozed replies, hidden banners) still don't sync; they can
+follow the same pattern if they start to bother. No "undo" for "It's fine", as before.
