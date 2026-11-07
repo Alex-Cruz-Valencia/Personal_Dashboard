@@ -300,6 +300,8 @@ export interface DashboardData {
   replies: Reply[];
   /** Sent emails still waiting on an answer; empty when Gmail isn't connected or can't be read. */
   waiting: Waiting[];
+  /** Today's conflicts marked "It's fine" on any device (`okKey`s); empty without a store. */
+  okConflicts: string[];
   arc: ArcWindow;
   /** The weather card's own window — same end as `arc`, an independently
    *  configurable start (see `DashboardSettings.weatherStart`). */

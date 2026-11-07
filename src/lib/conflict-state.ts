@@ -3,10 +3,12 @@
 /**
  * Conflicts and tight turnarounds the viewer has said are fine ("It's fine" in the attention
  * strip). Keyed by the events and their exact times, so if either one moves the warning can
- * come back. Remembered in this browser for two days; nothing is written to Google.
+ * come back. Remembered in this browser at once, and on the server for the day so every device
+ * agrees (`/api/conflicts/ok`; the page passes today's server list back in). Nothing is
+ * written to Google.
  */
 
-import { useSyncExternalStore } from "react";
+import { useMemo, useSyncExternalStore } from "react";
 
 const KEY = "dashboard_ok_conflicts";
 const KEEP_MS = 2 * 86_400_000;
@@ -44,6 +46,13 @@ export function dismissConflict(key: string) {
     /* private mode: it still holds for this page view */
   }
   listeners.forEach((l) => l());
+  // Shared with other devices; the public demo has no store and says no, which is fine.
+  fetch("/api/conflicts/ok", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ key }),
+    keepalive: true,
+  }).catch(() => {});
 }
 
 function subscribe(cb: () => void) {
@@ -53,7 +62,11 @@ function subscribe(cb: () => void) {
   };
 }
 
-/** Keys of the conflicts marked fine. Empty during server render and hydration. */
-export function useDismissedConflicts(): ReadonlySet<string> {
-  return useSyncExternalStore(subscribe, current, () => EMPTY);
+/**
+ * Keys of the conflicts marked fine: this browser's, plus `shared` from the server (marked on
+ * any device today). Only the shared ones during server render and hydration.
+ */
+export function useDismissedConflicts(shared: readonly string[] = []): ReadonlySet<string> {
+  const local = useSyncExternalStore(subscribe, current, () => EMPTY);
+  return useMemo(() => (shared.length ? new Set([...local, ...shared]) : local), [local, shared]);
 }

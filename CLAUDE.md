@@ -88,6 +88,10 @@
     Reply chips open `ReplyQueue` (Reply in Gmail, Wait a day, Move, Trash); a chip
     with several conflicts lists them first (`ChipItems`).
     The same meeting on two calendars (`sameMeeting`) isn't a conflict.
+    "It's fine" on a conflict/tight item (`okKey`, dated today) is shared across devices:
+    `POST /api/conflicts/ok` → `lib/conflict-ok-store.ts` (Redis set per day, 2-day expiry, or
+    `.data/ok-conflicts.json`), read back as `DashboardData.okConflicts` and merged with the
+    browser's own copy (`lib/conflict-state.ts`). Private deployments only; never writes to Google.
   - **Waiting on others** (`lib/waiting.ts` `pickWaiting`, `getWaiting()` in `gmail.ts`, `DashboardData.waiting`):
     sent threads with my message last, 2–21 days old, that asked something. The chip opens `WaitingList`;
     Later/Done reuse the reply snooze (thread ids), with undo. Gmail reads only.
