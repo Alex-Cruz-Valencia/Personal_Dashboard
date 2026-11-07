@@ -3480,3 +3480,63 @@ Decision: add a shared weekly timeline with aligned training, protein, sleep and
 Keep the FatSecret adapter honest: until user delegation is available it returns an authorization-pending state and no nutrition records, without token requests during every render. Missing diary days remain null, not zero or assumed fasting. Manual sleep is aligned to its check-in date (the preceding night), with this convention visible. Standalone water overrides historical check-in water for the same date. Training availability and sample provenance remain explicit. Coverage describes logged data, not adherence or causation.
 
 Alternatives: fabricate a nutrition demo, block all UI work on missing diary credentials, or infer targets from workouts. Instead, complete the unified UX and typed data boundary now, while keeping the external authorization requirement visible. Tradeoff: nutrition plots and meal rows remain empty in the real dashboard until a genuinely authorized diary adapter is implemented. This phase is the integrated presentation and data contract, not a completed personal FatSecret sync.
+## 2026-11-07 — No "Focus 25" button on the calendar
+
+**Problem.** The calendar header carried a "Focus 25" button next to Now/Next. It was never
+used, and it took space and attention in the header of the card I look at most.
+
+**Decision.** Remove the button. Keep the focus timer itself: "Focus on this" in a task's
+editor still starts one, and a running session still shows in the calendar header with
+Pause/Stop.
+
+**Reasoning.** Function over polish: a control nobody presses is clutter. Starting a session
+from the task it's about is the more deliberate path anyway, so nothing is lost.
+
+**Alternatives.** Remove the whole timer (more churn, and the task-editor path costs nothing);
+hide the button behind ⚙ (a setting for a button nobody wants).
+
+**Tradeoffs.** No one-click "just focus" without picking a task first.
+
+## 2026-11-07 — "It's fine" holds on every device
+
+**Problem.** Marking a calendar conflict "It's fine" on the laptop didn't carry over to the
+iPad. The choice lived only in that browser's localStorage, so the same conflict had to be
+dismissed again on each device, sometimes several times a day.
+
+**Decision.** Save each "It's fine" on the server for the day, in the same private Redis that
+holds the Google sign-in (or the gitignored `.data/` file locally), and send today's list with
+every page render. The browser still keeps its own copy, so the warning disappears at once
+and still works where there's no store (the public demo, which fails closed). Other devices
+pick it up on their next refresh, within a minute.
+
+**Reasoning.** The key already names the two events, their exact times and today's date, so
+"for the day" and "until either event moves" come for free: a new day or a moved event makes
+a new key and the warning returns. Nothing new to learn, no sign-in, and Google is untouched.
+
+**Alternatives.** A cookie (per device, same problem); writing a marker into the Google event
+(touches real data and other guests could see it); a full sync layer for every local
+preference (much bigger than the problem).
+
+**Tradeoffs.** Keys include event ids and times, stored in the private Redis next to the
+tokens. Other local-only choices (snoozed replies, hidden banners) still don't sync; they can
+follow the same pattern if they start to bother. No "undo" for "It's fine", as before.
+
+## 2026-11-07 — "Reference files" is one click on every email
+
+**Problem.** Filing to the "Reference files" label is the most common thing done with an
+email here, but it took three steps: Move…, find the label among the chips, click it.
+
+**Decision.** Each email in the reply queue gets a "Reference files" button beside Move….
+It runs the same move as the chip (with undo). It appears only when the account has a label
+by that name (or plain "Reference"), matched ignoring case and spacing, so the public demo
+and other accounts never show a dead button.
+
+**Reasoning.** One frequent action deserves a direct button; the rest stay one step away
+under Move…. Matching the existing label by name means no new setting.
+
+**Alternatives.** A setting to choose the quick label (more UI for one person's habit);
+"recently used labels" first in Move… (still two clicks); letting AI triage pick it (already
+exists, but is a suggestion, not a habit).
+
+**Tradeoffs.** The label name is hardcoded; renaming it in Gmail hides the button until the
+name matches again.

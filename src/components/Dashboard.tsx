@@ -128,6 +128,7 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
             tasks={data.sources.tasks === "mock" ? [] : data.tasks}
             replies={data.sources.email === "mock" ? [] : data.replies}
             waiting={data.waiting}
+            okShared={data.okConflicts}
             incomplete={data.sources.calendar === "mock" || data.sources.tasks === "mock" || data.sources.email === "mock"}
             nowHour={data.today.nowHour}
             theme={settings.theme}
@@ -151,7 +152,6 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
               tomorrow={tomorrow}
               sunset={data.weather.sunset}
               forecast={data.weather.tomorrow}
-              focusTask={data.tasks.find((t) => !t.overdueDays)?.name ?? data.tasks[0]?.name}
             />
             <TaskList tasks={data.tasks} settings={settings} source={data.sources.tasks} ai={data.ai} clarifyCount={data.clarifyCount} todayIso={data.today.iso} nowHour={data.today.nowHour} tomorrow={tomorrow} agenda={data.agenda} canPlan={data.sources.calendar === "live"} />
           </div>

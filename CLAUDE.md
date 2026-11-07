@@ -117,9 +117,13 @@
     min), overdue tasks (one rolled-up line, its chip opens the day review; `Task.overdueDays` is date-based, set
     in `todoist.ts`), replies. One line beside the heading: `attentionChips()` rolls
     them into a count per kind (`.attn__chip`; a colored bar in clean, a dot in cards).
-    Reply chips open `ReplyQueue` (Reply in Gmail, Wait a day, Move, Trash); a chip
+    Reply chips open `ReplyQueue` (Reply in Gmail, Wait a day, one-click "Reference files" when that label exists (`lib/quick-file.ts`), Move, Trash); a chip
     with several conflicts lists them first (`ChipItems`).
     The same meeting on two calendars (`sameMeeting`) isn't a conflict.
+    "It's fine" on a conflict/tight item (`okKey`, dated today) is shared across devices:
+    `POST /api/conflicts/ok` → `lib/conflict-ok-store.ts` (Redis set per day, 2-day expiry, or
+    `.data/ok-conflicts.json`), read back as `DashboardData.okConflicts` and merged with the
+    browser's own copy (`lib/conflict-state.ts`). Private deployments only; never writes to Google.
   - **Waiting on others** (`lib/waiting.ts` `pickWaiting`, `getWaiting()` in `gmail.ts`, `DashboardData.waiting`):
     sent threads with my message last, 2–21 days old, that asked something. The chip opens `WaitingList`;
     Later/Done reuse the reply snooze (thread ids), with undo. Gmail reads only.
@@ -132,7 +136,8 @@
     (six extra `getAgenda` calls + one Todoist query, all fail-soft; `week` is
     null when neither source is live). "Heavy" = booked + 30 min/task ≥ 6h.
   - Focus timer (`Focus.tsx`): local only (localStorage `dashboard_focus`), start
-    from the arc toolbar or a task's editor; shows in the arc header, as a block,
+    from a task's editor ("Focus on this"; the calendar's "Focus 25" button was removed
+    2026-11-07); shows in the arc header, as a block,
     and in the tab title. Writes nothing to Google or Todoist.
 - **AI (any OpenAI-compatible chat API, e.g. Dartmouth Chat)** — `LLM_BASE_URL`,
   `LLM_API_KEY`, `LLM_MODEL` in gitignored `.env.local` (private deployment env

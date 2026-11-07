@@ -69,8 +69,6 @@ interface DayCalendarProps {
   settings: ShownSettings;
   /** Demo mode: "now" stays at the sample time. */
   frozen?: boolean;
-  /** The task the Focus button starts on. */
-  focusTask?: string;
   /** Google is connected: events can be dragged, resized and drawn. */
   editable?: boolean;
   source?: SliceSource;
@@ -91,7 +89,7 @@ interface DayCalendarProps {
  * Google is connected, drag one to move it, drag its bottom edge to resize it,
  * or drag on an empty stretch to add a new one. Nothing is saved until you let go.
  */
-export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, today, settings, frozen = false, focusTask, editable = false, source = "live", reconnect = false, tomorrow = null, sunset, forecast }: DayCalendarProps) {
+export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, today, settings, frozen = false, editable = false, source = "live", reconnect = false, tomorrow = null, sunset, forecast }: DayCalendarProps) {
   const use24 = use24Hour(settings);
   const { open, isSelected } = useEventDetail();
   const focus = useFocus();
@@ -495,27 +493,15 @@ export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, to
               {focus.done ? "Dismiss" : "Stop"}
             </button>
           </div>
-        ) : (
-          <>
-            {next ? (
-              <div className="vcal__status" aria-live="polite">
-                <span className="vcal__tag">{next.mode === "now" ? "Now" : "Next"}</span>
-                <span className="vcal__name">{next.name}</span>
-                <span className="vcal__when">
-                  {next.mode === "now" ? `${minutesLabel(next.minutes)} left` : `in ${minutesLabel(next.minutes)}`}
-                </span>
-              </div>
-            ) : null}
-            <button
-              type="button"
-              className="vcal__btn"
-              onClick={() => focus.start(focusTask ?? "Focus", 25)}
-              title={focusTask ? `Start 25 minutes on: ${focusTask}` : "Start a 25 minute focus session"}
-            >
-              Focus 25
-            </button>
-          </>
-        )}
+        ) : next ? (
+          <div className="vcal__status" aria-live="polite">
+            <span className="vcal__tag">{next.mode === "now" ? "Now" : "Next"}</span>
+            <span className="vcal__name">{next.name}</span>
+            <span className="vcal__when">
+              {next.mode === "now" ? `${minutesLabel(next.minutes)} left` : `in ${minutesLabel(next.minutes)}`}
+            </span>
+          </div>
+        ) : null}
         <button
           type="button"
           className="vcal__btn vcal__now-btn"

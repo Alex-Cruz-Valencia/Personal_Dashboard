@@ -8,6 +8,7 @@ import { getDaySummary } from "./anthropic/summary";
 import { config, features, forceMock, isDemoMode } from "./config";
 import { deterministicDayNote, WIND_DOWN_HOUR } from "./day-note";
 import type { NoteStyle } from "./settings";
+import { readOkConflicts } from "./conflict-ok-store";
 import { getAgenda, getAllDayEvents } from "./google/calendar";
 import { getReplies, getTodoCount, getWaiting } from "./google/gmail";
 import { GoogleAuthError } from "./google/oauth";
@@ -119,6 +120,7 @@ export async function getDashboardData(
       agenda: MOCK_AGENDA,
       replies: MOCK_REPLIES,
       waiting: [],
+      okConflicts: [],
       arc: MOCK_ARC,
       weatherArc: MOCK_ARC,
       googleReconnect: false,
@@ -156,6 +158,9 @@ export async function getDashboardData(
 
   // Sent mail nobody has answered; extra, like the banners.
   const waiting: Promise<Waiting[]> = features.google ? getWaiting().catch(() => []) : Promise.resolve([]);
+
+  // "It's fine" from any device; a store that can't be read just shows the warnings again.
+  const okConflicts = features.google ? readOkConflicts(today.iso).catch(() => [] as string[]) : Promise.resolve([] as string[]);
 
   // The count on the Clarify button; a source that fails just isn't counted.
   const clarifyCounts = Promise.all([
@@ -255,6 +260,7 @@ export async function getDashboardData(
     replies: replies.value,
     // Extra, so it fails quietly: no sample data stands in for it.
     waiting: replies.live ? await waiting : [],
+    okConflicts: await okConflicts,
     arc,
     weatherArc,
     sources,
