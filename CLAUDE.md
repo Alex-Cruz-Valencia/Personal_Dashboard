@@ -85,7 +85,7 @@
     min), overdue tasks (one rolled-up line, its chip opens the day review; `Task.overdueDays` is date-based, set
     in `todoist.ts`), replies. One line beside the heading: `attentionChips()` rolls
     them into a count per kind (`.attn__chip`; a colored bar in clean, a dot in cards).
-    Reply chips open `ReplyQueue` (Reply in Gmail, Wait a day, Move, Trash); a chip
+    Reply chips open `ReplyQueue` (Reply in Gmail, Wait a day, one-click "Reference files" when that label exists (`lib/quick-file.ts`), Move, Trash); a chip
     with several conflicts lists them first (`ChipItems`).
     The same meeting on two calendars (`sameMeeting`) isn't a conflict.
     "It's fine" on a conflict/tight item (`okKey`, dated today) is shared across devices:

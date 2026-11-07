@@ -12,6 +12,7 @@ import {
   type LabelInfo,
   type TriageSuggestion,
 } from "@/lib/reply-actions";
+import { referenceLabel } from "@/lib/quick-file";
 import { SNOOZE_HOURS, snoozeReply } from "@/lib/reply-state";
 import type { Priority } from "@/lib/types";
 import type { Theme } from "@/lib/settings";
@@ -21,7 +22,8 @@ import { Popover } from "./Popover";
 
 /**
  * The emails behind an attention item, with an action on each: reply (opens
- * Gmail), wait (hide for a day, this browser only), move, trash. With AI on,
+ * Gmail), wait (hide for a day, this browser only), file to "Reference files" in
+ * one click (when that label exists), move, trash. With AI on,
  * each email also shows one suggested action; it runs only when clicked.
  */
 export function ReplyQueue({
@@ -55,6 +57,7 @@ export function ReplyQueue({
   const [triage, setTriage] = useState<Map<string, TriageSuggestion | null> | null>(null);
   const [triageError, setTriageError] = useState(false);
   const idKey = replies.map((r) => r.id).join(",");
+  const reference = referenceLabel(labels);
 
   useEffect(() => {
     let alive = true;
@@ -149,6 +152,16 @@ export function ReplyQueue({
                 <button type="button" className="rq__btn" onClick={() => waitReply(id)} title={`Hide for ${SNOOZE_HOURS} hours`}>
                   Wait a day
                 </button>
+                {reference ? (
+                  <button
+                    type="button"
+                    className="rq__btn"
+                    onClick={() => done(id, (i) => moveReply(i, reference.name))}
+                    title={`Move to ${reference.name}`}
+                  >
+                    {reference.name.trim()}
+                  </button>
+                ) : null}
                 <button type="button" className="rq__btn" onClick={() => setMoving(moving === id ? null : id)} aria-expanded={moving === id}>
                   Move…
                 </button>
