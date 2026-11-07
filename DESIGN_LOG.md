@@ -3379,3 +3379,20 @@ choice, superseded by the user's request for less intrusive navigation.
 
 **Tradeoffs** — Labels take a hover or keyboard focus to reveal. Touch users
 can navigate with a single tap, and assistive technology always has names.
+
+## 2026-11-07 — No "Focus 25" button on the calendar
+
+**Problem.** The calendar header carried a "Focus 25" button next to Now/Next. It was never
+used, and it took space and attention in the header of the card I look at most.
+
+**Decision.** Remove the button. Keep the focus timer itself: "Focus on this" in a task's
+editor still starts one, and a running session still shows in the calendar header with
+Pause/Stop.
+
+**Reasoning.** Function over polish: a control nobody presses is clutter. Starting a session
+from the task it's about is the more deliberate path anyway, so nothing is lost.
+
+**Alternatives.** Remove the whole timer (more churn, and the task-editor path costs nothing);
+hide the button behind ⚙ (a setting for a button nobody wants).
+
+**Tradeoffs.** No one-click "just focus" without picking a task first.

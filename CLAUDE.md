@@ -100,7 +100,8 @@
     (six extra `getAgenda` calls + one Todoist query, all fail-soft; `week` is
     null when neither source is live). "Heavy" = booked + 30 min/task ≥ 6h.
   - Focus timer (`Focus.tsx`): local only (localStorage `dashboard_focus`), start
-    from the arc toolbar or a task's editor; shows in the arc header, as a block,
+    from a task's editor ("Focus on this"; the calendar's "Focus 25" button was removed
+    2026-11-07); shows in the arc header, as a block,
     and in the tab title. Writes nothing to Google or Todoist.
 - **AI (any OpenAI-compatible chat API, e.g. Dartmouth Chat)** — `LLM_BASE_URL`,
   `LLM_API_KEY`, `LLM_MODEL` in gitignored `.env.local` (private deployment env
