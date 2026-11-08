@@ -2,7 +2,7 @@
 
 Researched against FatSecret's official documentation on November 7, 2026.
 
-## Current implementation
+## Initial application-authentication phase (historical)
 
 Application credentials are read from server-only `FATSECRET_CLIENT_ID` and
 `FATSECRET_CLIENT_SECRET`. Actual values belong in ignored `.env.local` or the
@@ -136,7 +136,7 @@ tokens need protected server-side storage when the user connection is added.
 Do not copy the full diary into an unbounded dashboard database or send it to
 an AI service by default.
 
-## Implemented shared dashboard presentation
+## Shared dashboard presentation
 
 The shared weekly timeline and selected-day fuel/context panels now live in
 `ConnectedHealth.tsx`. They join normalized training, browser check-ins and a
@@ -166,3 +166,38 @@ one. Passing this check still does not delegate access to a member's diary.
 After the user added the source IP to the allowlist, a repeat food search
 succeeded and returned a nutrition description. Food database access is now
 verified from this environment; personal diary authorization remains separate.
+
+## Current delegated diary implementation
+
+The connection UI now lives at `/health/connect/fatsecret`. Consumer credentials
+are read only from `FATSECRET_CONSUMER_KEY` / `FATSECRET_CONSUMER_SECRET`. The
+user approves an existing account on FatSecret's website; no empty API profile
+is created. Request tokens are paired with an opaque HttpOnly SameSite=Lax
+browser cookie and encrypted server-side pending records with ten-minute expiry.
+Callbacks match request tokens and consume pending state atomically before
+exchange, preventing cross-browser substitution and replay. Errors and redirect
+status messages are sanitized. Callback URLs are excluded from local Next dev
+request logs; deployment log policy should likewise protect verification query
+parameters. FatSecret’s authorization service requires signed form/query parameters: request tokens use a POST form, and the documented temporary access-token exchange uses a GET query. Permanent account tokens are sent in POST bodies to fixed read-only diary methods; token secrets are never transmitted.
+
+Saved access tokens are encrypted with AES-256-GCM using a key derived from the
+consumer credentials. Private Redis is used when configured; otherwise local
+owner-only encrypted files under ignored `.data/fatsecret` are used. Vercel fails
+closed without private Redis. Disconnect removes saved authorization. Rotating
+consumer credentials requires reconnecting.
+
+Once approved, the read-only adapter fetches current-day entries and at most
+four monthly summaries to cover twelve weeks. Historical details load on date
+selection. API numeric strings and dates are validated; entry nutrients are
+already totals and are not multiplied again by serving count. Empty diary days
+are omitted from summaries rather than treated as zero intake. RAM caches expire
+after five minutes and are tied to the saved account token; authentication errors
+clear authorization and disconnects cannot reuse cached records. No nutrition
+records are persisted in browser storage, Redis or files. Required FatSecret
+attribution accompanies displayed data. Live user-data validation still requires
+the user to save consumer credentials and complete their account consent.
+
+Live consumer-credential validation succeeded after matching FatSecret's signed
+form transport. The application now receives a confirmed temporary request token
+and an authorization redirect. Actual diary access still requires the user to
+complete FatSecret's account-consent page.

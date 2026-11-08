@@ -1,4 +1,5 @@
-import { validNutritionGoals, type NutritionGoals } from "./nutrition";
+import { TRAINING_DAYS_PER_WEEK } from "./health-schedule";
+import { PERSONAL_NUTRITION_GOALS, validNutritionGoals, type NutritionGoals } from "./nutrition";
 
 /** Provider-independent health view model. Sample records never masquerade as connected data. */
 export interface ExerciseSet {
@@ -39,9 +40,15 @@ export interface HealthCheckin {
   water: number;
   note: string;
 }
-export const HEALTH_GOALS: HealthGoals = { sessions: 4, sleep: 8, steps: 8000, water: 2500 };
+export const HEALTH_GOALS: HealthGoals = { sessions: TRAINING_DAYS_PER_WEEK, sleep: 8, steps: 8000, water: 2500 };
 export const HEALTH_STORAGE_KEY = "dashboard_health_v1";
-export interface HealthJournal { nutritionGoals?: NutritionGoals; waterDays?: Record<string, number>; bottleMl?: number; goals: HealthGoals; days: Record<string, HealthCheckin> }
+export type TodayWorkoutPlan = { kind: "rest" } | { kind: "routine"; routineId: string; title: string };
+export function validWorkoutPlan(value: unknown): value is TodayWorkoutPlan {
+  if (!value || typeof value !== "object") return false;
+  const v = value as Record<string, unknown>;
+  return v.kind === "rest" || (v.kind === "routine" && typeof v.routineId === "string" && v.routineId.length > 0 && v.routineId.length <= 100 && typeof v.title === "string" && v.title.trim().length > 0 && v.title.length <= 300);
+}
+export interface HealthJournal { nutritionGoalVersion?: 1; trainingScheduleVersion?: 1; workoutPlans?: Record<string, TodayWorkoutPlan>; nutritionGoals?: NutritionGoals; waterDays?: Record<string, number>; bottleMl?: number; goals: HealthGoals; days: Record<string, HealthCheckin> }
 
 const inRange = (value: unknown, min: number, max: number): value is number =>
   typeof value === "number" && Number.isFinite(value) && value >= min && value <= max;
@@ -71,7 +78,7 @@ export function validGoals(value: unknown): value is HealthGoals {
 
 /** Treat browser storage as untrusted; retain valid days even if one record is damaged. */
 export function readHealthJournal(raw: string | null): HealthJournal {
-  const empty = { goals: { ...HEALTH_GOALS }, days: {} };
+  const empty = { goals: { ...HEALTH_GOALS }, nutritionGoals: { ...PERSONAL_NUTRITION_GOALS }, days: {} };
   if (!raw) return empty;
   try {
     const parsed = JSON.parse(raw);
@@ -79,10 +86,17 @@ export function readHealthJournal(raw: string | null): HealthJournal {
     const days = Object.fromEntries(Object.entries(parsed.days && typeof parsed.days === "object" ? parsed.days : {})
       .filter(([date, value]) => isIsoDate(date) && validCheckin(value))
       .sort(([a], [b]) => b.localeCompare(a)).slice(0, 90)) as Record<string, HealthCheckin>;
+    const workoutPlans = Object.fromEntries(Object.entries(parsed.workoutPlans && typeof parsed.workoutPlans === "object" ? parsed.workoutPlans : {})
+      .filter(([date, value]) => isIsoDate(date) && validWorkoutPlan(value))
+      .sort(([a], [b]) => b.localeCompare(a)).slice(0, 90)) as Record<string, TodayWorkoutPlan>;
     const waterDays = Object.fromEntries(Object.entries(parsed.waterDays && typeof parsed.waterDays === "object" ? parsed.waterDays : {})
       .filter(([date, value]) => isIsoDate(date) && inRange(value, 0, 20000))
       .sort(([a], [b]) => b.localeCompare(a)).slice(0, 90)) as Record<string, number>;
-    return { ...(validNutritionGoals(parsed.nutritionGoals) ? { nutritionGoals: parsed.nutritionGoals } : {}), ...(Object.keys(waterDays).length ? { waterDays } : {}), goals: validGoals(parsed.goals) ? parsed.goals : empty.goals, days, ...([355, 500, 710, 946, 1000].includes(parsed.bottleMl) ? { bottleMl: parsed.bottleMl } : {}) };
+    const previousGoals = validGoals(parsed.goals) ? parsed.goals : empty.goals;
+    const goals = { ...previousGoals, sessions: parsed.trainingScheduleVersion === 1 ? previousGoals.sessions : TRAINING_DAYS_PER_WEEK };
+    const previousNutrition = validNutritionGoals(parsed.nutritionGoals) ? parsed.nutritionGoals : PERSONAL_NUTRITION_GOALS;
+    const nutritionGoals = parsed.nutritionGoalVersion === 1 ? previousNutrition : { ...previousNutrition, ...PERSONAL_NUTRITION_GOALS };
+    return { nutritionGoals, ...(parsed.nutritionGoalVersion === 1 ? { nutritionGoalVersion: 1 as const } : {}), ...(parsed.trainingScheduleVersion === 1 ? { trainingScheduleVersion: 1 as const } : {}), ...(Object.keys(workoutPlans).length ? { workoutPlans } : {}), ...(Object.keys(waterDays).length ? { waterDays } : {}), goals, days, ...([355, 500, 710, 946, 1000].includes(parsed.bottleMl) ? { bottleMl: parsed.bottleMl } : {}) };
   } catch { return empty; }
 }
 

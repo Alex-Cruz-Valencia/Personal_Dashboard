@@ -26,24 +26,33 @@ Use the calendar (**My day**) and heart (**Health**) icons in the narrow
 left navigation to switch between the morning dashboard and `/health`.
 Labels appear on hover or keyboard focus; Escape dismisses the label. The scenic header and ambient
 clock stay on My day. Health shares its display settings, palettes, and
-card/row styling, with a compact title and status-first layout. It provides:
+card/row styling. Health starts with today's actionable priorities: a
+weekday-matched Hevy routine, completed sessions, today's nutrition against goals,
+remaining water against your editable target, and a recovery check-in. Weekly
+status, timelines and longer-term insights sit below “Patterns & progress”.
+Routine names match the day of the week. Wednesday and Friday are rest days;
+the workout card disappears unless a matching routine or completed workout exists.
+The weekly goal counts five distinct training days. Routine choices stay in
+this browser and do not write workouts in Hevy.
+It provides:
 
 - A rolling seven-day training view using Hevy when configured, with every
   logged set, warm-up label, rep count, weight, cardio metric and effort rating.
 - A broad progression view with one matching-rep comparison per exercise,
   median percentage change, directional bars, and four- or twelve-week views.
   Comparison coverage is explicit; individual lift charts expand on demand.
-- A clickable training activity map and visual overview: weekly session ring,
+- A clickable training activity map and visual overview: weekly training-day ring,
   strength-direction distribution, sleep bars, and today's energy dots.
 - Manual sleep trends and a short list of follow-ups, each with source context.
   Only the unconfigured/public demo uses sample sleep and training data.
 - A shared seven-day timeline aligning Hevy workouts, FatSecret protein,
   sleep and energy by local date. Browse twelve weeks and select a date for
   daily fuel, same-day workout details, and manual check-in context.
-- Daily macro/meal views with optional user-set protein and calorie targets.
-  FatSecret diary authorization is still pending; nutrition stays unknown rather
-  than showing sample or zero intake. Targets are browser-local, with no default
-  calorie/protein prescription and no personal nutrition records saved locally.
+- Daily macro/meal views with the owner’s 2,600 kcal and 200 g protein goals.
+  Today’s progress bars show percentages and remaining amounts. All goals are
+  editable; carbs and fat are supporting totals unless targets are set.
+  Targets stay browser-local; no personal nutrition records are saved locally.
+  Until account authorization succeeds, nutrition stays unknown instead of zero.
 - A working daily check-in for energy, sleep, soreness, steps, water, and notes.
   Water uses tappable bottles (empty → half → full → empty), with a remembered bottle
   size in fluid ounces/mL; changing size preserves previously logged volume.
@@ -106,7 +115,7 @@ failures are labeled and leave the workout list usable. The next refresh
 retries after a one-minute backoff.
 
 Sleep, energy, soreness, steps and water remain manual check-in data, with
-missing nights excluded from sleep averages. FatSecret personal diary access remains unconnected.
+missing nights excluded from sleep averages. FatSecret nutrition stays unknown until the separate account connection is authorized.
 See the [official Hevy API docs](https://api.hevyapp.com/docs/).
 
 For deployment, add `HEVY_API_KEY` only to the **private Vercel project** and
@@ -377,13 +386,32 @@ Setup:
 5. Visit `/api/auth/google` on the **private** deployment once, after
    Redis is wired up, to (re)connect.
 
-### FatSecret application connection
+### FatSecret application and food diary connections
 
-Set `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET` in ignored `.env.local`.
-Never use `NEXT_PUBLIC_` or commit actual values. `/api/health/fatsecret` checks
-application authentication server-side and returns no token. Forced mock mode
-disables calls. A successful check does **not** connect your existing food diary:
-that requires separate OAuth 1.0 Consumer Key/Secret and user authorization.
-The current app does not fetch personal FatSecret records. See the
-[capability research and dashboard plan](docs/fatsecret-integration.md) for the
-access distinction, next steps and proposed nutrition views.
+Keep `FATSECRET_CLIENT_ID` and `FATSECRET_CLIENT_SECRET` in ignored `.env.local`
+for food-database authentication. Those credentials do not delegate access to
+an existing member's diary. Add its separate `FATSECRET_CONSUMER_KEY` and
+`FATSECRET_CONSUMER_SECRET`, restart the dev server, and open
+[Connect food diary](http://localhost:3000/health/connect/fatsecret). Sign in on
+FatSecret's own website with the account where you log meals and approve access.
+The default callback is `http://localhost:3000/api/auth/fatsecret/callback`;
+set `FATSECRET_REDIRECT_URI` for your private hosted dashboard.
+
+The server uses browser-bound, expiring, single-use request tokens and signs
+requests with OAuth 1.0 HMAC-SHA1. Account tokens are encrypted using AES-256-GCM
+with a key derived from the consumer credentials, stored in private Redis or
+owner-only files under ignored `.data/fatsecret`. Changing those credentials
+requires reconnecting. Vercel requires private Redis because its local disk is
+not persistent. Never use `NEXT_PUBLIC_` or commit real environment values.
+
+After authorization, Health loads today's meals and twelve weeks of daily
+calorie/macro summaries. Historical meal details load when a date is selected.
+Nutrition is cached in RAM for five minutes, never written to Redis/files or
+localStorage. Missing entries remain unknown, not zero intake; today's records
+are labelled logged so far. Food-diary access is read-only. Disconnect via the
+connection page to remove saved tokens. Forced mock mode disables provider calls.
+
+The application probe at `/api/health/fatsecret` returns no tokens; its saved
+authorization flag is distinct from a verified diary read. The delegated flow
+must be approved before actual personal nutrition can load. See the
+[capability research and dashboard plan](docs/fatsecret-integration.md).

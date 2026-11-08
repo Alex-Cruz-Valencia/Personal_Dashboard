@@ -6,7 +6,19 @@
   renders real Hevy training/strength plus browser-local check-ins. Only an
   unconfigured/forced demo shows sample training and sleep.
   The large scenic header/ambient clock stay on My day; Health starts with a
-  compact title and training/strength/sleep/energy status against targets.
+  compact title followed by `TodayActions.tsx`: today's weekday-matched Hevy
+  routine, completed sessions, nutrition against daily goals, tappable
+  water bottles with remaining user target, and a recovery check-in. Weekly
+  status, timeline and progression belong below Patterns & progress.
+  `workoutPlans` in the browser journal retains up to 90 dated choices. Never
+  infer a prescribed daily workout from Hevy history or label an unlogged
+  routine as completed. Today's nutrition link resets historical browsing to today.
+  `lib/health-schedule.ts` matches weekday names/abbreviations in saved routines.
+  Wednesday and Friday are rest days; hide the workout card without a matched
+  routine or an actual session today. Weekly target is five distinct training
+  days, not session count. Nutrition goals are owner-provided: 2,600 kcal and
+  200 g protein, editable alongside optional carbs/fat. Versioned journal
+  migrations apply these preferences once while preserving later edits.
   A full-width overall progression panel compares one matching-rep series per
   exercise with median percentage change, directional bars, and a training map.
   Overview visuals show sessions, strength direction, sleep, and energy.
@@ -38,14 +50,19 @@
   support with basic scope; credentials live in ignored `.env.local`. Never
   expose tokens through `/api/health/fatsecret`, which checks application auth
   only. Existing food diaries require separate OAuth 1.0 consumer credentials
-  plus account delegation; that flow is not implemented. Don't mark diary sync
-  connected or create an empty API profile as a substitute. Capability research,
+  plus account delegation via `/health/connect/fatsecret`. Never create an empty
+  API profile as a substitute for the existing account. The delegated flow uses
+  browser-bound single-use request tokens and encrypted server token storage
+  (`token-store.ts`), with private Redis required on Vercel. Capability research,
   API restrictions and the proposed nutrition UX are in
-  `docs/fatsecret-integration.md`. `lib/fatsecret/data.ts` explicitly returns
-  not-configured/authorization-pending/disabled states without remote calls.
+  `docs/fatsecret-integration.md`. `lib/fatsecret/data.ts` returns pending states
+  without provider reads until authorization exists; then it reads today’s
+  entries and twelve weeks of monthly daily summaries, cached in RAM for 5m.
   `ConnectedHealth.tsx` joins local calendar dates via `lib/health-timeline.ts`,
   displaying a navigable shared week and selected-day fuel/workout/check-in
-  context. Diary records remain absent until real authorization is implemented.
+  context. Historical meal details load on selection via the guarded day route.
+  Do not persist nutrition in Redis/files/localStorage; only encrypted account
+  credentials belong in the token store. Attribute FatSecret where data appears.
   `lib/nutrition.ts` defines the provider-independent nutrition model and optional
   user-set targets; only targets go into the local health journal, never meals.
   Preserve unknown versus zero and label today's intake as logged so far.

@@ -8,6 +8,7 @@ import {
 } from "@/lib/health";
 import { ConnectedHealth } from "./ConnectedHealth";
 import type { NutritionData } from "@/lib/nutrition";
+import { TodayActions } from "./TodayActions";
 import { WaterBottles } from "./WaterBottles";
 import { ProgressOverview } from "./ProgressOverview";
 import { overallProgress } from "@/lib/health-progress";
@@ -38,14 +39,10 @@ function serverSnapshot() { return null; }
 function persist(journal: HealthJournal): boolean {
   try {
     // Apply the retention limit on write as well as read.
-    localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(readHealthJournal(JSON.stringify(journal))));
+    localStorage.setItem(HEALTH_STORAGE_KEY, JSON.stringify(readHealthJournal(JSON.stringify({ ...journal, trainingScheduleVersion: 1, nutritionGoalVersion: 1 }))));
     window.dispatchEvent(new Event("health-journal-change"));
     return true;
   } catch { return false; }
-}
-
-function Meter({ value, goal, label }: { value: number; goal: number; label: string }) {
-  return <div className="health-meter" role="progressbar" aria-label={label} aria-valuemin={0} aria-valuemax={goal} aria-valuenow={Math.min(value, goal)} aria-valuetext={`${value.toLocaleString()} of ${goal.toLocaleString()}`}><span style={{ width: `${Math.min(100, Math.max(0, value / goal * 100))}%` }} /></div>;
 }
 
 /** Native dialog supplies focus containment, Escape and focus restoration. */
@@ -110,7 +107,7 @@ function GoalsForm({ goals, initialBottleMl, onSave }: { goals: HealthGoals; ini
   }}>
     <p className="health-muted">Start with targets that fit your life. These starting targets come from the app, not Hevy. Your edits stay in this browser; they aren’t personal recommendations.</p>
     <div className="health-form-grid">
-      <label>Training <span>sessions / 7 days</span><input name="sessions" type="number" min="1" max="7" step="1" required defaultValue={goals.sessions} /></label>
+      <label>Training <span>training days / 7 days</span><input name="sessions" type="number" min="1" max="7" step="1" required defaultValue={goals.sessions} /></label>
       <label>Sleep <span>hours / night</span><input name="sleep" type="number" min="1" max="24" step="0.25" required defaultValue={goals.sleep} /></label>
       <label>Movement <span>steps / day</span><input name="steps" type="number" min="100" max="100000" step="1" required defaultValue={goals.steps} /></label>
 
@@ -145,8 +142,8 @@ export function HealthDashboard({ today, timezone, training, nutrition }: { toda
   const checkin = journal.days[today];
   const { goals } = journal;
   const water = journal.waterDays?.[today] ?? checkin?.water ?? 0;
-  const waterLogged = journal.waterDays?.[today] !== undefined || !!checkin;
   const [dialog, setDialog] = useState<"checkin" | "goals" | HealthWorkout | null>(null);
+  const [fuelView, setFuelView] = useState(0);
   const [notice, setNotice] = useState("");
   const demo = training.source === "sample";
   const available = training.source !== "unavailable";
@@ -159,7 +156,8 @@ export function HealthDashboard({ today, timezone, training, nutrition }: { toda
   const sleepGap = sleepAverage !== null ? Math.max(0, Math.round((goals.sleep - sleepAverage) * 60)) : null;
   const nightsAtTarget = loggedSleep.filter((hours) => hours >= goals.sleep).length;
   const sessions = week.length;
-  const sessionsLeft = Math.max(0, goals.sessions - sessions);
+  const trainingDays = new Set(week.map(w => w.date)).size;
+  const sessionsLeft = Math.max(0, goals.sessions - trainingDays);
   const trainingMinutes = week.reduce((sum, w) => sum + w.minutes, 0);
   const progress = overallProgress(training.lifts, today, 4);
   const muscles = muscleSets(week);
@@ -174,25 +172,22 @@ export function HealthDashboard({ today, timezone, training, nutrition }: { toda
   </button>;
   return <main className="health" id="health-main">
     <header className="health-titlebar"><div><h1>Health</h1><p>{healthDate(today, { weekday: "long", month: "long", day: "numeric" })}</p></div><div className="health-header__actions"><button className="health-btn health-btn--quiet" type="button" onClick={() => setDialog("goals")}>Edit targets</button><button className="health-btn health-btn--primary" type="button" onClick={() => setDialog("checkin")}>{checkin ? "Edit check-in" : "Daily check-in"}</button></div></header>
-    <div className="health-preview-note"><span>{demo ? "Training & sleep: sample data" : available ? `${sourceLabel} · ${training.workouts.length} workouts · Synced ${training.syncedAt ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: timezone }).format(new Date(training.syncedAt)) : "—"}` : "Hevy unavailable"} · Check-ins: your entries</span><a href="#health-sources">Sources</a></div>
+
     {training.message ? <p className="source-notice" role="status">{training.message}</p> : null}
 
+    <TodayActions today={today} training={training} nutrition={nutrition} journal={journal} onWorkout={setDialog} onCheckin={() => setDialog("checkin")} onTargets={() => setDialog("goals")} onNutritionGoals={(nutritionGoals) => { if (!persist({ ...journal, nutritionGoals })) return false; setNotice("Daily nutrition targets saved on this device."); return true; }} onNutritionDetails={() => setFuelView(v => v + 1)} onWater={(amount) => { if (persist({ ...journal, waterDays: { ...journal.waterDays, [today]: amount } })) setNotice("Water saved on this device."); else setNotice("This browser could not save your water. Please try again."); }} onPlan={(plan) => { const workoutPlans = { ...journal.workoutPlans }; if (plan) workoutPlans[today] = plan; else delete workoutPlans[today]; if (!persist({ ...journal, workoutPlans })) return false; setNotice("Today’s workout plan saved on this device."); return true; }}/>
+    <div className="health-insights-heading" id="health-insights"><span className="health-eyebrow">THE BIGGER PICTURE</span><h2>Patterns & progress</h2><p className="health-caption">Review your consistency and history when you need more context.</p></div>
+    <div className="health-preview-note"><span>{demo ? "Training & sleep: sample data" : available ? `${sourceLabel} · ${training.workouts.length} workouts · Synced ${training.syncedAt ? new Intl.DateTimeFormat("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: timezone }).format(new Date(training.syncedAt)) : "—"}` : "Hevy unavailable"} · Check-ins: your entries</span><a href="#health-sources">Sources</a></div>
     <section className="card health-overview health-overview--visual" aria-label="Health at a glance">
-      <div><span className="health-stat-label">Training rhythm</span><div className="health-ring" role="img" aria-label={available ? `${sessions} of ${goals.sessions} target sessions in the last seven days` : 'Training unavailable'}><svg viewBox="0 0 100 100" aria-hidden="true"><circle className="health-ring-track" cx="50" cy="50" r="42"/><circle className="health-ring-fill" cx="50" cy="50" r="42" pathLength="100" strokeDasharray={`${available ? Math.min(100, sessions / goals.sessions * 100) : 0} 100`}/></svg><strong>{available ? sessions : '—'}<small> / {goals.sessions}</small></strong></div><span className="health-stat-note">{available ? sessionsLeft ? `${sessionsLeft} sessions to your weekly target` : 'Weekly target met' : 'Awaiting Hevy'}</span><span className="health-caption">Last 7 days · {sourceLabel}</span></div>
+      <div><span className="health-stat-label">Training rhythm</span><div className="health-ring" role="img" aria-label={available ? `${trainingDays} of ${goals.sessions} target training days in the last seven days` : 'Training unavailable'}><svg viewBox="0 0 100 100" aria-hidden="true"><circle className="health-ring-track" cx="50" cy="50" r="42"/><circle className="health-ring-fill" cx="50" cy="50" r="42" pathLength="100" strokeDasharray={`${available ? Math.min(100, trainingDays / goals.sessions * 100) : 0} 100`}/></svg><strong>{available ? trainingDays : '—'}<small> / {goals.sessions}</small></strong></div><span className="health-stat-note">{available ? sessionsLeft ? `${sessionsLeft} training days to your weekly target` : 'Weekly target met' : 'Awaiting Hevy'}</span><span className="health-caption">Last 7 days · {sourceLabel}</span></div>
       <div><span className="health-stat-label">Strength direction</span><strong className="health-strength-takeaway">{!available ? 'Unavailable' : progress.median === null ? 'Building a baseline' : progress.median > .5 ? 'Trending up' : progress.median < -.5 ? 'Trending down' : 'Holding steady'}</strong><div className="health-direction-track" role="img" aria-label={`${progress.improving} improving, ${progress.steady} steady, ${progress.declining} declining exercises`}>{progress.rows.length ? <><span data-direction="up" style={{flex: progress.improving}}/><span data-direction="steady" style={{flex: progress.steady}}/><span data-direction="down" style={{flex: progress.declining}}/></> : null}</div><span className="health-stat-note">{progress.median === null ? available ? 'Repeat comparable sets to reveal a trend.' : 'Awaiting Hevy' : `${progress.median > 0 ? '+' : ''}${progress.median.toFixed(1)}% typical change · ${progress.improving} up, ${progress.steady} steady, ${progress.declining} down`}</span><span className="health-caption">{progress.rows.length} exercises compared · {progress.unpaired} need more data<br/>Last 4 weeks · {sourceLabel}</span></div>
       <div><span className="health-stat-label">Sleep rhythm</span><strong>{sleepAverage !== null ? hoursLabel(sleepAverage) : '—'}<small> average</small></strong><div className="health-mini-nights" role="img" aria-label={`${loggedSleep.length} nights logged of seven; target ${goals.sleep} hours`}>{sleepValues.map((hours, i) => <div key={i} title={`${healthDate(recentDays[i])}: ${hours === null ? 'not logged' : hoursLabel(hours)}`}><span data-empty={hours === null} style={{height: hours === null ? '8px' : `${Math.max(3,Math.min(100, hours / Math.max(10,goals.sleep,...loggedSleep) * 100))}%`}}/></div>)}</div><span className="health-stat-note">{sleepGap === null ? 'Add sleep to reveal your rhythm' : sleepGap > 0 ? `${sleepGap} min below your sleep target` : 'At your sleep target'}</span><span className="health-caption">{loggedSleep.length} of 7 nights · {demo ? 'Sample' : 'Your entries'}</span></div>
       <div><span className="health-stat-label">Energy today</span><strong>{checkin ? ['','Low','Low','Steady','Good','High'][checkin.energy] : <span className="health-no-value">Not logged</span>}</strong><div className="health-energy-dots" role="img" aria-label={checkin ? `Energy ${checkin.energy} out of 5` : 'Energy not logged'}>{[1,2,3,4,5].map(n => <span key={n} data-active={!!checkin && n <= checkin.energy}/>)}</div><button type="button" className="health-text-btn" onClick={() => setDialog("checkin")}>{checkin ? 'Update your energy' : 'How do you feel today?'} <Icon name="arrow" /></button><span className="health-caption">Today · Your entry</span></div>
     </section>
 
-    <ConnectedHealth today={today} training={training} journal={journal} nutrition={nutrition} onWorkout={setDialog} onCheckin={() => setDialog("checkin")} onGoals={(nutritionGoals) => { if (!persist({ ...journal, nutritionGoals })) return false; setNotice("Nutrition targets saved on this device."); return true; }}/>
+    <ConnectedHealth key={fuelView} today={today} training={training} journal={journal} nutrition={nutrition} onWorkout={setDialog} onCheckin={() => setDialog("checkin")} onGoals={(nutritionGoals) => { if (!persist({ ...journal, nutritionGoals })) return false; setNotice("Nutrition targets saved on this device."); return true; }}/>
     <ProgressOverview training={training} today={today} onWorkout={setDialog}/>
     <div className="health-main-grid health-main-grid--visual">
-      <section className="card health-panel health-priorities" aria-labelledby="priorities-title"><div className="health-panel__head"><h2 id="priorities-title">What matters now</h2></div>
-        <div className="health-priority"><span className="health-priority__label">Consistency <small>{sourceLabel}</small></span><p>{!available ? "Training data is temporarily unavailable." : sessionsLeft ? `${sessionsLeft} more session${sessionsLeft === 1 ? "" : "s"} to your training target.` : "Your training target is met."}</p><span className="health-caption">{available ? `${sessions} sessions in the last 7 days.` : "We’ll retry on refresh."}</span><a className="health-text-btn" href="#health-training">Review your training <Icon name="arrow" /></a></div>
-        <div className="health-priority"><span className="health-priority__label">Rest <small>{demo ? "Sample" : "Your entries"}</small></span><p>{loggedSleep.length ? `${nightsAtTarget} of ${loggedSleep.length} logged nights reached your sleep target.` : "Your sleep hasn’t been logged this week."}</p><button className="health-text-btn" type="button" onClick={() => setDialog("checkin")}>Log sleep & soreness <Icon name="arrow" /></button></div>
-        <div className="health-priority"><span className="health-priority__label">How you feel <small>Your entry</small></span><p>{!checkin ? "A check-in adds the part the charts can’t tell." : checkin.energy <= 2 ? "You logged lower energy today." : checkin.energy >= 4 ? "You logged good energy today." : "You logged steady energy today."}</p>{checkin ? <span className="health-caption">Soreness: {checkin.soreness} · Sleep: {hoursLabel(checkin.sleep)}</span> : null}<button type="button" className="health-text-btn" onClick={() => setDialog("checkin")}>{checkin ? "Update your check-in" : "Add your check-in"} <Icon name="arrow" /></button></div>
-      </section>
-
       <section className="card health-panel" id="health-training" aria-labelledby="training-title"><div className="health-panel__head"><h2 id="training-title">Training consistency</h2><span className="health-source">{sourceLabel}</span></div><p className="health-panel__intro">{healthDate(recentDays[0])}–{healthDate(today)} · {available ? `${trainingMinutes} min across ${sessions} sessions` : "Unavailable"}</p>
         <div className="health-training-week" aria-label="Training, last seven days">{recentDays.map((date, index) => {
           const daily = training.workouts.filter((w) => w.date === date);
@@ -210,10 +205,6 @@ export function HealthDashboard({ today, timezone, training, nutrition }: { toda
       </section>
     </div>
 
-    <section className="card health-panel" aria-labelledby="foundations-title"><div className="health-panel__head"><h2 id="foundations-title">Today’s basics</h2><button type="button" className="health-text-btn" onClick={() => setDialog("checkin")}>{checkin ? "Update" : "Log today"} <Icon name="arrow" /></button></div><div className="health-basics-grid">
-      <div className="health-foundation"><div><span>Movement</span><strong>{checkin?.steps != null ? checkin.steps.toLocaleString() : "—"}<small> / {goals.steps.toLocaleString()} steps</small></strong></div>{checkin?.steps != null ? <Meter value={checkin.steps} goal={goals.steps} label="Today's manually logged steps" /> : <p className="health-caption">Not logged today</p>}</div>
-      <div className="health-foundation health-foundation--water"><div><span>Water</span><WaterBottles water={water} onChange={(amount) => { if (persist({ ...journal, waterDays: { ...journal.waterDays, [today]: amount } })) setNotice("Water saved on this device."); else setNotice("This browser could not save your water. Please try again."); }} bottleMl={journal.bottleMl ?? 500} goal={goals.water}/>{!waterLogged ? <p className="health-caption">Not logged today</p> : null}<button type="button" className="health-text-btn" onClick={() => setDialog("checkin")}>Bottle size & check-in <Icon name="arrow" /></button></div></div>
-    </div>{checkin?.note ? <p className="health-personal-note health-basics-note">Your note: {checkin.note}</p> : null}<p className="health-caption">Your entries · Targets are editable</p></section>
     {Object.keys(journal.days).length > 0 ? <details className="health-disclosure health-journal-disclosure"><summary>Check-in history <span>{checkinCount} in the last 7 days</span></summary><div className="health-journal">{Object.entries(journal.days).sort(([a], [b]) => b.localeCompare(a)).slice(0, 7).map(([date, entry]) => <div key={date}><strong>{healthDate(date)}</strong><span>Energy {entry.energy}/5 · {hoursLabel(entry.sleep)} sleep · {entry.soreness} soreness</span>{entry.note ? <p>{entry.note}</p> : null}</div>)}</div></details> : null}
     {!demo && training.routines !== null ? <details className="health-disclosure"><summary>Your routines <span>{training.routines.length} saved in Hevy</span></summary><div className="health-muscles">{training.routines.length ? training.routines.map((r) => <div key={r.id}><span>{r.name}</span><strong>{r.exercises} exercises</strong></div>) : <p className="health-caption">No saved routines.</p>}</div></details> : null}
     <details className="health-disclosure" id="health-sources"><summary>Sources & what’s next <span>Hevy · check-ins · nutrition</span></summary><div className="health-connections__items"><span><strong>Hevy</strong><small>{demo ? "Sample workouts and strength. No live connection." : !available ? "Hevy isn’t reachable. Training data is temporarily unavailable." : `${sourceLabel}: ${training.workouts.length} workouts loaded. Refreshes about every 5 minutes while open.`}</small></span><span><strong>Sleep & activity</strong><small>{demo ? "Sample sleep." : "Sleep, energy, soreness and steps come from your check-ins. Water can also be logged directly by tapping bottles."}</small></span><span><strong>Nutrition · FatSecret</strong><small>{nutrition.status === "authorization_required" ? "Application credentials configured. Your food diary still needs account authorization; meals and macros are not syncing yet." : nutrition.status === "connected" ? "Your FatSecret food diary is shown by calendar date alongside training and check-ins." : nutrition.status === "disabled" ? "FatSecret is disabled in demo mode." : nutrition.status === "unavailable" ? "FatSecret could not load your diary. Missing nutrition is not counted as zero." : "FatSecret will provide meals and nutrition after it is connected."}</small></span></div></details>

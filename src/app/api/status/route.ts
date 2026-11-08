@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { config, features, isDemoMode } from "@/lib/config";
 import { isGoogleConnected } from "@/lib/google/tokens";
+import { readDiaryTokens } from "@/lib/fatsecret/token-store";
 import { resolveLocation } from "@/lib/location";
 
 /** What's wired up — handy for a future settings screen. */
@@ -16,7 +17,8 @@ export async function GET() {
       fatsecret: {
         configured: Boolean(config.fatsecret.clientId && config.fatsecret.clientSecret),
         enabled: features.fatsecret,
-        diaryConnected: false,
+        diaryConfigured: Boolean(config.fatsecret.consumerKey && config.fatsecret.consumerSecret),
+        diaryConnected: features.fatsecretDiary ? Boolean(await readDiaryTokens().catch(() => null)) : false,
       },
       google: {
         configured: features.google,
