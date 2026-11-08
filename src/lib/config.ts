@@ -61,6 +61,9 @@ export const config = {
 
   /** Application-level food database access; not permission to read a personal diary. */
   fatsecret: {
+    consumerKey: str("FATSECRET_CONSUMER_KEY"),
+    consumerSecret: str("FATSECRET_CONSUMER_SECRET"),
+    redirectUri: str("FATSECRET_REDIRECT_URI") ?? `${str("DASHBOARD_BASE_URL") ?? "http://localhost:3000"}/api/auth/fatsecret/callback`,
     clientId: str("FATSECRET_CLIENT_ID"),
     clientSecret: str("FATSECRET_CLIENT_SECRET"),
   },
@@ -135,6 +138,7 @@ export const isDemoMode =
 export const forceMock = process.env.DASHBOARD_FORCE_MOCK === "true";
 
 export const features = {
+  fatsecretDiary: !forceMock && Boolean(config.fatsecret.consumerKey && config.fatsecret.consumerSecret),
   fatsecret: !forceMock && Boolean(config.fatsecret.clientId && config.fatsecret.clientSecret),
   hevy: !forceMock && Boolean(config.hevy.apiKey),
   weather:

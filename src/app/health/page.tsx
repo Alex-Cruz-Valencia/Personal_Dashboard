@@ -31,9 +31,10 @@ export default async function HealthPage({ searchParams }: PageProps<"/health">)
   const now = new Date();
   const today = isoDateInZone(now, location.timezone);
   const hour = decimalHourInZone(now, location.timezone);
-  const [weather, training] = await Promise.all([
+  const [weather, training, nutrition] = await Promise.all([
     features.weather ? getWeather(location, { from: settings.weatherStart, to: settings.dayEnd }).catch(() => MOCK_WEATHER) : MOCK_WEATHER,
     getHevyTraining(today, location.timezone),
+    getFatSecretNutrition(today),
   ]);
   const theme = settings.skyTheme === "time" && settings.skyPart === "night" ? "dark" : shownTheme(settings.theme, skyHour(hour, weather, settings), weather);
   const pageScene = settings.motion === "on" && settings.background === "scene";
@@ -42,7 +43,7 @@ export default async function HealthPage({ searchParams }: PageProps<"/health">)
     <div className="dashboard-shell">
     <DashboardNav active="health" />
     <div className="dashboard-content">
-    <HealthDashboard key={today} today={today} timezone={location.timezone} training={training} nutrition={getFatSecretNutrition()} />
+    <HealthDashboard key={today} today={today} timezone={location.timezone} training={training} nutrition={nutrition} />
     <footer className="footline"><span>{healthDate(today, { weekday: "long", month: "long", day: "numeric" })}</span><div className="footline__right"><nav className="footline__links" aria-label="Legal"><Link href="/privacy">Privacy</Link><Link href="/terms">Terms</Link></nav><SettingsPanel settings={settings} shownTheme={theme} /></div></footer>
     <AutoRefresh />
     </div>

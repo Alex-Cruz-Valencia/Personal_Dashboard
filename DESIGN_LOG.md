@@ -3544,3 +3544,43 @@ name matches again.
 ## 2026-11-07 — Keep missing-data displays quiet
 
 Decision: return to the prior empty-data presentation after trying contextual information icons. Remove the icon component, hover popovers, styling and related assertions. Preserve the existing data-source status and empty-value handling. The user prefers a quieter dashboard without extra missing-data controls.
+
+## 2026-11-07 — Put today's actions before historical insights
+
+Problem: Health led with averages and trends, while the user needs to know what to do today: which workout, what nutrition is logged, water remaining, and how they feel.
+
+Decision: lead with a dedicated TodayActions area containing workout, nutrition and water cards plus a short recovery check-in strip. Let the user choose a saved Hevy routine or a rest day for today's plan; persist dated choices only in the local health journal with 90-entry retention. Show actual same-day Hevy sessions separately and open their sets. Link out to Hevy/FatSecret for logging. Water bottles remain directly tappable, with remaining volume against the existing editable target, explicitly based on logged drinks. Today's nutrition shows real daily macros and protein remaining against a chosen target when diary data exists; otherwise show a concise source status rather than placeholder charts. The detailed nutrition link resets historical browsing to today. Move weekly status, shared calendar, progression and history below Patterns & progress. Remove duplicate action/guidance and water sections from the bottom.
+
+Reasoning: immediate actions deserve the first screen; trends provide context when the user seeks it. Hevy history does not provide a scheduled daily workout, and its routine list must not be silently interpreted as a training prescription. Nutrition and hydration targets remain user inputs. Missing personal diary authorization stays visible and never becomes invented intake. Keep prior visual tokens and the user's preference against info icons.
+
+Tradeoff: workout plans are local and manual; they do not sync to Hevy or other devices. Plans remain distinct from logged sessions. Historical insights take more scrolling, deliberately. Existing check-ins and water entries remain compatible; no external writes or new credentials are introduced.
+
+## 2026-11-07 — Connect the existing FatSecret account through delegated authorization
+
+Problem: food-database authentication and its IP allowlist are working, but daily nutrition requires the separate authorization of the user's existing FatSecret diary. The user has now obtained OAuth 1.0 consumer credentials.
+
+Decision: add a connection setup page, guarded POST start/disconnect routes, and an OAuth callback bound to opaque HttpOnly browser state plus expiring server-side request tokens. Verify the request token, consume state atomically and exchange the verifier using HMAC-SHA1; never create a new profile. Encrypt server tokens using AES-256-GCM with a key derived from the consumer credentials; store in private Redis or owner-only ignored files. Vercel requires Redis. Clear authorization on rejection and provide a disconnect control. The flow is not auto-authorized; the user signs in and approves on FatSecret's website.
+
+Read-only data loading fetches today's entries and twelve weeks of monthly daily summaries. Full older meal details load on selection. Normalize decimal strings, calendar-date integers and entry totals without multiplying servings twice. Missing days stay unknown. Nutrition is cached only in short-lived RAM; saved account tokens are rechecked before cache reuse. Attribute FatSecret where content is shown. Keep the API's broad account grant distinct from the dashboard's read-only implementation. No token secrets in browser props, logs or source; suppress callback URL logs locally and set no-referrer on auth responses. Live validation confirmed that FatSecret’s auth service expects signed form/query parameters rather than the Authorization-header transport used initially. Use POST forms for request tokens and permanent-token read-only diary methods; the documented access-token exchange uses a GET with temporary parameters.
+
+Tradeoffs: consumer-key rotation requires reconnection, and local fallback credentials are single-user server storage. Live consent and provider payloads still require verification with the user's real account. Optional macro targets stay browser-local and are not imported or prescribed by this flow.
+
+
+### 2026-11-07 — Today’s fuel goals and weekday training schedule
+
+The owner needs daily intake relative to goals and a workout that belongs to
+today, rather than a generic routine picker. Today’s nutrition now compares
+logged intake against the owner’s stated 2,600 kcal and 200 g protein goals
+with bars, percentages, and remaining amounts. Carbs and fat remain supporting
+totals with optional editable targets. These are user-provided goals, not
+health recommendations; versioned local migrations apply them once and preserve
+later edits, including clearing a target.
+
+Saved Hevy routine names determine the weekday plan, with full weekday names
+and common abbreviations accepted. Wednesday and Friday are explicit rest days.
+Without a matching routine or actual session today the workout card is hidden,
+allowing nutrition and hydration more room. Multiple weekday matches can be
+selected locally; completed workouts always remain visible even on rest days.
+Historical workouts are not used to guess a plan. The weekly target is five
+distinct training days, avoiding double credit for two sessions on one day.
+The tradeoff is that renamed routines must retain their weekday to appear.

@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { config, features } from "@/lib/config";
 import { FatSecretError, getFatSecretAppToken } from "@/lib/fatsecret/client";
+import { readDiaryTokens } from "@/lib/fatsecret/token-store";
 import { rejectCrossSite } from "@/lib/request-guard";
 
 export const dynamic = "force-dynamic";
@@ -15,7 +16,8 @@ export async function GET(request: Request) {
   if (!features.fatsecret) return NextResponse.json({ configured, appAuthenticated: false, diaryConnected: false, status: "disabled" }, { headers });
   try {
     await getFatSecretAppToken();
-    return NextResponse.json({ configured, appAuthenticated: true, diaryConnected: false, status: "diary_authorization_required", message: "Application credentials work. Connecting an existing FatSecret diary requires separate OAuth 1.0 credentials and account authorization." }, { headers });
+    const diaryConnected = features.fatsecretDiary ? Boolean(await readDiaryTokens().catch(() => null)) : false;
+    return NextResponse.json({ configured, appAuthenticated: true, diaryConnected, status: diaryConnected ? "authorized" : "diary_authorization_required", message: diaryConnected ? "Application authentication and saved diary authorization are available. Health reads the diary separately." : "Application credentials work. Open /health/connect/fatsecret to authorize your food diary." }, { headers });
   } catch (error) {
     const code = error instanceof FatSecretError ? error.code : "unavailable";
     const messages: Record<string, string> = {

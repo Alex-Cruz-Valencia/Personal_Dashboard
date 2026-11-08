@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
 import { dayOffset, HEALTH_GOALS, hoursLabel, readHealthJournal, validCheckin, validGoals, workoutVolume, type HealthCheckin } from "./health";
 
+import { PERSONAL_NUTRITION_GOALS } from "./nutrition";
+
 const checkin: HealthCheckin = { energy: 3, soreness: "low", sleep: 7.5, steps: null, water: 1250, note: "Felt good after a walk." };
 
 describe("health journal", () => {
@@ -27,7 +29,7 @@ describe("health journal", () => {
   });
   it("recovers from corrupt and unexpected storage without losing the page", () => {
     for (const raw of [null, "{", "null", "42", "[]"]) {
-      expect(readHealthJournal(raw)).toEqual({ goals: HEALTH_GOALS, days: {} });
+      expect(readHealthJournal(raw)).toEqual({ goals: HEALTH_GOALS, nutritionGoals: PERSONAL_NUTRITION_GOALS, days: {} });
     }
   });
   it("retains valid check-ins while rejecting impossible dates and invalid entries", () => {

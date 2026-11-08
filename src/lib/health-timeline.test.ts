@@ -36,9 +36,9 @@ describe('shared health timeline', () => {
     expect(week[5].nutrition?.totals.protein).toBe(0);
     expect(week[6].nutrition).toBeNull();
   });
-  it('stores user-chosen targets without generating any, rejects malformed goals and retains check-ins', () => {
-    expect(readHealthJournal(null).nutritionGoals).toBeUndefined();
-    const data=readHealthJournal(JSON.stringify({...journal,nutritionGoals:{protein:140,calories:null}}));
+  it('uses the owner’s goals, preserves edits, rejects malformed goals and retains check-ins', () => {
+    expect(readHealthJournal(null).nutritionGoals).toEqual({protein:200,calories:2600});
+    const data=readHealthJournal(JSON.stringify({...journal,nutritionGoalVersion:1,nutritionGoals:{protein:140,calories:null}}));
     expect(data.nutritionGoals).toEqual({protein:140,calories:null});
     expect(data.days['2026-11-06'].sleep).toBe(7.5);
     for(const goals of [{protein:-1,calories:null},{protein:'140',calories:2000},{protein:null,calories:Infinity},{protein:null}]) expect(validNutritionGoals(goals)).toBe(false);
