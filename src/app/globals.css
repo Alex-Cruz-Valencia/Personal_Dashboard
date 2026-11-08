@@ -1604,6 +1604,7 @@ a:hover { color: var(--ink); text-decoration: underline; }
 
 /* ---- ambient motion, round 2: calendar states, refresh pulse, sky tint ---- */
 .vcal__now { transition: top 15s linear; }
+.vcal__now--snap { transition: none; }
 .vcal__event { transition: opacity 0.6s, filter 0.6s; }
 .vcal__event--past { opacity: 0.55; filter: saturate(0.6); }
 .vcal__event--now { animation: vcal-breathe 5s ease-in-out infinite; }

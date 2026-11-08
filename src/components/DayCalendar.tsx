@@ -14,7 +14,7 @@ import type { ShownSettings } from "@/lib/settings";
 import { use24Hour } from "@/lib/settings";
 import type { AgendaEvent, ArcWindow, SliceSource, TodayInfo, Weather, WeekDay } from "@/lib/types";
 import { offerUndo, write } from "@/lib/undo";
-import { useNowSeconds } from "@/lib/use-now";
+import { nowJumped, useNowSeconds } from "@/lib/use-now";
 import { EndOfDay } from "./EndOfDay";
 import { useEventDetail } from "./EventDetail";
 import { formatClock, useFocus } from "./Focus";
@@ -97,7 +97,12 @@ export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, to
   const landed = useRef(false);
 
   // The now-line and event states move on their own between the 60s server refreshes.
-  const nowHour = useNowSeconds(today, frozen, 15) / 3600;
+  const nowSec = useNowSeconds(today, frozen, 15);
+  const nowHour = nowSec / 3600;
+  // Back after a while (the tab slept): the now line snaps to the time instead of gliding there.
+  // Stored with the time it was judged against, so the snap lasts exactly that one move.
+  const [lastNow, setLastNow] = useState({ at: nowSec, snap: false });
+  if (lastNow.at !== nowSec) setLastNow({ at: nowSec, snap: nowJumped(lastNow.at, nowSec) });
   const hours = arc.to - arc.from;
   const height = hours * HOUR_PX;
   const y = (h: number) => (Math.min(Math.max(h, arc.from), arc.to) - arc.from) * HOUR_PX;
@@ -841,7 +846,7 @@ export function DayCalendar({ agenda: rawAgenda, allDay: allAllDay = [], arc, to
             ) : null}
 
             {nowVisible ? (
-              <div className="vcal__now" style={{ top: y(nowHour) }} aria-label={`Now, ${formatHour(nowHour, use24)}`}>
+              <div className={`vcal__now${lastNow.snap ? " vcal__now--snap" : ""}`} style={{ top: y(nowHour) }} aria-label={`Now, ${formatHour(nowHour, use24)}`}>
                 <i />
               </div>
             ) : null}

@@ -236,7 +236,7 @@
   `refined` = smooth curve, past dimmer than ahead). `?now=14.5` previews another hour.
 - **Current page layout (2026-10-28):** header + weather, `AttentionStrip`, then
   `DayCalendar` (vertical, Google-Calendar-style day view: `HOUR_PX`, side-by-side
-  overlap lanes from `layoutOverlaps()`, a now line, lands near now; owns the
+  overlap lanes from `layoutOverlaps()`, a now line (glides each 15s tick, snaps on a jump over 5 min: `nowJumped()` in `use-now.ts`), lands near now; owns the
   Now/Next readout and Focus timer controls) beside `TaskList` in `.twocol`, then
   `WeekStrip`. **Archived (kept in the repo, not rendered):** `DayArc` (the
   horizontal arc and its `.dayarc*` CSS), `PlanCard` (so "Plan with AI" has no UI;

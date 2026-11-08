@@ -41,3 +41,11 @@ export function useNowSeconds(today: TodayInfo, frozen: boolean, stepSec = 1): n
     () => server,
   );
 }
+
+/** A jump bigger than this (the tab slept, the device woke) snaps instead of gliding. */
+export const NOW_SNAP_SEC = 5 * 60;
+
+/** True when "now" moved too far to animate, either way (midnight wraps backwards). */
+export function nowJumped(prevSec: number, nextSec: number): boolean {
+  return Math.abs(nextSec - prevSec) > NOW_SNAP_SEC;
+}
