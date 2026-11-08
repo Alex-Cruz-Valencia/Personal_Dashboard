@@ -3584,3 +3584,21 @@ selected locally; completed workouts always remain visible even on rest days.
 Historical workouts are not used to guess a plan. The weekly target is five
 distinct training days, avoiding double credit for two sessions on one day.
 The tradeoff is that renamed routines must retain their weekday to appear.
+
+## 2026-11-08 — The now line snaps after a long absence
+
+**Problem.** The calendar's red now line animates each 15-second move over 15 seconds. That
+reads as calm while watching, but after the tab slept (back on the laptop, iPad woken), the
+line crawled across hours of calendar to reach the time, so for a while "now" pointed at the past.
+
+**Decision.** If "now" moved more than five minutes since the last tick, the line jumps
+straight there (no transition for that one move); normal ticks still glide.
+
+**Reasoning.** The glide is ambient polish; being right at a glance is the job. Five minutes is
+well past any normal tick (15s) yet small enough that a short glance away still looks smooth.
+
+**Alternatives.** Drop the glide entirely (loses the calm motion while watching); shorten the
+transition (still visibly wrong after a long sleep); listen for `visibilitychange` (misses
+a device waking with the tab still "visible").
+
+**Tradeoffs.** None worth noting; reduced-motion users already had no transition.
