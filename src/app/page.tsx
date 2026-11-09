@@ -1,9 +1,11 @@
 import { cookies } from "next/headers";
+import { after } from "next/server";
 import { AutoRefresh } from "@/components/AutoRefresh";
 import { Dashboard } from "@/components/Dashboard";
 import { LocationSync } from "@/components/LocationSync";
 import { config, features } from "@/lib/config";
 import { getDashboardData } from "@/lib/dashboard-data";
+import { fillTriage } from "@/lib/llm/background-triage";
 import { DAY_PARTS, partHour } from "@/lib/day-part";
 import { parseLocationOverride } from "@/lib/location";
 import { parseSkyPreview } from "@/lib/weather/codes";
@@ -31,6 +33,13 @@ export default async function Home({ searchParams }: PageProps<"/">) {
     use24: settings.timeFormat === "24-hour",
     windDown: settings.windDown,
   });
+  // Once the page is out: triage any email or Waiting on thread not looked at yet, so the queue opens
+  // already filled in. Only when this render has real mail (`email` live) and something is missing.
+  if (data.sources.email === "live") {
+    const fresh = data.replies.filter((r) => r.id && !(r.id in data.triage));
+    const freshWaiting = data.waiting.filter((w) => !(w.id in data.nudges));
+    if (fresh.length || freshWaiting.length) after(() => fillTriage(fresh, freshWaiting));
+  }
   const sky = parseSkyPreview(sp) ?? (settings.skyWeather === "auto" ? null : { ...data.weather.sky, kind: settings.skyWeather });
   // Preview only: ?now=14.5 shows the page as if it were 2:30pm (greeting, scenes, curve), and ?part=golden
   // jumps to that part of today's real sun. The live clock still runs.

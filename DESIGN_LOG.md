@@ -18,6 +18,18 @@ Newest first. Each entry:
 **Tradeoffs / open questions** — what this costs, or what's still unresolved
 ```
 
+## 2026-11-09 — Email triage runs in the background
+
+**Problem / trigger** — AI triage only ran when I opened the reply queue, and only on the first 8 emails, so every open started with "Thinking about this one…" for several seconds. Waiting on others had no AI at all: deciding whether to follow up, and writing the follow-up, was still by hand. I want the answer already there when I look, and said speed matters more than token cost.
+
+**Decision** — Triage now runs ahead of time on the server. Each page render reads what's already done from a store (no model call) and passes it to the page; once the response has gone out (Next's `after()`), the server looks at anything new: every email in the reply queue (in batches of 8, up to 6 calls at once) and every Waiting on thread. Results are stored by message id in the same Redis as the Google tokens (or `.data/triage.json` locally) for 3 days, and the page's own one-minute refresh picks them up. The reply queue opens with every suggestion showing. Waiting on now shows **Follow up** or **Let it go** with a reason; Follow up has a short follow-up already written, which **Review follow-up** opens for editing and **Save to Gmail drafts** saves into the same thread. Let it go offers Done. The queue's own on-demand call stays as the fallback for an email the background hasn't reached yet, and its results are stored too.
+
+**Reasoning** — Running on page render, not on a schedule, means it only spends tokens when I'm actually using the dashboard, and needs no cron (Vercel's free schedule is once a day). Keying by message id makes it incremental: an email is looked at once, not on every refresh. Waiting on is keyed by my last message, so sending another follow-up gets a fresh look. Pre-writing the follow-up but not reply drafts was my call: follow-ups are short and formulaic, real replies usually need my input first.
+
+**Alternatives considered** — Pre-writing reply drafts for every "reply" suggestion: faster still, but most replies need a steer from me, so the drafts would mostly be redone. Splitting the chip counts by suggestion ("3 to reply · 5 to trash"): more to read on the first screen; suggestions stay inside the queue. A scheduled job: too coarse on Vercel's plan, and it would spend tokens while I'm away.
+
+**Tradeoffs / open questions** — The first load after new mail still has nothing stored; suggestions arrive on the next refresh, a minute later, or on demand if I open the queue first. The store holds model output (an action, a short reason, a follow-up draft), never the emails themselves, but a follow-up draft does paraphrase my own sent email. More data goes to the model than before ("send the minimum" now covers every email in the queue, not just the ones I look at), a deliberate trade for speed. A cap of 60 background calls an hour per server instance guards against a loop. Without today's date, the model told me to chase a question about an event that had already passed; the prompt now includes the date.
+
 ## 2026-11-07 — Waiting on others
 
 **Problem / trigger** — Needs attention tracked replies I owe, never the ones I'm owed. An email I sent asking for something could go unanswered for two weeks with nothing on the page to say so.

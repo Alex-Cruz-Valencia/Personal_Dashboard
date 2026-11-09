@@ -11,6 +11,7 @@ import type { NoteStyle } from "./settings";
 import { readOkConflicts } from "./conflict-ok-store";
 import { getAgenda, getAllDayEvents } from "./google/calendar";
 import { getReplies, getTodoCount, getWaiting } from "./google/gmail";
+import { storedTriage } from "./llm/background-triage";
 import { GoogleAuthError } from "./google/oauth";
 import { resolveLocation, type LocationOverride } from "./location";
 import {
@@ -129,6 +130,8 @@ export async function getDashboardData(
       canAddTasks: false,
       clarifyCount: null,
       allDay: [],
+      triage: {},
+      nudges: {},
       sources: {
         weather: "off",
         tasks: "off",
@@ -249,6 +252,9 @@ export async function getDashboardData(
     geocoded ?? timezoneCity(location.timezone) ?? weather.value.place;
 
   const counted = (await clarifyCounts).filter((n) => n !== null);
+  const waitingLive = replies.live ? await waiting : [];
+  // Triage already done in the background; no model call here (see page.tsx for the rest).
+  const { triage, nudges } = replies.live ? await storedTriage(replies.value, waitingLive) : { triage: {}, nudges: {} };
 
   return {
     user,
@@ -259,7 +265,7 @@ export async function getDashboardData(
     agenda: agenda.value,
     replies: replies.value,
     // Extra, so it fails quietly: no sample data stands in for it.
-    waiting: replies.live ? await waiting : [],
+    waiting: waitingLive,
     okConflicts: await okConflicts,
     arc,
     weatherArc,
@@ -270,5 +276,7 @@ export async function getDashboardData(
     canAddTasks: features.todoist,
     clarifyCount: counted.length ? counted.reduce((a, b) => a + b, 0) : null,
     allDay,
+    triage,
+    nudges,
   };
 }

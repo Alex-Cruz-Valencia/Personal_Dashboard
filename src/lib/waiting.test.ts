@@ -10,7 +10,7 @@ const mail = (over: Partial<MailLite>): MailLite => ({
 
 describe("pickWaiting", () => {
   it("keeps a question I sent days ago with no answer", () => {
-    expect(pickWaiting([{ id: "t1", messages: [mail({})] }], ME, NOW)).toEqual([{ id: "t1", to: "Priya Raman", subject: "Lab schedule", days: 4 }]);
+    expect(pickWaiting([{ id: "t1", messages: [mail({})] }], ME, NOW)).toEqual([{ id: "t1", to: "Priya Raman", subject: "Lab schedule", days: 4, lastId: "" }]);
   });
 
   it("drops a thread once they've answered", () => {

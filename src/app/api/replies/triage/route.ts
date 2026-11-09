@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getMessageForDraft, listGmailLabels } from "@/lib/google/gmail";
+import { rememberTriage } from "@/lib/llm/background-triage";
 import { readEmailProfile } from "@/lib/llm/email-profile";
 import { guardAi, validMessageId } from "@/lib/llm/guard";
 import { triageEmails } from "@/lib/llm/triage";
@@ -31,6 +32,8 @@ export async function POST(request: Request) {
     // One message that can't be read just gets no suggestion.
     const emails = settled.flatMap((r) => (r.status === "fulfilled" ? [r.value] : []));
     const suggestions = await triageEmails(emails, labels, profile);
+    // Kept, so the next page load already has them.
+    await rememberTriage(emails.map((e) => e.id), suggestions);
     return NextResponse.json({ suggestions });
   } catch (err) {
     // The message is generic by construction (see lib/llm/client.ts).

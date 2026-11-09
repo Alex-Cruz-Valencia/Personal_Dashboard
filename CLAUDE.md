@@ -180,6 +180,14 @@
   profile (`lib/llm/email-profile.ts`) lives in Redis (`dashboard:email-profile`) or the
   gitignored `.data/email-profile.json`, **never** in the repo; `npm run email:profile
   mine|push|show` rebuilds it (mining is Gmail GETs only).
+  **Background triage** (`lib/llm/background-triage.ts`): each render reads stored results
+  (`storedTriage` → `DashboardData.triage` / `.nudges`, no model call); `page.tsx` then runs
+  `fillTriage` in `after()` for anything new — every reply-queue email and every Waiting on thread
+  (`lib/llm/nudge.ts`: follow up or let go, with a pre-written follow-up; Waiting carries `lastId`,
+  the message the draft replies to). Store: `lib/llm/triage-store.ts` (Redis `dashboard:triage:*`
+  or `.data/triage.json`, 3 days, model output only; pure helpers in `triage-keys.ts`). Capped at
+  60 background calls/hour per instance. The queue seeds from it (`seedTriage`/`cachedTriage`), so
+  it opens filled in; `/api/replies/triage` is the fallback and writes to the same store.
   `npm run llm:models` lists model ids.
 - **Clarify** (`Clarify.tsx`, opened by a faint "Clarify" in the task card's footer, shown only when
   `DashboardData.clarifyCount` is above zero, with no count on the page): `ClarifyPanel` replaces the task card's contents, with the calendar

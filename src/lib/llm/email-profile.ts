@@ -11,7 +11,9 @@ import { join } from "node:path";
  * demo has neither store configured, so it never sees one.
  */
 
-export type TriageAction = "trash" | "task" | "reply" | "file" | "leave";
+import type { TriageAction } from "@/lib/types";
+
+export type { TriageAction };
 export const TRIAGE_ACTIONS: readonly TriageAction[] = ["trash", "task", "reply", "file", "leave"];
 
 export interface ProfileExample {

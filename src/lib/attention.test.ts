@@ -51,8 +51,8 @@ describe("chips", () => {
 describe("waiting on others", () => {
   it("rolls sent emails into one chip, naming the longest wait", () => {
     const waiting = [
-      { id: "a", to: "Sam", subject: "S", days: 3, url: "" },
-      { id: "b", to: "Priya", subject: "P", days: 8, url: "" },
+      { id: "a", to: "Sam", subject: "S", days: 3, url: "", lastId: "m1" },
+      { id: "b", to: "Priya", subject: "P", days: 8, url: "", lastId: "m2" },
     ];
     const items = buildAttention({ agenda: [], tasks: [], replies: [], waiting, nowHour: 9 });
     expect(items).toHaveLength(1);

@@ -8,7 +8,8 @@ import { snoozeReply, unsnoozeReply, useHiddenReplyIds } from "@/lib/reply-state
 import { setReviewOpen } from "@/lib/review-state";
 import type { Theme } from "@/lib/settings";
 import { offerUndo } from "@/lib/undo";
-import type { AgendaEvent, Reply, Task, Waiting } from "@/lib/types";
+import { seedTriage } from "@/lib/reply-actions";
+import type { AgendaEvent, Nudge, Reply, Task, TriageSuggestion, Waiting } from "@/lib/types";
 import { useEventDetail } from "./EventDetail";
 import { Popover } from "./Popover";
 import { ReplyQueue } from "./ReplyQueue";
@@ -36,6 +37,8 @@ export function AttentionStrip({
   tasks,
   replies,
   waiting = [],
+  triage = {},
+  nudges = {},
   okShared = [],
   nowHour,
   theme,
@@ -56,11 +59,17 @@ export function AttentionStrip({
   replies: Reply[];
   /** Sent emails nobody has answered yet. */
   waiting?: Waiting[];
+  /** Background AI triage, by message id. */
+  triage?: Record<string, TriageSuggestion | null>;
+  /** Background follow-up suggestions, by Waiting on thread id. */
+  nudges?: Record<string, Nudge>;
   /** Conflicts marked "It's fine" today on any device. */
   okShared?: string[];
   nowHour: number;
   theme: Theme;
 }) {
+  // Background results go into the queue's cache before anything opens.
+  if (aiDraft) seedTriage(triage);
   const hidden = useHiddenReplyIds();
   const okConflicts = useDismissedConflicts(okShared);
   const [open, setOpen] = useState<{ item: AttentionItem; anchor: DOMRect } | null>(null);
@@ -143,7 +152,7 @@ export function AttentionStrip({
         />
       ) : null}
       {waitingAt && stillWaiting.length ? (
-        <WaitingList waiting={stillWaiting} anchorEl={waitingAt} theme={theme} onClose={() => setWaitingAt(null)} />
+        <WaitingList waiting={stillWaiting} nudges={aiDraft ? nudges : {}} anchorEl={waitingAt} theme={theme} onClose={() => setWaitingAt(null)} />
       ) : null}
       {resolving ? (
         <ConflictCard item={resolving.item} anchorEl={resolving.el} theme={theme} use24={use24} onClose={() => setResolving(null)} />
@@ -156,37 +165,149 @@ export function AttentionStrip({
 const LATER_HOURS = 72;
 const DONE_HOURS = 24 * 30;
 
-/** Sent emails waiting on an answer: open the thread, look again later, or let it go. */
-function WaitingList({ waiting, anchorEl, theme, onClose }: { waiting: Waiting[]; anchorEl: HTMLElement; theme: Theme; onClose: () => void }) {
+/** Sent emails waiting on an answer: open the thread, follow up, look again later, or let it go. */
+function WaitingList({
+  waiting,
+  nudges,
+  anchorEl,
+  theme,
+  onClose,
+}: {
+  waiting: Waiting[];
+  /** Background suggestions by thread id; a thread without one just shows its buttons. */
+  nudges: Record<string, Nudge>;
+  anchorEl: HTMLElement;
+  theme: Theme;
+  onClose: () => void;
+}) {
   const [anchor] = useState(() => anchorEl.getBoundingClientRect());
+  const [writing, setWriting] = useState<string | null>(null);
+  const [edited, setEdited] = useState(false);
   const hide = (w: Waiting, hours: number, text: string) => {
     snoozeReply(w.id, hours);
     offerUndo(text, async () => unsnoozeReply(w.id));
   };
+  const done = (w: Waiting) => hide(w, DONE_HOURS, `No longer waiting: ${w.subject}`);
   return (
-    <Popover anchor={anchor} theme={theme} onClose={onClose} ariaLabel="Waiting on others" className="resolve waitlist">
+    <Popover anchor={anchor} theme={theme} onClose={onClose} hold={edited} ariaLabel="Waiting on others" className="resolve waitlist">
       <p className="resolve__title">Waiting on others</p>
       <p className="resolve__detail">Sent by you, no answer yet. Later and Done only hide it here.</p>
       <ul className="waitlist__rows">
-        {waiting.map((w) => (
-          <li key={w.id} className="waitlist__row">
-            <a className="waitlist__open" href={w.url} target="_blank" rel="noopener noreferrer" title="Open in Gmail">
-              <span className="waitlist__to">{w.to}</span>
-              <span className="waitlist__subject">{w.subject}</span>
-            </a>
-            <span className="waitlist__days">{w.days}d</span>
-            <span className="waitlist__acts">
-              <button type="button" className="waitlist__btn" onClick={() => hide(w, LATER_HOURS, `Hidden for 3 days: ${w.subject}`)}>
-                Later
-              </button>
-              <button type="button" className="waitlist__btn" onClick={() => hide(w, DONE_HOURS, `No longer waiting: ${w.subject}`)}>
-                Done
-              </button>
-            </span>
-          </li>
-        ))}
+        {waiting.map((w) => {
+          const n = nudges[w.id];
+          return (
+            <li key={w.id} className="waitlist__row">
+              <a className="waitlist__open" href={w.url} target="_blank" rel="noopener noreferrer" title="Open in Gmail">
+                <span className="waitlist__to">{w.to}</span>
+                <span className="waitlist__subject">{w.subject}</span>
+              </a>
+              <span className="waitlist__days">{w.days}d</span>
+              <span className="waitlist__acts">
+                <button type="button" className="waitlist__btn" onClick={() => hide(w, LATER_HOURS, `Hidden for 3 days: ${w.subject}`)}>
+                  Later
+                </button>
+                <button type="button" className="waitlist__btn" onClick={() => done(w)}>
+                  Done
+                </button>
+              </span>
+              {n ? (
+                <div className={`rq__ai waitlist__ai rq__ai--${n.action === "nudge" ? "reply" : "leave"}`}>
+                  <span className="rq__ai-text">
+                    <span className="rq__ai-kicker">Suggested:</span>{" "}
+                    <strong>{n.action === "nudge" ? "Follow up" : "Let it go"}</strong>
+                    {n.reason ? <span className="rq__ai-why"> · {n.reason}</span> : null}
+                  </span>
+                  {n.action === "let_go" ? (
+                    <button type="button" className="rq__btn rq__btn--sm" onClick={() => done(w)}>
+                      Done
+                    </button>
+                  ) : w.lastId && writing !== w.id ? (
+                    <button type="button" className="rq__btn rq__btn--sm" onClick={() => { setWriting(w.id); setEdited(false); }}>
+                      {n.draft ? "Review follow-up" : "Write follow-up"}
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+              {n?.action === "nudge" && writing === w.id ? (
+                <NudgeDraft
+                  messageId={w.lastId}
+                  initial={n.draft ?? ""}
+                  onEdit={() => setEdited(true)}
+                  onSaved={() => setEdited(false)}
+                />
+              ) : null}
+            </li>
+          );
+        })}
       </ul>
     </Popover>
+  );
+}
+
+/** The follow-up, written ahead of time: edit it, then save it to Gmail as a draft in the same thread. Never sends. */
+function NudgeDraft({
+  messageId,
+  initial,
+  onEdit,
+  onSaved,
+}: {
+  messageId: string;
+  initial: string;
+  onEdit: () => void;
+  onSaved: () => void;
+}) {
+  const [text, setText] = useState(initial);
+  const [phase, setPhase] = useState<"ready" | "saving" | "saved">("ready");
+  const [url, setUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const save = async () => {
+    setPhase("saving");
+    setError(null);
+    try {
+      const res = await fetch(`/api/replies/${messageId}/draft/save`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const body = (await res.json().catch(() => ({}))) as { url?: string; error?: string };
+      if (!res.ok || !body.url) throw new Error(body.error || "Couldn't save the draft.");
+      setUrl(body.url);
+      setPhase("saved");
+      onSaved();
+    } catch (err) {
+      setError((err as Error).message);
+      setPhase("ready");
+    }
+  };
+  return (
+    <div className="rq__draft waitlist__draft">
+      <textarea
+        className="rq__text"
+        value={text}
+        rows={5}
+        maxLength={8000}
+        aria-label="Follow-up draft"
+        placeholder="Write a short follow-up"
+        disabled={phase !== "ready"}
+        onChange={(e) => {
+          setText(e.target.value);
+          onEdit();
+        }}
+      />
+      <p className="rq__hint">AI draft. Read it before you send; nothing is sent from here.</p>
+      <div className="rq__actions">
+        {phase === "saved" && url ? (
+          <a className="rq__btn rq__btn--primary" href={url} target="_blank" rel="noreferrer">
+            Saved. Open in Gmail drafts
+          </a>
+        ) : (
+          <button type="button" className="rq__btn rq__btn--primary" disabled={phase === "saving" || !text.trim()} onClick={save}>
+            {phase === "saving" ? "Saving…" : "Save to Gmail drafts"}
+          </button>
+        )}
+      </div>
+      {error ? <p className="rq__error">{error}</p> : null}
+    </div>
   );
 }
 
