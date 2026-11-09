@@ -128,6 +128,8 @@ export function Dashboard({ data, settings: chosen, connectFailed = false }: Das
             tasks={data.sources.tasks === "mock" ? [] : data.tasks}
             replies={data.sources.email === "mock" ? [] : data.replies}
             waiting={data.waiting}
+            triage={data.triage}
+            nudges={data.nudges}
             okShared={data.okConflicts}
             incomplete={data.sources.calendar === "mock" || data.sources.tasks === "mock" || data.sources.email === "mock"}
             nowHour={data.today.nowHour}

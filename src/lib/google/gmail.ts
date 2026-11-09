@@ -539,6 +539,7 @@ export async function getWaiting(): Promise<Waiting[]> {
           {
             id: r.value.id,
             messages: (r.value.messages ?? []).map((m) => ({
+              id: m.id,
               from: header(m, "From"),
               to: header(m, "To"),
               subject: header(m, "Subject"),

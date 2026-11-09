@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import {
   gmailLink,
   loadLabels,
+  cachedTriage,
   loadTriage,
   moveReply,
   trashReply,
@@ -54,7 +55,10 @@ export function ReplyQueue({
   const [draft, setDraft] = useState("");
   const [drafting, setDrafting] = useState<string | null>(null);
   const [tasking, setTasking] = useState<string | null>(null);
-  const [triage, setTriage] = useState<Map<string, TriageSuggestion | null> | null>(null);
+  // Usually already worked out in the background, so the queue opens with every suggestion showing.
+  const [triage, setTriage] = useState<Map<string, TriageSuggestion | null> | null>(() =>
+    aiDraft ? cachedTriage(replies.flatMap((r) => (r.id ? [r.id] : []))) : null,
+  );
   const [triageError, setTriageError] = useState(false);
   const idKey = replies.map((r) => r.id).join(",");
   const reference = referenceLabel(labels);

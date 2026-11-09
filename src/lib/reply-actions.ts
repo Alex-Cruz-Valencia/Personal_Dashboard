@@ -88,17 +88,21 @@ export function loadLabels(): Promise<LabelInfo[]> {
   return labelPromise;
 }
 
-export type TriageAction = "trash" | "task" | "reply" | "file" | "leave";
-
-export interface TriageSuggestion {
-  id: string;
-  action: TriageAction;
-  label?: string;
-  reason: string;
-}
+export type { TriageAction, TriageSuggestion } from "./types";
+import type { TriageSuggestion } from "./types";
 
 /** id → suggestion (null: asked, but the model had none). Kept for the page load, so reopening the queue costs nothing. */
 const triageCache = new Map<string, TriageSuggestion | null>();
+
+/** Suggestions the server already worked out in the background; the page passes them in on every render. */
+export function seedTriage(stored: Record<string, TriageSuggestion | null>) {
+  for (const [id, s] of Object.entries(stored)) if (!triageCache.has(id)) triageCache.set(id, s);
+}
+
+/** Every one of these already known: the queue can open filled in, with no loading line. */
+export function cachedTriage(ids: string[]): Map<string, TriageSuggestion | null> | null {
+  return ids.every((id) => triageCache.has(id)) ? new Map(ids.map((id) => [id, triageCache.get(id) ?? null])) : null;
+}
 
 /** AI suggestions for these emails; only ids not asked about yet go to the server. Read-only. */
 const TRIAGE_BATCH = 8;

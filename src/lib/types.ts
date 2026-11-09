@@ -230,6 +230,28 @@ export interface Waiting {
   days: number;
   /** The thread in Gmail, in the connected account. */
   url: string;
+  /** My last message in the thread: what a follow-up draft replies to. */
+  lastId: string;
+}
+
+/** What AI triage would do with an email. Only ever a proposal; a click applies it. */
+export type TriageAction = "trash" | "task" | "reply" | "file" | "leave";
+
+export interface TriageSuggestion {
+  /** Gmail message id. */
+  id: string;
+  action: TriageAction;
+  /** "file": the Gmail label to move it to. "reply": where to file it once answered (optional). */
+  label?: string;
+  reason: string;
+}
+
+/** For a sent email nobody answered: follow up, or let it go. */
+export interface Nudge {
+  action: "nudge" | "let_go";
+  reason: string;
+  /** "nudge": a short follow-up, written ahead of time. Saved to Gmail only as a draft, on a click. */
+  draft?: string;
 }
 
 /** The visible span of the day on the arc. */
@@ -320,6 +342,13 @@ export interface DashboardData {
   clarifyCount: number | null;
   /** Today's all-day events (deadlines, holidays, terms), shown as banners. Kept out of `agenda`. */
   allDay: AgendaEvent[];
+  /**
+   * AI triage already done in the background, by message id (null: looked at, nothing to suggest).
+   * An email missing here hasn't been looked at yet.
+   */
+  triage: Record<string, TriageSuggestion | null>;
+  /** Background suggestions for `waiting`, by thread id. */
+  nudges: Record<string, Nudge>;
 }
 
 /** One rough item in Clarify mode: an Inbox task or a thread under the to-do label. */

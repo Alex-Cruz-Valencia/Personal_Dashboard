@@ -1,21 +1,16 @@
 import "server-only";
 import { config } from "@/lib/config";
 import { chat } from "./client";
-import { TRIAGE_ACTIONS, type EmailProfile, type TriageAction } from "./email-profile";
+import type { TriageSuggestion } from "@/lib/types";
+import { TRIAGE_ACTIONS, type EmailProfile } from "./email-profile";
+
+export type { TriageSuggestion };
 
 /**
  * Email triage: one suggested action per email, with a one-line reason. The
  * model only proposes; every action is applied by the person's click through
  * the existing routes (trash, move, the task form, the reply drafter).
  */
-
-export interface TriageSuggestion {
-  id: string;
-  action: TriageAction;
-  /** "file": the Gmail label to move it to. "reply": where to file it once answered (optional). */
-  label?: string;
-  reason: string;
-}
 
 export interface TriageEmail {
   id: string;

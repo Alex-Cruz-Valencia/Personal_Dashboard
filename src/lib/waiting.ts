@@ -5,6 +5,8 @@
 
 /** One message of a thread, reduced to what the check needs. */
 export interface MailLite {
+  /** Gmail message id. */
+  id?: string;
   from: string;
   to: string;
   subject: string;
@@ -26,6 +28,8 @@ export interface WaitingPick {
   subject: string;
   /** Whole days since I sent it. */
   days: number;
+  /** My last message's id ("" when Gmail didn't give one). */
+  lastId: string;
 }
 
 /** Quieter than this and it's too early to call it waiting; older and it's let go. */
@@ -62,7 +66,7 @@ export function pickWaiting(threads: ThreadLite[], me: string, now: number): Wai
     const others = addresses(last.to).filter((a) => a !== self);
     if (!others.length || others.every((a) => NO_REPLY.test(a))) continue;
     if (!ASKS.test(`${last.subject} ${last.snippet}`)) continue;
-    out.push({ id: t.id, to: people(last.to), subject: last.subject || "(no subject)", days });
+    out.push({ id: t.id, to: people(last.to), subject: last.subject || "(no subject)", days, lastId: last.id ?? "" });
   }
   return out.sort((a, b) => b.days - a.days);
 }
